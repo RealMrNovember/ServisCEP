@@ -19,6 +19,7 @@ Bu dizin, ServisCEP projesinin ürün, mimari ve geliştirme dokümantasyonunu b
 | 11 | [Geliştirme Prensipleri](11-gelistirme-prensipleri.md) | Test stratejisi, AI destekli geliştirme kuralları, Definition of Done |
 | 12 | [MVP Kapsamı](12-mvp-kapsami.md) | MVP'de olmayacaklar, başarı kriterleri |
 | 13 | [Web Arayüzü ve Showroom](13-web-arayuzu-ve-showroom.md) | Showroom (tanıtım sitesi), web panel, mobil showcase entegrasyonu |
+| 14 | [Marka Kimliği](14-marka-kimligi.md) | Logo, renk paleti, ikon varlıkları ve kullanım kuralları |
 | 99 | [Orijinal Spesifikasyon (Arşiv)](99-orijinal-spesifikasyon.md) | `idea.md`'nin bölünmeden önceki tam hali — referans amaçlı arşiv |
 
 ## İlgili Dosyalar

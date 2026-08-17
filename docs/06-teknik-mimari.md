@@ -20,6 +20,8 @@ Ana navigasyon sade tutulmalıdır:
 
 ## 2. Mobil Tasarım Prensipleri
 
+> **Zorunlu gereksinim:** Mobil arayüz **tamamen modern ve şık** olmalıdır — "işlevsel ama sade" ilkesi, düşük kaliteli/eski görünümlü bir arayüz için mazeret değildir. Referans kalite seviyesi: piyasadaki premium SaaS mobil uygulamaları (Linear, Notion, Stripe Dashboard gibi ürünlerin mobil deneyimi) — tutarlı bir tasarım sistemi (renk paleti, tipografi, spacing, bileşen kütüphanesi), akıcı geçiş/animasyonlar ve özenli boş/yükleme/hata durumları içermelidir. Marka renk paleti için bkz. [14 — Marka Kimliği](14-marka-kimligi.md).
+
 Saha koşulları (eldiven, güneş ışığı, tek elle kullanım, düşük teknik yetkinlik) göz önünde bulundurularak:
 
 - Büyük dokunma alanları
@@ -106,14 +108,21 @@ Mobil Uygulama                         Backend
       │◄────────────────────────────────── │
       │                                    │
       │  (yeni sürüm varsa) APK indir      │
-      │ ──────────────────────────────────►│  /releases/serviscep-vX.Y.Z.apk
+      │ ──────────────────────────────────►│  GitHub Releases (aşağıya bkz.)
       │                                    │
       │  Android PackageInstaller ile      │
       │  kur (mevcut kurulumun üzerine)    │
 ```
 
 - **Kontrol noktası:** Uygulama açılışında ve/veya periyodik arka plan kontrolünde `app/version` endpoint'i sorgulanır.
-- **APK barındırma:** Sunucuda `/releases/` altında statik olarak sunulur (imzalı, versiyonlu dosya adlarıyla).
+- **APK barındırma — GitHub Releases:** Play Store'da yayın yapılamadığı MVP döneminde (lisanslama süreci tamamlanana kadar), APK sunucuda değil **GitHub Releases** üzerinde barındırılır:
+  - Her sürüm, repo üzerinde bir GitHub Release olarak yayınlanır (`vX.Y.Z` tag'i, APK dosyası release asset'i olarak eklenir).
+  - GitHub'ın **sabit "latest" URL deseni** kullanılır, böylece tek bir bağlantı her zaman en güncel sürümü çözer — yeni sürüm çıktığında link **değişmez**:
+    ```
+    https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk
+    ```
+  - Bu URL hem showroom'daki "İndir" butonunda (bkz. [13 — Web Arayüzü ve Showroom § APK İndirme](13-web-arayuzu-ve-showroom.md#2-apk-i̇ndirme-play-store-yerine)) hem de backend'in `app/version` endpoint'inin döndürdüğü `apk_url` alanında **aynı sabit link** olarak kullanılabilir — ayrı bir dosya barındırma/güncelleme adımına gerek kalmaz.
+  - Sunucu tarafında `/releases/` altında statik dosya barındırma, yalnızca GitHub Releases'e erişilemeyen bir senaryoda yedek plan olarak değerlendirilebilir.
 - **Force update:** `min_supported_version`'ın altında kalan istemciler, güncelleme yapılmadan API'yi kullanamaz — kritik güvenlik/veri modeli değişikliklerinde bu mekanizma kullanılır.
 - **İzin gereksinimi:** Play Store dışı kurulum olduğu için Android'de `REQUEST_INSTALL_PACKAGES` izni gerekir; kullanıcıya bu adım açıkça anlatılmalıdır.
 - Bu akış [08 — Offline-First ve Senkronizasyon](08-offline-first-ve-senkronizasyon.md) ile birlikte çalışır: güncelleme kontrolü de bağlantı geldiğinde tetiklenen arka plan işlerinden biridir.

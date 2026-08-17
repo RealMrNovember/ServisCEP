@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/branding/icon-192.png" width="96" height="96" alt="ServisCEP logosu">
+
 # ServisCEP
 
 **Saha teknik servis işletmeleri için mobil-first, offline-first işletme yönetim platformu.**

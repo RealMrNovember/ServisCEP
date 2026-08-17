@@ -4,7 +4,7 @@
 
 ServisCEP'in web varlığı iki ayrı amaca hizmet eder:
 
-1. **Showroom (Tanıtım Sitesi)** — `serviscep.cicibyte.com` üzerinde herkese açık, ürünü tanıtan, giriş/kayıt akışına yönlendiren profesyonel bir açılış sayfası.
+1. **Showroom (Tanıtım Sitesi)** — `serviscep.cicibyte.com` üzerinde herkese açık, ürünü tanıtan, giriş/kayıt akışına ve APK indirmeye yönlendiren profesyonel bir açılış sayfası.
 2. **Web Panel** — mobil uygulamayla **aynı Laravel API'yi** tüketen, tarayıcı üzerinden tam işlevsel bir yönetim arayüzü (masaüstünden çalışmak isteyen kullanıcılar için).
 
 Bu iki parça aynı domain altında, kimlik doğrulama durumuna göre ayrışır: giriş yapmamış ziyaretçi showroom'u görür, giriş yapmış kullanıcı panele yönlendirilir.
@@ -13,21 +13,35 @@ Bu iki parça aynı domain altında, kimlik doğrulama durumuna göre ayrışır
 
 ### Amaç
 
-Ziyaretçiye ürünü profesyonelce tanıtmak ve giriş/kayıt akışına yönlendirmek.
+Ziyaretçiye ürünü profesyonelce tanıtmak, giriş/kayıt akışına ve APK indirmeye yönlendirmek.
 
 ### Kapsam
 
 - Hero bölümü — ürün vaadi (bkz. [01 — Vizyon ve Felsefe](01-vizyon-ve-felsefe.md))
 - Özellik tanıtımı (müşteri yönetimi, servis formu, teklif/proforma, finans, offline-first)
-- **Mobil uygulama ekran görüntüleri / showcase** — mobil UI tamamlandığında eklenir (bkz. §4 aşağıda)
+- **Mobil uygulama ekran görüntüleri / showcase** — mobil UI tamamlandığında eklenir (bkz. §5 aşağıda)
 - **Giriş (Login) ve Kayıt (Signup)** butonları — zorunlu, sayfanın her yerinden erişilebilir
+- **"Uygulamayı İndir" (APK)** — zorunlu, öne çıkan bir CTA (bkz. §2 aşağıda)
 - İletişim/CTA alanı
 
 ### Kimlik Doğrulama Giriş Noktası
 
 Showroom'daki Login/Signup, [09 — Güvenlik ve Yetkilendirme § Kimlik Doğrulama Yöntemleri](09-guvenlik-ve-yetkilendirme.md#0-kimlik-doğrulama-yöntemleri) içinde tanımlanan akışı kullanır (e-posta+parola ve Google OAuth).
 
-## 2. Web Panel
+## 2. APK İndirme (Play Store Yerine)
+
+> **Zorunlu gereksinim:** Uygulama şu aşamada Play Store'da lisanslanamadığı için, showroom'u ziyaret eden herkes uygulamayı **doğrudan siteden, tek tıkla** indirebilmelidir — her zaman **en güncel sürüm**.
+
+- **Konum:** Showroom'da göze çarpan, öne çıkan bir "Uygulamayı İndir" butonu/bölümü (hero alanına yakın, aşağı kaydırmadan görünür).
+- **Mekanizma:** Buton, GitHub Releases'in sabit "latest" URL desenine yönlendirir — yeni sürüm yayınlandığında bağlantı **değişmeden** en güncel APK'yı verir:
+  ```
+  https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk
+  ```
+  Aynı mekanizma, mobil uygulamanın kendi otomatik güncelleme kontrolü için de kullanılır — bkz. [06 — Teknik Mimari § Mobil Uygulama Otomatik Güncelleme](06-teknik-mimari.md#mobil-uygulama-otomatik-güncelleme-ota).
+- **İçerik:** İndirme alanı yalnızca bir link değil, kullanıcıya güven verecek kısa bir kurulum rehberi de içermelidir — "Bilinmeyen kaynaklardan yükleme" izni gerektiği kısaca açıklanmalı (Play Store dışı kurulum olduğu için).
+- **Durum:** İlk gerçek sürüm (MVP release, Sprint 8) yayınlanana kadar bu bölüm showroom'da **yer almaz** — sahte/çalışmayan bir buton göstermek yerine, ilk release ile birlikte canlıya alınır.
+
+## 3. Web Panel
 
 ### Amaç
 
@@ -49,11 +63,11 @@ Web panel, mobil uygulamayla **aynı Laravel API'yi** tüketir (bkz. [07 — API
 
 Frontend teknolojisi (React/Vue/Inertia.js gibi) **Phase W3 başlangıcında** güncel ve stabil seçenekler değerlendirilerek kesinleştirilecektir — [06 — Teknik Mimari](06-teknik-mimari.md) içindeki "kütüphane seçimi geliştirme anında netleşir" prensibiyle tutarlı.
 
-## 3. Kimlik Doğrulama ve Yetkilendirme
+## 4. Kimlik Doğrulama ve Yetkilendirme
 
 Web panel, [09 — Güvenlik ve Yetkilendirme](09-guvenlik-ve-yetkilendirme.md) içindeki rol/yetki modelini birebir uygular — mobilde geçerli olan (`OWNER`, ileride `ADMIN`/`TECHNICIAN`/`ACCOUNTING`/`VIEWER`) kısıtlamalar web tarafında da sunucu düzeyinde zorunlu kılınır. Web arayüzünün varlığı, [11 — Geliştirme Prensipleri](11-gelistirme-prensipleri.md) içindeki *"yetkilendirme yalnızca frontend'e bırakılmaz"* kuralını daha da kritik hale getirir — iki farklı istemci (mobil + web) aynı sunucu taraflı policy'lere güvenmelidir.
 
-## 4. Mobil Showcase Entegrasyonu
+## 5. Mobil Showcase Entegrasyonu
 
 Mobil uygulamanın modern arayüzü tamamlandığında (Sprint 8 / MVP release civarı, bkz. [ROADMAP.md](../ROADMAP.md)), gerçek ekran görüntüleri ve/veya kısa ekran kayıtları showroom sayfasına eklenmelidir. Bu adım, showroom'un ilk sürümünde **placeholder/mockup görsellerle** başlayıp mobil UI olgunlaştıkça gerçek görsellerle güncellenmesi şeklinde ilerler.
 
@@ -66,6 +80,6 @@ Bu doküman kapsamındaki işler, [ROADMAP.md](../ROADMAP.md) içindeki ana Phas
 | **W1** | Showroom — statik tanıtım sayfası (mevcut placeholder'ın yerini alır) | Yok — hemen başlanabilir |
 | **W2** | Login/Signup entegrasyonu (e-posta + Google OAuth) | Phase 5 (Authentication) |
 | **W3** | Web Panel — mobil ile feature parity | Phase 9+ (ilgili modüllerin API'leri hazır oldukça kademeli) |
-| **W4** | Mobil showcase görsellerinin showroom'a eklenmesi | Sprint 8 / MVP release |
+| **W4** | Mobil showcase görsellerinin ve APK indirme butonunun showroom'a eklenmesi | Sprint 8 / MVP release (ilk APK release'i ile birlikte) |
 
 > W1, backend'den bağımsız olduğu için MVP'nin geri kalanını beklemeden başlanabilir; sunucu tarafı zaten hazır (bkz. [deploy/README.md](../deploy/README.md)).

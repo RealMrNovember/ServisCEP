@@ -13,6 +13,9 @@ cd "$SITE_DIR"
 echo "==> Placeholder / statik dosyalar güncelleniyor"
 cp -f deploy/public-placeholder/index.html index.html
 cp -f deploy/public-placeholder/robots.txt robots.txt
+cp -f deploy/public-placeholder/favicon.ico favicon.ico
+cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png
+cp -f deploy/public-placeholder/logo.png logo.png
 
 # ── Backend (Laravel) devreye girdiğinde aşağıdaki adımlar açılacak ──
 # if [ -f backend/artisan ]; then
@@ -32,7 +35,7 @@ cp -f deploy/public-placeholder/robots.txt robots.txt
 echo "==> İzinler ayarlanıyor (yalnızca repo dosyaları — aaPanel'in yönettiği"
 echo "    .user.ini / .well-known gibi dosyalara dokunulmaz)"
 git ls-files -z | xargs -0 -r chown www:www
-chown www:www index.html robots.txt .gitignore 2>/dev/null || true
+chown www:www index.html robots.txt favicon.ico apple-touch-icon.png logo.png .gitignore 2>/dev/null || true
 chown -R www:www .git 2>/dev/null || true
 
 echo "==> Deploy tamamlandı: $(git rev-parse --short HEAD)"

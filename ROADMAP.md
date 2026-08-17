@@ -127,6 +127,8 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 | **Push Notification (zorunlu)** | Hatırlatmalar uygulama kapalıyken de push ile iletilmeli (FCM) | Phase 18 (Notifications) — kapsam genişletildi | [docs/06 § Push Notification](docs/06-teknik-mimari.md#push-notification-zorunlu) |
 | **Web Arayüzü (Showroom + Panel)** | Mobile ek olarak web tanıtım sitesi + tam işlevsel web panel | Paralel track (W1-W4) — bkz. aşağıda | [docs/13 — Web Arayüzü ve Showroom](docs/13-web-arayuzu-ve-showroom.md) |
 | **Google OAuth (Sign in with Google)** | E-posta/parolaya ek kimlik doğrulama yöntemi | Phase 5 (Authentication) — kapsam genişletildi | [docs/09 § Kimlik Doğrulama Yöntemleri](docs/09-guvenlik-ve-yetkilendirme.md#0-kimlik-doğrulama-yöntemleri) |
+| **Marka Kimliği (Logo/İkon)** | Logo, favicon, renk paleti — Phase 1 öncesi tamamlandı ✅ | Phase 1 (Project Architecture) öncesi | [docs/14 — Marka Kimliği](docs/14-marka-kimligi.md) |
+| **APK İndirme (GitHub Releases)** | Play Store yerine, showroom'dan tek tıkla her zaman en güncel APK indirme | W4 (Showroom) + Phase 18-19 (OTA update ile paylaşılan mekanizma) | [docs/13 § APK İndirme](docs/13-web-arayuzu-ve-showroom.md#2-apk-i̇ndirme-play-store-yerine) |
 
 ### Web Arayüzü — Paralel Faz Sıralaması
 
