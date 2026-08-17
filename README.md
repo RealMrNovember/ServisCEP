@@ -86,6 +86,7 @@ ServisCEP/
 │   ├── README.md           Dokümantasyon indeksi
 │   ├── 01-12...            Katman/sektör bazlı dokümanlar
 │   └── 99-orijinal-spesifikasyon.md   Arşivlenmiş ilk spesifikasyon
+├── deploy/                 Sunucu deploy scripti ve placeholder statik dosyalar
 ├── backend/                Laravel API (geliştirme başladığında doldurulacak)
 └── mobile/                 Flutter uygulaması (geliştirme başladığında doldurulacak)
 ```
