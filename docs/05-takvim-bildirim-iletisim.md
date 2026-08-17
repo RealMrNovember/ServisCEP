@@ -45,6 +45,8 @@ Sistem aşağıdaki hatırlatma türlerini desteklemelidir:
 🛠️ ABC Market'in bakım zamanı geldi.
 ```
 
+> ⚠️ **Zorunlu gereksinim:** Bu bildirimler yalnızca uygulama içi (in-app) değil, **push notification** olarak da iletilmelidir — kullanıcı uygulamayı açık tutmasa dahi hatırlatmayı almalıdır. Teknik mekanizma (FCM, cihaz kaydı, arka plan job) için bkz. [06 — Teknik Mimari § Push Notification](06-teknik-mimari.md#push-notification-zorunlu).
+
 ## 5. WhatsApp Paylaşımı
 
 > **MVP'de doğrudan WhatsApp Business API entegrasyonuna gerek yoktur.**

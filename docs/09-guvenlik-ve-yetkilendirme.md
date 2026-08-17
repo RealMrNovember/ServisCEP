@@ -1,6 +1,15 @@
 # 09 — Güvenlik ve Yetkilendirme
 
-> Kaynak: orijinal spesifikasyon §37–§41, §69, §73, §76–§77.
+> Kaynak: orijinal spesifikasyon §37–§41, §69, §73, §76–§77. Kimlik doğrulama yöntemleri bölümü sonradan eklenmiştir (bkz. [ROADMAP.md § Ek Gereksinimler](../ROADMAP.md#ek-gereksinimler-sonradan-eklenen)).
+
+## 0. Kimlik Doğrulama Yöntemleri
+
+- **E-posta + Parola** — temel yöntem, tüm kullanıcı tipleri için.
+- **Google OAuth (Sign in with Google)** — Laravel Socialite ile; hem web (showroom/panel) hem mobil giriş/kayıt akışında kullanılabilir.
+  - Callback route: `/auth/google/callback` (aynı domain, `serviscep.cicibyte.com`).
+  - Mobilde native Google Sign-In yerine, backend-mediated (WebView/Custom Tabs → aynı callback) akış tercih edilir — bu, client secret'ın mobil istemciye hiç gömülmemesini sağlar.
+  - ⚠️ **Kural:** OAuth client ID/secret **asla repoya commit edilmez**; yalnızca sunucu `.env` dosyasında tutulur (bkz. [`.gitignore`](../.gitignore)).
+- Kayıt/giriş sonrası oturum, [07 — API ve Veritabanı](07-api-ve-veritabani.md) içindeki token tabanlı authentication akışına girer.
 
 ## 1. Yetkilendirme (Roller)
 

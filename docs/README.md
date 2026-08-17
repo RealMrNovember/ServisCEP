@@ -18,6 +18,7 @@ Bu dizin, ServisCEP projesinin ürün, mimari ve geliştirme dokümantasyonunu b
 | 10 | [SaaS Vizyonu](10-saas-vizyonu.md) | Çok kiracılı mimari, abonelik modeli, self-servis onboarding |
 | 11 | [Geliştirme Prensipleri](11-gelistirme-prensipleri.md) | Test stratejisi, AI destekli geliştirme kuralları, Definition of Done |
 | 12 | [MVP Kapsamı](12-mvp-kapsami.md) | MVP'de olmayacaklar, başarı kriterleri |
+| 13 | [Web Arayüzü ve Showroom](13-web-arayuzu-ve-showroom.md) | Showroom (tanıtım sitesi), web panel, mobil showcase entegrasyonu |
 | 99 | [Orijinal Spesifikasyon (Arşiv)](99-orijinal-spesifikasyon.md) | `idea.md`'nin bölünmeden önceki tam hali — referans amaçlı arşiv |
 
 ## İlgili Dosyalar

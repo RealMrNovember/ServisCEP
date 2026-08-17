@@ -44,9 +44,12 @@ Proje, gerçek bir saha işletmecisinin ihtiyacından yola çıkarak geliştiril
 | 📄 **Teklif & Proforma & Fatura** | Profesyonel PDF belge üretimi, durum takibi, tek noktadan belge merkezi |
 | 💰 **Finans Yönetimi** | Gelir/gider takibi, tahsilat durumu, aylık finans dashboard'u |
 | 📦 **Stok (opsiyonel)** | Servis bazlı malzeme kullanımı ve stok düşümü için hazır veri modeli |
-| 🗓️ **Takvim & Bildirimler** | Günlük iş planı, hatırlatmalar, WhatsApp üzerinden belge paylaşımı |
+| 🗓️ **Takvim & Bildirimler** | Günlük iş planı, hatırlatmalar, WhatsApp üzerinden belge paylaşımı, push notification (FCM) |
 | 🔌 **Offline-First** | Saha ekibi internetsiz tam operasyon; bağlantı geldiğinde otomatik senkronizasyon |
+| 🔄 **Otomatik Uygulama Güncelleme** | APK, yeniden kurulum gerektirmeden sunucudan otomatik güncelleme çeker |
+| 🌐 **Web Arayüzü** | Herkese açık showroom + mobil ile aynı API'yi kullanan tam işlevsel web paneli — bkz. [docs/13](docs/13-web-arayuzu-ve-showroom.md) |
 | 🔐 **Çok Kiracılı Güvenlik** | `company_id` bazlı tam veri izolasyonu, rol bazlı yetkilendirme, dosya erişim kontrolü |
+| 🔑 **Kimlik Doğrulama** | E-posta/parola + Google OAuth |
 
 > Tüm modüllerin ayrıntılı tanımı için [docs/](docs/README.md) dizinine bakın.
 

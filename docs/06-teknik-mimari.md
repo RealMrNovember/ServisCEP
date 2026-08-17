@@ -80,6 +80,57 @@ Flutter
 
 > State management ve yardımcı kütüphaneler, proje başlangıcında güncel ve stabil seçenekler değerlendirilerek **kesinleştirilecektir** — yukarıdaki liste yönlendirici bir başlangıç noktasıdır, nihai kütüphane seçimi Phase 4 (Flutter Foundation) sırasında dokümante edilmelidir.
 
+## Mobil Uygulama Otomatik Güncelleme (OTA)
+
+> **Zorunlu gereksinim:** Uygulama Play Store dışında (doğrudan APK dağıtımı, WhatsApp/link ile paylaşım vb.) yayılacağı için, kullanıcı **hiçbir zaman uygulamayı elle kaldırıp yeniden kurmak zorunda kalmamalıdır.** Her güncelleme, mevcut kurulumun üzerine sorunsuzca uygulanabilmelidir.
+
+### Neden "yeniden kurulum gerekmez"
+
+Android, aynı **imza anahtarıyla (signing key)** imzalanmış bir APK'nın üzerine güncelleme kurulumuna izin verir; bu durumda:
+
+- Uygulama verileri (offline veritabanı, secure storage, oturum) **korunur**.
+- Kullanıcı yalnızca standart Android "Yükle" onay ekranını görür — **kaldır/yeniden kur adımına gerek yoktur.**
+- Bunun çalışabilmesi için **her sürümün aynı release keystore ile imzalanması zorunludur** — keystore kaybı/değişimi, tüm kullanıcı tabanının elle yeniden kurulum yapmasını gerektirir ve **geri dönüşü olmayan bir hatadır.** Keystore güvenli ve yedekli saklanmalıdır.
+
+### Mekanizma
+
+```
+Mobil Uygulama                         Backend
+      │                                    │
+      │  GET /api/v1/app/version           │
+      │ ──────────────────────────────────►│
+      │                                    │
+      │  { latest_version, min_supported,  │
+      │    apk_url, release_notes,         │
+      │    force_update }                  │
+      │◄────────────────────────────────── │
+      │                                    │
+      │  (yeni sürüm varsa) APK indir      │
+      │ ──────────────────────────────────►│  /releases/serviscep-vX.Y.Z.apk
+      │                                    │
+      │  Android PackageInstaller ile      │
+      │  kur (mevcut kurulumun üzerine)    │
+```
+
+- **Kontrol noktası:** Uygulama açılışında ve/veya periyodik arka plan kontrolünde `app/version` endpoint'i sorgulanır.
+- **APK barındırma:** Sunucuda `/releases/` altında statik olarak sunulur (imzalı, versiyonlu dosya adlarıyla).
+- **Force update:** `min_supported_version`'ın altında kalan istemciler, güncelleme yapılmadan API'yi kullanamaz — kritik güvenlik/veri modeli değişikliklerinde bu mekanizma kullanılır.
+- **İzin gereksinimi:** Play Store dışı kurulum olduğu için Android'de `REQUEST_INSTALL_PACKAGES` izni gerekir; kullanıcıya bu adım açıkça anlatılmalıdır.
+- Bu akış [08 — Offline-First ve Senkronizasyon](08-offline-first-ve-senkronizasyon.md) ile birlikte çalışır: güncelleme kontrolü de bağlantı geldiğinde tetiklenen arka plan işlerinden biridir.
+
+## Push Notification (Zorunlu)
+
+> **Zorunlu gereksinim:** Hatırlatmalar (bkz. [05 — Takvim, Bildirim ve İletişim](05-takvim-bildirim-iletisim.md)) yalnızca uygulama içi değil, **push notification** ile de iletilmelidir — kullanıcı uygulamayı açık tutmadan bildirim almalıdır.
+
+- **Sağlayıcı:** Firebase Cloud Messaging (FCM) — Android için standart, ücretsiz, Flutter ile birinci sınıf entegrasyon.
+- Cihaz kaydı: uygulama girişinde FCM device token backend'e kaydedilir (`device_tokens` tablosu — `user_id`, `company_id`, `token`, `platform`, `last_seen_at`).
+- Sunucu tarafında zamanlanmış bir job (ör. Laravel scheduled command), hatırlatma kurallarını (§29 — servis randevusu, tahsilat, teklif takibi, garanti bitişi vb.) tarayıp ilgili kullanıcılara push gönderir.
+- Uygulama offline iken push ulaşamaz — cihaz tekrar online olduğunda bekleyen/okunmamış bildirimler bir `notifications` listesi üzerinden senkronize edilmelidir (push, tek başına güvenilir teslimat kanalı değildir).
+
+## Web Arayüzü (Panel + Showroom)
+
+Mobil uygulamaya ek olarak bir **web arayüzü** planlanmaktadır — hem herkese açık bir tanıtım/showroom sitesi hem de mobil ile aynı API'yi tüketen bir web paneli. Detaylı kapsam için bkz. **[13 — Web Arayüzü ve Showroom](13-web-arayuzu-ve-showroom.md)**.
+
 ## 7. Backend Yapısı (Laravel)
 
 ```

@@ -83,7 +83,7 @@ MVP'nin gerçek kullanımından gelen geri bildirimlerle önceliklendirilecek ge
 - Gelişmiş raporlar (bkz. [docs/04 § Raporlar](docs/04-finans-ve-stok.md#3-finans-dashboard))
 - Personel yönetimi
 - Rol bazlı yetkilendirme (`ADMIN`, `TECHNICIAN`, `ACCOUNTING`, `VIEWER` — bkz. [docs/09](docs/09-guvenlik-ve-yetkilendirme.md#1-yetkilendirme-roller))
-- Web paneli
+- Web paneli — kapsamlı feature-parity hedefli tam sürüm (erken başlayan showroom/W1-W2 track'i için bkz. [Ek Gereksinimler](#ek-gereksinimler-sonradan-eklenen) ve [docs/13](docs/13-web-arayuzu-ve-showroom.md))
 - Çoklu cihaz desteği
 - Cloud sync geliştirmeleri
 
@@ -114,6 +114,30 @@ Uzun vadeli vizyon — sesle/doğal dille servis kaydı ve akıllı öneriler (b
 - Otomatik müşteri takibi
 - Tahsilat tahmini
 - İş kârlılık analizi
+
+---
+
+## Ek Gereksinimler (Sonradan Eklenen)
+
+Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştirme süreci başladıktan sonra netleşen ve **bağlayıcı** hale gelen gereksinimlerdir. Ana Phase 1-20 sırasını değiştirmez, ona **ek/genişletme** olarak eklenir.
+
+| Gereksinim | Kapsam | İlgili Faz | Detay |
+|---|---|---|---|
+| **APK Otomatik Güncelleme (OTA)** | Kullanıcı hiçbir güncellemede uygulamayı elle kaldırıp yeniden kurmak zorunda kalmamalı | Phase 4 (Flutter Foundation) + Phase 18 (Notifications) ile birlikte devreye alınır | [docs/06 § Mobil Uygulama Otomatik Güncelleme](docs/06-teknik-mimari.md#mobil-uygulama-otomatik-güncelleme-ota) |
+| **Push Notification (zorunlu)** | Hatırlatmalar uygulama kapalıyken de push ile iletilmeli (FCM) | Phase 18 (Notifications) — kapsam genişletildi | [docs/06 § Push Notification](docs/06-teknik-mimari.md#push-notification-zorunlu) |
+| **Web Arayüzü (Showroom + Panel)** | Mobile ek olarak web tanıtım sitesi + tam işlevsel web panel | Paralel track (W1-W4) — bkz. aşağıda | [docs/13 — Web Arayüzü ve Showroom](docs/13-web-arayuzu-ve-showroom.md) |
+| **Google OAuth (Sign in with Google)** | E-posta/parolaya ek kimlik doğrulama yöntemi | Phase 5 (Authentication) — kapsam genişletildi | [docs/09 § Kimlik Doğrulama Yöntemleri](docs/09-guvenlik-ve-yetkilendirme.md#0-kimlik-doğrulama-yöntemleri) |
+
+### Web Arayüzü — Paralel Faz Sıralaması
+
+```
+W1  Showroom (statik tanıtım sayfası)        ──► bağımsız, hemen başlanabilir (kuruldu ✅)
+W2  Login/Signup entegrasyonu                ──► Phase 5 sonrası
+W3  Web Panel (mobil ile feature parity)     ──► Phase 9+ sonrası, kademeli
+W4  Mobil showcase görselleri showroom'a     ──► Sprint 8 / MVP release sonrası
+```
+
+> W1 için sunucu altyapısı zaten hazır — bkz. [deploy/README.md](deploy/README.md). Statik placeholder sayfa, showroom tasarımı netleşince onunla değiştirilecektir.
 
 ---
 
