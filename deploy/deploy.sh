@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ServisCEP — sunucu üzerinde çalıştırılan deploy scripti.
+# ServisCEP — sunucu üzerinde çalıştırılan deploy scripti (pull adımı).
 #
 # Kullanım (sunucuda, site dizininde):
 #   bash deploy/deploy.sh
@@ -7,6 +7,12 @@
 # Bu script şu ana kadar SADECE bu sitenin dizinine dokunur
 # (/www/wwwroot/serviscep.cicibyte.com). Başka hiçbir site/servis
 # etkilenmez.
+#
+# NOT: Bu script git pull ile KENDİSİNİ günceller. Bu nedenle asıl
+# deploy mantığı burada değil, pull tamamlandıktan SONRA taze bir
+# process ile çalıştırılan deploy/apply.sh içindedir — aksi halde
+# çalışan process, güncellenmeden önceki eski script içeriğini
+# yürütmeye devam edebilir (self-modifying script sorunu).
 
 set -euo pipefail
 
@@ -19,29 +25,5 @@ echo "==> En son kod çekiliyor ($BRANCH)"
 git fetch origin "$BRANCH"
 git reset --hard "origin/$BRANCH"
 
-echo "==> Placeholder / statik dosyalar güncelleniyor"
-cp -f deploy/public-placeholder/index.html index.html
-cp -f deploy/public-placeholder/robots.txt robots.txt
-
-# ── Backend (Laravel) devreye girdiğinde aşağıdaki adımlar açılacak ──
-# if [ -d backend/artisan ] || [ -f backend/artisan ]; then
-#   echo "==> Composer bağımlılıkları"
-#   (cd backend && composer install --no-dev --optimize-autoloader)
-#
-#   echo "==> Migration"
-#   (cd backend && php artisan migrate --force)
-#
-#   echo "==> Config/route/view cache"
-#   (cd backend && php artisan config:cache && php artisan route:cache && php artisan view:cache)
-#
-#   echo "==> Storage symlink"
-#   (cd backend && php artisan storage:link || true)
-# fi
-
-echo "==> İzinler ayarlanıyor (yalnızca repo dosyaları — aaPanel'in yönettiği"
-echo "    .user.ini / .well-known gibi dosyalara dokunulmaz)"
-git ls-files -z | xargs -0 -r chown www:www
-chown www:www index.html robots.txt .gitignore 2>/dev/null || true
-chown -R www:www .git 2>/dev/null || true
-
-echo "==> Deploy tamamlandı: $(git rev-parse --short HEAD)"
+echo "==> apply.sh taze bir process olarak çalıştırılıyor"
+exec bash "$SITE_DIR/deploy/apply.sh"
