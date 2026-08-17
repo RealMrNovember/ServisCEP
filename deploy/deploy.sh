@@ -38,7 +38,10 @@ cp -f deploy/public-placeholder/robots.txt robots.txt
 #   (cd backend && php artisan storage:link || true)
 # fi
 
-echo "==> İzinler ayarlanıyor"
-chown -R www:www "$SITE_DIR"
+echo "==> İzinler ayarlanıyor (yalnızca repo dosyaları — aaPanel'in yönettiği"
+echo "    .user.ini / .well-known gibi dosyalara dokunulmaz)"
+git ls-files -z | xargs -0 -r chown www:www
+chown www:www index.html robots.txt .gitignore 2>/dev/null || true
+chown -R www:www .git 2>/dev/null || true
 
 echo "==> Deploy tamamlandı: $(git rev-parse --short HEAD)"
