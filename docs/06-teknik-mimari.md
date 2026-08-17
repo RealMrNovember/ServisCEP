@@ -94,6 +94,8 @@ Android, aynı **imza anahtarıyla (signing key)** imzalanmış bir APK'nın üz
 - Kullanıcı yalnızca standart Android "Yükle" onay ekranını görür — **kaldır/yeniden kur adımına gerek yoktur.**
 - Bunun çalışabilmesi için **her sürümün aynı release keystore ile imzalanması zorunludur** — keystore kaybı/değişimi, tüm kullanıcı tabanının elle yeniden kurulum yapmasını gerektirir ve **geri dönüşü olmayan bir hatadır.** Keystore güvenli ve yedekli saklanmalıdır.
 
+> **Durum (2026-08-18):** Release keystore oluşturuldu ve iki bağımsız yerde (yerel makine + sunucuda `/root/serviscep_secrets/`, root-only) yedeklendi. Dosyalar `.gitignore` ile repoya **asla** girmez (`android/key.properties`, `android/app/*.jks`). İlk imzalı test sürümü `v0.1.0` olarak yayınlandı (bkz. [ROADMAP.md](../ROADMAP.md)).
+
 ### Mekanizma
 
 ```

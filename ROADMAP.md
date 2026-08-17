@@ -26,7 +26,7 @@ gerçek kullanımı                                   derinlik      genişleme  
 | **1** | Project Architecture — repo yapısı, ortam kurulumu, temel konvansiyonlar | Sprint 1 | ✅ Tamamlandı |
 | **2** | Database Schema — PostgreSQL şeması, migration altyapısı (bkz. [docs/07](docs/07-api-ve-veritabani.md)) | Sprint 1 | Sırada |
 | **3** | Laravel API Foundation — proje iskeleti, katman yapısı (bkz. [docs/06 § Backend](docs/06-teknik-mimari.md#7-backend-yapısı-laravel)) | Sprint 1 | 🟡 Temel iskelet hazır, derinlik ertelendi |
-| **4** | Flutter Foundation — proje iskeleti, state management/routing seçimi | Sprint 1 | 🟡 İskelet + tema + Dashboard hazır |
+| **4** | Flutter Foundation — proje iskeleti, state management/routing seçimi | Sprint 1 | 🟡 İskelet + tema + Dashboard hazır, **v0.1.0 test APK'sı yayınlandı** |
 | **5** | Authentication — token tabanlı kimlik doğrulama | Sprint 1 |
 | **6** | Company Profile — şirket/kullanıcı kurulumu, `company_id` izolasyonunun temeli | Sprint 1 |
 | **7** | Customer Management — müşteri CRUD, tipler, profil (bkz. [docs/02](docs/02-is-alani-ve-veri-modeli.md)) | Sprint 2 |

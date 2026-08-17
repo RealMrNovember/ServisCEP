@@ -36,5 +36,14 @@ Herhangi bir tasarım değişikliğinde: `icon.svg`'yi düzenle → `python gene
 ## Kullanım Alanları
 
 - **Favicon / site ikonu:** `deploy/public-placeholder/` içine kopyalanır, `deploy/apply.sh` tarafından her deploy'da site köküne yerleştirilir.
-- **Mobil uygulama ikonu:** Phase 4 (Flutter Foundation) sırasında `icon-512.png` kaynak alınarak Android launcher icon setleri üretilecektir.
+- **Mobil uygulama ikonu:** `assets/branding/icon-512.png` kaynak alınarak `flutter_launcher_icons` ile Android/iOS launcher icon setleri üretilir (bkz. [mobile/README.md](../mobile/README.md)). ✅ Tamamlandı.
 - **Web/Showroom:** [13 — Web Arayüzü ve Showroom](13-web-arayuzu-ve-showroom.md) kapsamında header/hero alanlarında kullanılır.
+
+## Geliştirici Atfı (Zorunlu)
+
+> **Zorunlu gereksinim:** "ServisCEP · **Cicibyte Teknoloji** tarafından geliştirilmiştir" ibaresi, [cicibyte.com](https://cicibyte.com) bağlantısıyla, gerçekten olması gereken footer alanlarında gösterilmelidir:
+
+- **Mobil:** Ana ekranların altında (bkz. `mobile/lib/shared/brand_footer.dart`, şu an Dashboard'da kullanılıyor) ve ileride eklenecek "Daha Fazla / Hakkında" ekranında.
+- **Web (Showroom + Panel):** Sayfa footer'ında, tüm sayfalarda tutarlı şekilde.
+
+Bu, Claude/Anthropic atfı **değildir** — ServisCEP'i geliştiren şirketin kendi atfıdır, kullanıcı talebiyle eklenmiştir ve her yeni ekran/sayfada bu kurala uyulmalıdır.
