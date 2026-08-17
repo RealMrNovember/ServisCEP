@@ -1,0 +1,124 @@
+# ServisCEP — Yol Haritası
+
+> Kaynak: orijinal spesifikasyon §57–§60, §92–§93. Ayrıntılı kapsam dışı liste için bkz. [docs/12-mvp-kapsami.md](docs/12-mvp-kapsami.md).
+
+Bu yol haritası iki eksende organize edilmiştir:
+
+1. **Faz sırası (Phase 1–20)** — geliştirme ajanının/ekibin uyacağı **zorunlu, sıralı** uygulama sırası.
+2. **Sprint gruplaması (Sprint 1–8)** — fazların, teslim edilebilir kilometre taşlarına gruplanmış hali.
+
+> ⚠️ **Kural:** Bir faz, [Definition of Done](docs/11-gelistirme-prensipleri.md#definition-of-done-bitmiş-sayılma-kriteri) kriterlerinin tamamını karşılamadan bir sonraki faza geçilmez.
+
+```
+MVP  ──────────────────────────────────────────►  V2  ──►  V3 (SaaS)  ──►  V4 (AI)
+Tekil işletme, İbrahim'in                         Operasyonel   Çok kiracılı   Akıllı
+gerçek kullanımı                                   derinlik      genişleme      otomasyon
+```
+
+---
+
+## MVP — Faz Sırası (Phase 1–20)
+
+| Faz | Kapsam | Sprint |
+|---|---|---|
+| **1** | Project Architecture — repo yapısı, ortam kurulumu, temel konvansiyonlar | Sprint 1 |
+| **2** | Database Schema — PostgreSQL şeması, migration altyapısı (bkz. [docs/07](docs/07-api-ve-veritabani.md)) | Sprint 1 |
+| **3** | Laravel API Foundation — proje iskeleti, katman yapısı (bkz. [docs/06 § Backend](docs/06-teknik-mimari.md#7-backend-yapısı-laravel)) | Sprint 1 |
+| **4** | Flutter Foundation — proje iskeleti, state management/routing seçimi | Sprint 1 |
+| **5** | Authentication — token tabanlı kimlik doğrulama | Sprint 1 |
+| **6** | Company Profile — şirket/kullanıcı kurulumu, `company_id` izolasyonunun temeli | Sprint 1 |
+| **7** | Customer Management — müşteri CRUD, tipler, profil (bkz. [docs/02](docs/02-is-alani-ve-veri-modeli.md)) | Sprint 2 |
+| **8** | Service Request — talep modülü, talep→iş dönüşümü | Sprint 2 |
+| **9** | Job / Service Management — iş modülü, durum akışı, iş türleri | Sprint 2 |
+| **10** | Service Form — servis formu oluşturma ve doldurma (bkz. [docs/03](docs/03-servis-ve-belge-yonetimi.md)) | Sprint 3 |
+| **11** | Photo + Signature — fotoğraf sistemi, dijital imza | Sprint 3 |
+| **12** | Quote / Proforma — teklif ve proforma modülleri | Sprint 4 |
+| **13** | PDF Engine — belge PDF üretimi, belge merkezi | Sprint 4 |
+| **14** | Income / Expense — gelir/gider modülleri (bkz. [docs/04](docs/04-finans-ve-stok.md)) | Sprint 5 |
+| **15** | Payments — tahsilat modülü, finans dashboard | Sprint 5 |
+| **16** | Offline Engine — yerel veritabanı, offline CRUD (bkz. [docs/08](docs/08-offline-first-ve-senkronizasyon.md)) | Sprint 6 |
+| **17** | Synchronization — sync queue, conflict handling, backup | Sprint 6 |
+| **18** | Notifications — hatırlatmalar, bildirimler, takvim | Sprint 7 |
+| **19** | WhatsApp Sharing — Android Share entegrasyonu, harita | Sprint 7 |
+| **20** | Real User Testing — gerçek kullanıcı testi, bug fixing, performans, release build | Sprint 8 |
+
+## MVP — Sprint Özeti
+
+### Sprint 1 — Temel Altyapı
+Flutter projesi · Laravel API · Authentication · Company · User · Database · Temel navigation · Dashboard
+
+### Sprint 2 — Müşteri ve İş Çekirdeği
+Müşteriler · Müşteri profili · Adresler · İşler · Talepler
+
+### Sprint 3 — Sahada Servis
+Servis formu · Fotoğraf · Not · Dijital imza · Servis durumları
+
+### Sprint 4 — Ticari Belgeler
+Teklif · Proforma · PDF · Belge merkezi
+
+### Sprint 5 — Finans
+Gelir · Gider · Tahsilat · Finans dashboard
+
+### Sprint 6 — Offline & Senkronizasyon
+Offline database · Sync engine · Conflict handling · Backup · Error handling
+
+### Sprint 7 — İletişim ve Zamanlama
+WhatsApp sharing · Bildirimler · Takvim · Harita
+
+### Sprint 8 — Sahaya Çıkış
+Gerçek kullanıcı testleri · Bug fixing · UX iyileştirmeleri · Performance · Release build
+
+> **MVP kabul kriteri:** [docs/11 § Gerçek Hayat Test Senaryosu](docs/11-gelistirme-prensipleri.md#gerçek-hayat-test-senaryosu) uçtan uca, internetsiz başlayıp senkronize ve PDF paylaşımıyla biten senaryo eksiksiz çalışmalıdır.
+
+---
+
+## V2 — Operasyonel Derinlik
+
+MVP'nin gerçek kullanımından gelen geri bildirimlerle önceliklendirilecek genişletmeler:
+
+- Stok yönetimi (tam kapsamlı)
+- Malzeme takibi
+- Garanti ve bakım periyotları (bkz. [docs/05 § Garanti ve Bakım](docs/05-takvim-bildirim-iletisim.md#6-garanti-ve-bakım-v2))
+- Gelişmiş randevu/takvim
+- Gelişmiş raporlar (bkz. [docs/04 § Raporlar](docs/04-finans-ve-stok.md#3-finans-dashboard))
+- Personel yönetimi
+- Rol bazlı yetkilendirme (`ADMIN`, `TECHNICIAN`, `ACCOUNTING`, `VIEWER` — bkz. [docs/09](docs/09-guvenlik-ve-yetkilendirme.md#1-yetkilendirme-roller))
+- Web paneli
+- Çoklu cihaz desteği
+- Cloud sync geliştirmeleri
+
+## V3 — SaaS Dönüşümü
+
+Ürün-pazar uyumu doğrulandıktan sonra genel SaaS ürününe geçiş (bkz. [docs/10 — SaaS Vizyonu](docs/10-saas-vizyonu.md)):
+
+- Self-servis SaaS onboarding
+- Abonelik modeli (Free / Pro / Business)
+- Tam çok kiracılı (multi-tenant) mimari
+- Çoklu şirket yönetimi
+- Personel/rol genişlemesi
+- Genel API erişimi
+- E-posta / SMS bildirimleri
+- WhatsApp Business API entegrasyonu
+- Resmi e-Fatura / e-Arşiv entegrasyonları
+- Online ödeme altyapısı
+
+## V4 — Akıllı Otomasyon (AI)
+
+Uzun vadeli vizyon — sesle/doğal dille servis kaydı ve akıllı öneriler (bkz. orijinal spesifikasyon §51–§52 → [docs/99](docs/99-orijinal-spesifikasyon.md)):
+
+- AI ile servis kaydı oluşturma (doğal dil → yapılandırılmış kayıt)
+- AI ile teklif oluşturma (öneri + taslak, onay kullanıcıda kalır)
+- AI destekli raporlama
+- Sesli kullanım
+- Akıllı fiyat önerileri
+- Otomatik müşteri takibi
+- Tahsilat tahmini
+- İş kârlılık analizi
+
+---
+
+## İlkeler
+
+- Her faz, MVP kapsamındaki [Definition of Done](docs/11-gelistirme-prensipleri.md#definition-of-done-bitmiş-sayılma-kriteri) kriterlerini eksiksiz karşılamalıdır.
+- V2/V3/V4 kapsamındaki hiçbir madde, MVP'nin veri modelini veya güvenlik prensiplerini (bkz. [docs/09](docs/09-guvenlik-ve-yetkilendirme.md)) geriye dönük olarak bozacak şekilde uygulanamaz.
+- MVP'de bilinçli olarak dışarıda bırakılan kapsam için bkz. [docs/12-mvp-kapsami.md](docs/12-mvp-kapsami.md).
