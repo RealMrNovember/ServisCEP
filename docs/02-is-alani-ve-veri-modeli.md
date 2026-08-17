@@ -40,7 +40,10 @@ Müşteri kaydı açıldığında aşağıdaki sekmeler/bölümler gösterilmeli
 - Toplam iş tutarı
 - Tahsil edilen tutar
 - Bekleyen tutar
-- Toplam borç
+- Toplam borç (güncel bakiye — cari hesaptan türetilir)
+- "Ekstre Görüntüle / PDF İndir" aksiyonu
+
+> Bu özet rakamların arkasında tam bir **cari hesap** (kronolojik borç/alacak hareketleri + bakiye) bulunur — bkz. [15 — Cari Hesap](15-cari-hesap.md).
 
 **İş Geçmişi**
 - Müşteriye ait tüm servisler kronolojik sırayla listelenir.

@@ -77,7 +77,7 @@ proformas, proforma_items
 
 invoices, invoice_items
 
-payments, income, expenses
+payments, income, expenses, customer_ledger_entries
 
 products, stock_movements
 
@@ -96,7 +96,7 @@ audit_logs, sync_operations
 | Müşteri | `customers`, `customer_addresses`, `customer_contacts` |
 | İş / Servis | `service_requests`, `jobs`, `job_notes`, `job_photos`, `job_materials`, `job_signatures` |
 | Belge — Ticari | `quotes`, `quote_items`, `proformas`, `proforma_items`, `invoices`, `invoice_items` |
-| Finans | `payments`, `income`, `expenses` |
+| Finans | `payments`, `income`, `expenses`, `customer_ledger_entries` (bkz. [15 — Cari Hesap](15-cari-hesap.md)) |
 | Stok | `products`, `stock_movements` |
 | Belge Yönetimi | `documents`, `document_templates` |
 | Zamanlama | `appointments`, `reminders` |
@@ -126,6 +126,7 @@ Aşağıdaki işlemler **transaction içinde** ele alınmalıdır:
 - Belge oluşturma
 - İş tamamlanması
 - Finans kaydı
+- Cari hesap hareketi (ledger kaydı + türetilen bakiye güncellemesi — bkz. [15 — Cari Hesap § Bakiye Hesaplama](15-cari-hesap.md#bakiye-hesaplama))
 
 Kısmi başarısızlık durumunda sistem **tutarsız bir durumda bırakılmamalıdır** (örneğin: stok düşüldü ama tahsilat kaydı oluşmadı gibi bir senaryo asla yaşanmamalıdır).
 

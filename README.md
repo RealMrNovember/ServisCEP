@@ -45,6 +45,7 @@ Proje, gerçek bir saha işletmecisinin ihtiyacından yola çıkarak geliştiril
 | 📸 **Fotoğraf Sistemi** | Kategorize edilmiş iş fotoğrafları (öncesi/arıza/montaj/sonrası) |
 | 📄 **Teklif & Proforma & Fatura** | Profesyonel PDF belge üretimi, durum takibi, tek noktadan belge merkezi |
 | 💰 **Finans Yönetimi** | Gelir/gider takibi, tahsilat durumu, aylık finans dashboard'u |
+| 📒 **Cari Hesap** | Müşteri bazlı kronolojik borç/alacak hareketleri, güncel bakiye, PDF ekstre — bkz. [docs/15](docs/15-cari-hesap.md) |
 | 📦 **Stok (opsiyonel)** | Servis bazlı malzeme kullanımı ve stok düşümü için hazır veri modeli |
 | 🗓️ **Takvim & Bildirimler** | Günlük iş planı, hatırlatmalar, WhatsApp üzerinden belge paylaşımı, push notification (FCM) |
 | 🔌 **Offline-First** | Saha ekibi internetsiz tam operasyon; bağlantı geldiğinde otomatik senkronizasyon |

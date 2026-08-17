@@ -111,9 +111,12 @@ Belgeler
 ├── Servis Formları
 ├── Faturalar
 ├── Tahsilat Belgeleri
+├── Cari Hesap Ekstreleri
 ├── Garanti Belgeleri
 └── Diğer
 ```
+
+> Cari Hesap Ekstresi detayları için bkz. [15 — Cari Hesap](15-cari-hesap.md#cari-hesap-ekstresi-pdf).
 
 **Filtreler:** Müşteri · Tarih · Belge tipi · Durum · Tutar
 
