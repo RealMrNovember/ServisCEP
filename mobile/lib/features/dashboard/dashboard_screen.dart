@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../shared/brand_footer.dart';
+
 /// Ana Sayfa / Dashboard.
 ///
 /// Ürün vizyonunun merkezi ekranı — bkz. docs/01 § Ana Kullanıcı Deneyimi:
@@ -56,11 +58,17 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
               sliver: SliverList.separated(
                 itemCount: jobs.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) => _JobCard(job: jobs[index]),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 90),
+                child: BrandFooter(),
               ),
             ),
           ],
