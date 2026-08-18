@@ -4,16 +4,71 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants/job_constants.dart';
+import '../service_requests/data/service_requests_repository.dart';
+import '../service_requests/service_request_form_screen.dart';
 import 'data/jobs_repository.dart';
 
-class JobsListScreen extends ConsumerStatefulWidget {
+/// İşler ekranı — bkz. docs/06 § Mobil Navigasyon. "Talepler" (docs/02 §
+/// Talep Modülü) ayrı bir alt sekme olarak burada barındırılır; ayrı bir
+/// bottom-nav sekmesi açmak sade navigasyon prensibine aykırı olurdu.
+class JobsListScreen extends StatefulWidget {
   const JobsListScreen({super.key});
 
   @override
-  ConsumerState<JobsListScreen> createState() => _JobsListScreenState();
+  State<JobsListScreen> createState() => _JobsListScreenState();
 }
 
-class _JobsListScreenState extends ConsumerState<JobsListScreen> {
+class _JobsListScreenState extends State<JobsListScreen> with SingleTickerProviderStateMixin {
+  late final _tabController = TabController(length: 2, vsync: this)
+    ..addListener(() => setState(() {}));
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isJobsTab = _tabController.index == 0;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('İşler'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [Tab(text: 'İşler'), Tab(text: 'Talepler')],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [_JobsTab(), _RequestsTab()],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          if (isJobsTab) {
+            context.push('/jobs/new');
+          } else {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ServiceRequestFormScreen()));
+          }
+        },
+        icon: const Icon(Icons.add),
+        label: Text(isJobsTab ? 'Yeni İş' : 'Yeni Talep'),
+      ),
+    );
+  }
+}
+
+class _JobsTab extends ConsumerStatefulWidget {
+  const _JobsTab();
+
+  @override
+  ConsumerState<_JobsTab> createState() => _JobsTabState();
+}
+
+class _JobsTabState extends ConsumerState<_JobsTab> {
   String? _statusFilter;
 
   @override
@@ -21,66 +76,167 @@ class _JobsListScreenState extends ConsumerState<JobsListScreen> {
     final jobsAsync = ref.watch(jobsListProvider);
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('İşler')),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              children: [
-                _FilterChipItem(
-                  label: 'Tümü',
-                  selected: _statusFilter == null,
-                  onTap: () => setState(() => _statusFilter = null),
+    return Column(
+      children: [
+        SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            children: [
+              _FilterChipItem(
+                label: 'Tümü',
+                selected: _statusFilter == null,
+                onTap: () => setState(() => _statusFilter = null),
+              ),
+              for (final entry in jobStatusLabels.entries)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: _FilterChipItem(
+                    label: entry.value,
+                    selected: _statusFilter == entry.key,
+                    onTap: () => setState(() => _statusFilter = entry.key),
+                  ),
                 ),
-                for (final entry in jobStatusLabels.entries)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: _FilterChipItem(
-                      label: entry.value,
-                      selected: _statusFilter == entry.key,
-                      onTap: () => setState(() => _statusFilter = entry.key),
-                    ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: jobsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
+            data: (jobs) {
+              final filtered = _statusFilter == null
+                  ? jobs
+                  : jobs.where((j) => j.job.status == _statusFilter).toList();
+
+              if (jobs.isEmpty) {
+                return _EmptyState(onAdd: () => context.push('/jobs/new'));
+              }
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Text('Bu durumda iş yok', style: TextStyle(color: scheme.onSurfaceVariant)),
+                );
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+                itemCount: filtered.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (context, index) => _JobTile(item: filtered[index]),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+const _requestStatusLabels = {
+  'BEKLIYOR': 'Bekliyor',
+  'ISLEME_ALINDI': 'İşleme Alındı',
+  'REDDEDILDI': 'Reddedildi',
+  'ISE_DONUSTU': 'İşe Dönüştü',
+};
+
+class _RequestsTab extends ConsumerWidget {
+  const _RequestsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requestsAsync = ref.watch(serviceRequestsListProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    return requestsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
+      data: (requests) {
+        if (requests.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.inbox_outlined, size: 56, color: scheme.onSurfaceVariant),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Henüz talep yok',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+          itemCount: requests.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (context, index) => _RequestTile(item: requests[index]),
+        );
+      },
+    );
+  }
+}
+
+class _RequestTile extends ConsumerWidget {
+  const _RequestTile({required this.item});
+  final RequestWithCustomer item;
+
+  Future<void> _convert(BuildContext context, WidgetRef ref) async {
+    final job = await ref.read(serviceRequestsRepositoryProvider).convertToJob(item.request);
+    if (context.mounted) context.push('/jobs/${job.id}');
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final request = item.request;
+    final canConvert = request.status == 'BEKLIYOR' || request.status == 'ISLEME_ALINDI';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.customer.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ),
+                Text(request.code, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(request.description),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Chip(
+                  label: Text(
+                    _requestStatusLabels[request.status] ?? request.status,
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+                const Spacer(),
+                if (canConvert)
+                  FilledButton.tonal(
+                    onPressed: () => _convert(context, ref),
+                    child: const Text('İşe Dönüştür'),
                   ),
               ],
             ),
-          ),
-          Expanded(
-            child: jobsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
-              data: (jobs) {
-                final filtered = _statusFilter == null
-                    ? jobs
-                    : jobs.where((j) => j.job.status == _statusFilter).toList();
-
-                if (jobs.isEmpty) {
-                  return _EmptyState(onAdd: () => context.push('/jobs/new'));
-                }
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Text('Bu durumda iş yok', style: TextStyle(color: scheme.onSurfaceVariant)),
-                  );
-                }
-
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) => _JobTile(item: filtered[index]),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/jobs/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('Yeni İş'),
+          ],
+        ),
       ),
     );
   }

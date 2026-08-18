@@ -31,9 +31,9 @@ gerçek kullanımı                                   derinlik      genişleme  
 | **M3** | Ana navigasyon iskeleti — Ana Sayfa \| İşler \| Müşteriler \| Belgeler \| Daha Fazla | Phase 4 (genişletme) | ✅ Tamamlandı |
 | **M4** | Müşteri modülü — liste, arama/filtre, oluştur/düzenle, detay (Genel/Finans/İş Geçmişi/Belgeler/Fotoğraflar) | Phase 7 | ✅ Tamamlandı |
 | **M5** | İş/Servis modülü — liste, filtre, oluştur/düzenle, detay, durum akışı, iş türleri kataloğu, iş tamamlanınca otomatik cari borç kaydı | Phase 9 | ✅ Tamamlandı |
-| **M6** | Talep modülü — liste, oluştur, işe dönüştürme | Phase 8 | Sırada |
-| **M7** | Servis Formu + Fotoğraf + Dijital İmza | Phase 10 + 11 | Sırada |
-| **M8** | **Stok & Barkod Modülü** — ürün kataloğu, stok durumu badge'i (yalnızca uygulama içi), kamera ile barkod okuma + global barkod sorgusu, teklif/proforma kalem seçimi bu katalogdan | Phase 25-26 (genişletilmiş) | 🔵 Tasarlandı ([docs/16](docs/16-stok-ve-barkod.md)), yapım sırada |
+| **M6** | Talep modülü — liste, oluştur, işe dönüştürme (İşler ekranı içinde sekme olarak) | Phase 8 | ✅ Tamamlandı |
+| **M7** | Servis Formu + Fotoğraf (kategorili) + Dijital İmza (kamera + signature pad) | Phase 10 + 11 | ✅ Tamamlandı |
+| **M8** | **Stok & Barkod Modülü** — ürün kataloğu, stok durumu badge'i (yalnızca uygulama içi), kamera ile barkod okuma + global barkod sorgusu, teklif/proforma kalem seçimi bu katalogdan | Phase 25-26 (genişletilmiş) | ✅ Tamamlandı ([docs/16](docs/16-stok-ve-barkod.md)) — global barkod sağlayıcı entegrasyonu hariç (arayüz hazır, sağlayıcı seçilecek) |
 | **M9** | Teklif & Proforma — kalemler M8'deki stok kataloğundan seçilebilir veya serbest girilebilir | Phase 12 | Sırada |
 | **M10** | Finans — Gelir/Gider/Tahsilat + Dashboard'un gerçek veriye bağlanması | Phase 14 + 15 | 🟡 Dashboard kısmen gerçek veriye bağlandı (bugünkü iş/tahsilat kartı) |
 | **M11** | Belge Merkezi (liste/filtre görünümü — PDF üretimi Phase 13'te derinleşir) | Phase 13 (kısmi) | 🟡 Placeholder ekran hazır |

@@ -49,6 +49,9 @@ dependencies:
   uuid: ^4.6.0
   crypto: ^3.0.7
   mobile_scanner: ^7.4.0
+  image_picker: ^1.2.3
+  signature: ^6.4.0
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
