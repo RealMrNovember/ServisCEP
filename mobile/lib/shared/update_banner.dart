@@ -1,21 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../core/services/apk_updater.dart';
 import '../core/services/update_checker.dart';
 
 /// Yeni sürüm bulunduğunda gösterilen bildirim şeridi — bkz. docs/06 §
 /// Mobil Uygulama Otomatik Güncelleme.
-class UpdateBanner extends ConsumerWidget {
+///
+/// Güncelleme tamamen uygulama içinde indirilir ve Android yükleyicisi
+/// doğrudan açılır — tarayıcıya/GitHub sayfasına yönlendirme YOK.
+class UpdateBanner extends ConsumerStatefulWidget {
   const UpdateBanner({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UpdateBanner> createState() => _UpdateBannerState();
+}
+
+enum _DownloadState { idle, downloading, error }
+
+class _UpdateBannerState extends ConsumerState<UpdateBanner> {
+  _DownloadState _state = _DownloadState.idle;
+  double _progress = 0;
+  String? _errorMessage;
+
+  Future<void> _startUpdate(UpdateInfo update) async {
+    setState(() {
+      _state = _DownloadState.downloading;
+      _progress = 0;
+      _errorMessage = null;
+    });
+    try {
+      await apkUpdater.downloadAndInstall(
+        update,
+        onProgress: (p) {
+          if (mounted) setState(() => _progress = p);
+        },
+      );
+      if (mounted) setState(() => _state = _DownloadState.idle);
+    } on ApkInstallException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _state = _DownloadState.error;
+        _errorMessage = e.isPermissionDenied
+            ? 'Yükleme için "bilinmeyen kaynaklardan yükleme" iznini onaylaman gerekiyor. '
+                  'İzni verdikten sonra tekrar dene.'
+            : 'İndirilen dosya açılamadı. Tekrar dene.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _state = _DownloadState.error;
+        _errorMessage = 'İndirme başarısız oldu. Bağlantını kontrol edip tekrar dene.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final updateAsync = ref.watch(updateInfoProvider);
     final update = updateAsync.valueOrNull;
     if (update == null) return const SizedBox.shrink();
 
     final scheme = Theme.of(context).colorScheme;
+    final isDownloading = _state == _DownloadState.downloading;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -44,7 +91,7 @@ class UpdateBanner extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Yeni sürüm indirilebilir',
+                      isDownloading ? 'İndiriliyor…' : 'Yeni sürüm indirilebilir',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
@@ -54,15 +101,31 @@ class UpdateBanner extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () =>
-                  launchUrl(Uri.parse(update.downloadUrl), mode: LaunchMode.externalApplication),
-              child: const Text('Güncelle'),
+          if (_state == _DownloadState.error && _errorMessage != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _errorMessage!,
+              style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
             ),
-          ),
+          ],
+          const SizedBox(height: 14),
+          if (isDownloading)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: _progress > 0 ? _progress : null,
+                minHeight: 8,
+                backgroundColor: scheme.onPrimaryContainer.withValues(alpha: 0.15),
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => _startUpdate(update),
+                child: Text(_state == _DownloadState.error ? 'Tekrar Dene' : 'Güncelle'),
+              ),
+            ),
         ],
       ),
     );

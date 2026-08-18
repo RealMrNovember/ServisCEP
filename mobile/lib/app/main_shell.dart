@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/services/play_update_service.dart';
 import 'theme.dart';
 
 /// Ana navigasyon iskeleti — bkz. docs/06 § Mobil Navigasyon:
@@ -11,7 +13,7 @@ import 'theme.dart';
 /// sığdırmaya çalışırken küçük ekranlarda/daha büyük yazı tipi ölçeğinde
 /// taşabiliyordu. Etiketler [FittedBox] ile daralan alana göre otomatik
 /// küçültülür; bu nedenle hiçbir cihaz genişliğinde taşma oluşmaz.
-class MainShell extends StatelessWidget {
+class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
@@ -25,15 +27,44 @@ class MainShell extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playUpdateReady = ref.watch(playUpdateReadyProvider);
+
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          if (playUpdateReady) const _PlayUpdateReadyBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: _FloatingNavBar(
         currentIndex: navigationShell.currentIndex,
         destinations: _destinations,
         onSelect: (index) =>
             navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
       ),
+    );
+  }
+}
+
+/// Play Store üzerinden indirilen bir güncelleme kurulum için hazır
+/// olduğunda gösterilir — bkz. play_update_service.dart. GitHub tabanlı
+/// [UpdateBanner]'ın aksine burada indirme YOK, yalnızca "yeniden başlat"
+/// tetiklenir; indirme zaten Play tarafından sessizce tamamlanmıştır.
+class _PlayUpdateReadyBanner extends StatelessWidget {
+  const _PlayUpdateReadyBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialBanner(
+      content: const Text('Güncelleme indirildi. Uygulamayı yeniden başlatmak için devam et.'),
+      leading: const Icon(Icons.system_update_alt_rounded),
+      actions: [
+        TextButton(
+          onPressed: () => playUpdateService.completeUpdate(),
+          child: const Text('YENİDEN BAŞLAT'),
+        ),
+      ],
     );
   }
 }

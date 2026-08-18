@@ -7,6 +7,12 @@ import 'package:package_info_plus/package_info_plus.dart';
 /// Uygulama içi güncelleme kontrolü — bkz. docs/06 § Mobil Uygulama
 /// Otomatik Güncelleme (OTA).
 ///
+/// Bu, yalnızca Play Store DIŞI (GitHub Releases sideload) kurulumlar
+/// içindir. Play Store üzerinden kurulmuş bir uygulamada resmi Play In-App
+/// Update API'si (bkz. play_update_service.dart) kullanılır — bu yüzden
+/// [checkForUpdate], Play Store kurulumu tespit edilirse hemen `null` döner
+/// ve iki güncelleme sistemi aynı anda kullanıcıya görünmez.
+///
 /// Backend `app/version` endpoint'i henüz yok (Phase 3 derinleşmedi), bu
 /// yüzden GitHub Releases'in KENDİ herkese açık API'si doğrudan sorgulanır
 /// (`/releases/latest`) — ek bir sunucuya ihtiyaç duymadan gerçek "yeni
@@ -25,6 +31,7 @@ class UpdateChecker {
 
   Future<UpdateInfo?> checkForUpdate() async {
     final packageInfo = await PackageInfo.fromPlatform();
+    if (packageInfo.installerStore == 'com.android.vending') return null;
     final currentVersion = packageInfo.version;
 
     final response = await http

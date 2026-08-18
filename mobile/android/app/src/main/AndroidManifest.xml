@@ -9,6 +9,11 @@
          Kasitli olarak "exact alarm" izni istenmiyor (INEXACT scheduling
          kullaniliyor), boylece kullaniciya ekstra izin ekrani cikmiyor. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Uygulama içi güncelleme (OTA) — indirilen APK'yı doğrudan Android
+         yükleyicisine açabilmek için (bkz. docs/06). Kullanıcıdan ayrıca
+         "bilinmeyen kaynaklardan yükleme" izni istenir — bu sistem
+         tarafından yönetilir, uygulama kodu bunu atlayamaz. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
         android:label="ServisCEP"
         android:name="${applicationName}"
