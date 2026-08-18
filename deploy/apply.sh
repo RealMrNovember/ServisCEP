@@ -12,6 +12,7 @@ cd "$SITE_DIR"
 
 echo "==> Placeholder / statik dosyalar güncelleniyor"
 cp -f deploy/public-placeholder/index.html index.html
+cp -f deploy/public-placeholder/privacy.html privacy.html
 cp -f deploy/public-placeholder/robots.txt robots.txt
 cp -f deploy/public-placeholder/favicon.ico favicon.ico
 cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png

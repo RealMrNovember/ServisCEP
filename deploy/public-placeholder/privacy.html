@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>ServisCEP — Gizlilik Politikası</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0b1120;
+    --fg: #e5e9f2;
+    --muted: #8892a6;
+    --accent: #3B82F6;
+    --card: #121a2b;
+    --border: #202b42;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, #16213d 0%, var(--bg) 60%);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 24px;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 40px 64px;
+  }
+  .logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: block;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: 30px;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .updated {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 40px;
+  }
+  h2 {
+    font-size: 18px;
+    margin: 36px 0 12px;
+    color: var(--fg);
+  }
+  p, li {
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--fg); }
+  a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  a:hover { text-decoration: underline; }
+  .card {
+    margin-top: 32px;
+    padding: 20px 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  footer {
+    margin-top: 48px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="logo" src="/logo.png" alt="ServisCEP logosu" width="56" height="56">
+    <h1>Gizlilik Politikası</h1>
+    <p class="updated">Son güncelleme: 18 Ağustos 2026</p>
+
+    <p>ServisCEP ("uygulama"), Cicibyte Teknoloji tarafından geliştirilen, saha teknik servis işletmelerinin
+    müşteri, iş, teklif/proforma ve finans süreçlerini yönetmesi için tasarlanmış mobil-first bir işletme
+    yönetim platformudur. Bu sayfa, uygulamayı kullanan işletme sahibi ve çalışanları ("kullanıcı") ile
+    kullanıcının kendi müşterilerine ait verilerin nasıl işlendiğini açıklar.</p>
+
+    <h2>1. Hangi veriler toplanır</h2>
+    <p>Uygulama, kullanıcının kendi işini yönetebilmesi için aşağıdaki kişisel verileri saklar:</p>
+    <ul>
+      <li><strong>Hesap sahibi (kullanıcı) bilgileri:</strong> ad soyad, e-posta, telefon, şirket bilgileri, parola (tuzlanmış/hash'lenmiş biçimde)</li>
+      <li><strong>Müşteri kayıtları:</strong> yetkili adı soyadı, firma adı, telefon, e-posta, adres, vergi bilgisi, IBAN</li>
+      <li><strong>İş/servis kayıtları:</strong> iş açıklaması, adres, fotoğraflar, dijital imza, notlar</li>
+      <li><strong>Finansal kayıtlar:</strong> teklif/proforma tutarları, tahsilat, gelir/gider kayıtları</li>
+      <li><strong>Cihaz bilgisi:</strong> uygulama sürümü, işletim sistemi sürümü (yalnızca hata ayıklama ve güncelleme kontrolü için)</li>
+    </ul>
+
+    <h2>2. Veriler nerede saklanır</h2>
+    <p>Uygulama <strong>offline-first</strong> çalışır: tüm veriler öncelikle cihazınızdaki yerel veritabanında
+    saklanır. Sunucu tabanlı senkronizasyon devreye girdiğinde, aynı veriler kullanıcının kendi şirket hesabına
+    özel, şirketler arası izole edilmiş bir sunucu veritabanında da tutulacaktır. Fotoğraf ve belgeler gibi
+    dosyalar herkese açık bir klasörde tutulmaz; yalnızca yetkilendirilmiş erişimle sunulur.</p>
+
+    <h2>3. Veriler kimlerle paylaşılır</h2>
+    <p>Toplanan veriler <strong>üçüncü taraflarla satılmaz veya pazarlama amacıyla paylaşılmaz</strong>.
+    Google Sign-In tercih edildiğinde, yalnızca kimlik doğrulama için gerekli ad/e-posta bilgisi Google'dan
+    alınır. Veriler yalnızca uygulamanın temel işlevini yerine getirmek (örn. PDF belge oluşturma, WhatsApp/Android
+    paylaşım özelliği kullanıcı tarafından tetiklendiğinde) amacıyla işlenir.</p>
+
+    <h2>4. Kullanıcı hakları (KVKK)</h2>
+    <p>6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında kullanıcılar; kendileri veya
+    müşterileri hakkında işlenen verilerin düzeltilmesini, silinmesini veya aktarılmasını talep etme hakkına
+    sahiptir. Bu talepler için <a href="mailto:info@cicibyte.com">info@cicibyte.com</a> adresinden
+    iletişime geçilebilir.</p>
+
+    <h2>5. Veri güvenliği</h2>
+    <p>Parolalar tuzlanmış biçimde saklanır, oturum bilgileri cihazın güvenli depolama alanında
+    (secure storage) tutulur. Uygulama içi belgelerde ve dijital imzada, bunların resmi bir e-fatura veya resmi
+    elektronik imza yerine geçmediği açıkça belirtilir.</p>
+
+    <div class="card">
+      <p style="margin:0">Bu sayfa, Google Play Store gereksinimleri için ServisCEP'in genel gizlilik
+      yaklaşımını özetler; kapsamlı bir KVKK uyum raporu yerine geçmez. Sorularınız için
+      <a href="mailto:info@cicibyte.com">info@cicibyte.com</a> üzerinden bize ulaşabilirsiniz.</p>
+    </div>
+  </div>
+
+  <footer style="text-align:center">
+    ServisCEP · <a href="https://cicibyte.com" target="_blank" rel="noopener">Cicibyte Teknoloji</a> tarafından geliştirilmiştir
+  </footer>
+</body>
+</html>
