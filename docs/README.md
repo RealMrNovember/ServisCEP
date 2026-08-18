@@ -21,6 +21,7 @@ Bu dizin, ServisCEP projesinin ürün, mimari ve geliştirme dokümantasyonunu b
 | 13 | [Web Arayüzü ve Showroom](13-web-arayuzu-ve-showroom.md) | Showroom (tanıtım sitesi), web panel, mobil showcase entegrasyonu |
 | 14 | [Marka Kimliği](14-marka-kimligi.md) | Logo, renk paleti, ikon varlıkları ve kullanım kuralları |
 | 15 | [Cari Hesap](15-cari-hesap.md) | Müşteri cari hesabı, kronolojik borç/alacak hareketleri, ekstre PDF'i |
+| 16 | [Stok ve Barkod Modülü](16-stok-ve-barkod.md) | Ürün kataloğu, stok durumu badge'i, barkod okuma, teklif/proforma kalem seçimi |
 | 99 | [Orijinal Spesifikasyon (Arşiv)](99-orijinal-spesifikasyon.md) | `idea.md`'nin bölünmeden önceki tam hali — referans amaçlı arşiv |
 
 ## İlgili Dosyalar

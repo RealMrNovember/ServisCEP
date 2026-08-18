@@ -17,9 +17,37 @@ gerçek kullanımı                                   derinlik      genişleme  
 
 ---
 
+## BUGÜN — Mobil Tamamlama Planı (2026-08-18)
+
+> Kullanıcı kararı: **mobil uygulama bugün uçtan uca çalışır ve profesyonel olmalı** — backend henüz derinleşmeden. Bu bölüm, aşağıdaki Phase 1-20 sırasını **iptal etmez**; onun mobile denk gelen fazlarını (5, 6, 7, 8, 9, 10, 11, 12, 16, 18-kısmi) **yerel-öncelikli (local-first)** bir sırayla, backend bağımlılığı olmadan bugün uygulanabilir hale getirir. Offline-first mimari zaten bunu destekler (bkz. [docs/08](docs/08-offline-first-ve-senkronizasyon.md)) — uygulama yerel veritabanıyla tam işlevsel çalışır, backend senkronizasyonu (Phase 17) ayrı ve sonraki bir katmandır.
+
+**Strateji:** Kimlik doğrulama ve şirket kaydı da dahil her şey önce **yerel veritabanına (Drift)** yazılır. Backend API'si (Phase 3) derinleştiğinde, bu ekranlar değişmeden kalır — yalnızca veri katmanı yerel-only'den yerel+sync'e genişler. Bu, iş tekrarını önler ve "sonra düzeltiriz" riskini taşımaz (bkz. [docs/11](docs/11-gelistirme-prensipleri.md)).
+
+| # | Kapsam | Karşılık gelen Phase | Durum |
+|---|---|---|---|
+| **M0** | Uygulama adı/etiketi düzeltmesi (Android+iOS: "ServisCEP") | — | ✅ Tamamlandı |
+| **M1** | Yerel veritabanı şeması (Drift) — companies, users, customers, jobs, service_requests, quotes, proformas, payments, income, expenses, job_photos, job_signatures, job_notes, customer_ledger_entries | Phase 2 (yerel karşılığı) + Phase 16 | ✅ Tamamlandı |
+| **M2** | Kimlik doğrulama & onboarding (yerel-first) — Kayıt (şirket bilgileri + işletme türü + sahip bilgileri + parola), Giriş, oturum kalıcılığı, router yönlendirme | Phase 5 + Phase 6 | ✅ Tamamlandı |
+| **M3** | Ana navigasyon iskeleti — Ana Sayfa \| İşler \| Müşteriler \| Belgeler \| Daha Fazla | Phase 4 (genişletme) | ✅ Tamamlandı |
+| **M4** | Müşteri modülü — liste, arama/filtre, oluştur/düzenle, detay (Genel/Finans/İş Geçmişi/Belgeler/Fotoğraflar) | Phase 7 | ✅ Tamamlandı |
+| **M5** | İş/Servis modülü — liste, filtre, oluştur/düzenle, detay, durum akışı, iş türleri kataloğu, iş tamamlanınca otomatik cari borç kaydı | Phase 9 | ✅ Tamamlandı |
+| **M6** | Talep modülü — liste, oluştur, işe dönüştürme | Phase 8 | Sırada |
+| **M7** | Servis Formu + Fotoğraf + Dijital İmza | Phase 10 + 11 | Sırada |
+| **M8** | **Stok & Barkod Modülü** — ürün kataloğu, stok durumu badge'i (yalnızca uygulama içi), kamera ile barkod okuma + global barkod sorgusu, teklif/proforma kalem seçimi bu katalogdan | Phase 25-26 (genişletilmiş) | 🔵 Tasarlandı ([docs/16](docs/16-stok-ve-barkod.md)), yapım sırada |
+| **M9** | Teklif & Proforma — kalemler M8'deki stok kataloğundan seçilebilir veya serbest girilebilir | Phase 12 | Sırada |
+| **M10** | Finans — Gelir/Gider/Tahsilat + Dashboard'un gerçek veriye bağlanması | Phase 14 + 15 | 🟡 Dashboard kısmen gerçek veriye bağlandı (bugünkü iş/tahsilat kartı) |
+| **M11** | Belge Merkezi (liste/filtre görünümü — PDF üretimi Phase 13'te derinleşir) | Phase 13 (kısmi) | 🟡 Placeholder ekran hazır |
+| **M12** | Daha Fazla / Ayarlar / Hakkında (BrandFooter, çıkış yap, şirket ayarları) | Phase 6 (genişletme) | ✅ Tamamlandı (temel), ayar alt ekranları sırada |
+| **M13** | Takvim görünümü | Phase 18 (kısmi) | Sonraki oturum |
+| **M14** | Yerel hatırlatma bildirimleri (push/FCM değil — cihaz içi zamanlanmış bildirim) | Phase 18 (kısmi) | Sonraki oturum |
+
+> **Dürüst kapsam notu:** M0–M5 ve M12 (temel) tamamlandı ve gerçek cihazda derlenip doğrulandı. M6–M11 aktif olarak sırayla inşa ediliyor, kesintisiz devam ediyor. M13, M14 — harita entegrasyonu ve push bildirimleri (Firebase proje kurulumu gerektirir) — bir sonraki oturumun ilk maddeleridir; bunları "bugün bitti" diye işaretlemeyeceğiz, çünkü gerçekten bitmemiş bir şeyi bitti göstermek profesyonel değildir. Backend senkronizasyonu (Phase 3 derinliği + Phase 17) ayrı bir sonraki büyük faz olarak kalır.
+
+---
+
 ## MVP — Faz Sırası (Phase 1–20)
 
-> **Öncelik notu (2026-08-18):** Kullanıcı kararıyla **mobil uygulama backend'den daha yüksek öncelikli**. Backend (Phase 3) şimdilik yalnızca temel/çalışır iskelet düzeyinde tutulacak; asıl derinlik Flutter tarafında (Phase 4+) ilerleyecek. Bu, Sprint gruplamasını değil, faz içi efor dağılımını etkiler.
+> **Öncelik notu (2026-08-18):** Kullanıcı kararıyla **mobil uygulama backend'den daha yüksek öncelikli**. Backend (Phase 3) şimdilik yalnızca temel/çalışır iskelet düzeyinde tutulacak; asıl derinlik Flutter tarafında (Phase 4+) ilerleyecek. Bu, Sprint gruplamasını değil, faz içi efor dağılımını etkiler. Bugünkü yürütme sırası için bkz. yukarıdaki **BUGÜN — Mobil Tamamlama Planı**.
 
 | Faz | Kapsam | Sprint | Durum |
 |---|---|---|---|
@@ -132,6 +160,7 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 | **Marka Kimliği (Logo/İkon)** | Logo, favicon, renk paleti — Phase 1 öncesi tamamlandı ✅ | Phase 1 (Project Architecture) öncesi | [docs/14 — Marka Kimliği](docs/14-marka-kimligi.md) |
 | **APK İndirme (GitHub Releases)** | Play Store yerine, showroom'dan tek tıkla her zaman en güncel APK indirme | W4 (Showroom) + Phase 18-19 (OTA update ile paylaşılan mekanizma) | [docs/13 § APK İndirme](docs/13-web-arayuzu-ve-showroom.md#2-apk-i̇ndirme-play-store-yerine) |
 | **Cari Hesap (Müşteri Ekstresi)** | Özet bakiye yerine tam kronolojik borç/alacak hareketleri + PDF ekstre. Yalnızca müşteri carisi (tedarikçi MVP dışı) | Phase 7 (Customer Management) + Phase 15 (Payments) ile birlikte | [docs/15 — Cari Hesap](docs/15-cari-hesap.md) |
+| **Stok & Barkod Modülü** | Teklif/proforma kalemleri stok kataloğundan seçilebilir, stok durumu uygulama içi (belgelerde değil) renkli badge ile gösterilir, kamera ile barkod okuma + global barkod veri kaynağından otomatik ürün bilgisi | M8 (bkz. yukarıdaki BUGÜN planı) — Phase 25-26'nın genişletilmiş hali | [docs/16 — Stok ve Barkod Modülü](docs/16-stok-ve-barkod.md) |
 
 ### Web Arayüzü — Paralel Faz Sıralaması
 

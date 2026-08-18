@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/constants/job_constants.dart';
+import '../../core/utils/money.dart';
 import '../../shared/brand_footer.dart';
+import '../auth/data/session_controller.dart';
+import '../jobs/data/jobs_repository.dart';
 
 /// Ana Sayfa / Dashboard.
 ///
 /// Ürün vizyonunun merkezi ekranı — bkz. docs/01 § Ana Kullanıcı Deneyimi:
 /// kullanıcı uygulamayı açtığında "Bugün ne yapacağım?" sorusunun cevabını
-/// doğrudan görmelidir.
-///
-/// NOT: Bu ekrandaki iş/tahsilat verileri şu an MOCK'tur — backend API'si
-/// (Phase 7-9, Phase 15) hazır olduğunda gerçek veriyle değiştirilecektir.
-class DashboardScreen extends StatelessWidget {
+/// doğrudan görmelidir. Yerel veritabanından gerçek veriyle beslenir.
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final today = DateFormat('d MMMM, EEEE', 'tr_TR').format(DateTime.now());
-    final jobs = _mockTodayJobs;
-    final expectedCollection = jobs.fold<double>(
-      0,
-      (sum, job) => sum + job.expectedAmount,
-    );
+    final session = ref.watch(sessionControllerProvider).valueOrNull;
+    final jobsAsync = ref.watch(todaysJobsProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -40,46 +40,85 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      jobs.isEmpty
-                          ? 'Bugün planlanmış işin yok.'
-                          : 'Bugün ${jobs.length} işin var.',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
+                    if (session != null)
+                      Text(
+                        session.companyName,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                child: _CollectionSummaryCard(amount: expectedCollection),
+              child: jobsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (e, _) => const SizedBox.shrink(),
+                data: (jobs) => Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                  child: Text(
+                    jobs.isEmpty ? 'Bugün planlanmış işin yok.' : 'Bugün ${jobs.length} işin var.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-              sliver: SliverList.separated(
-                itemCount: jobs.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => _JobCard(job: jobs[index]),
+            SliverToBoxAdapter(
+              child: jobsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (e, _) => const SizedBox.shrink(),
+                data: (jobs) {
+                  final expected = jobs
+                      .where((j) => j.job.actualPriceMinor == null)
+                      .fold<int>(0, (sum, j) => sum + (j.job.estimatedPriceMinor ?? 0));
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                    child: _CollectionSummaryCard(amountMinor: expected),
+                  );
+                },
               ),
+            ),
+            jobsAsync.when(
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Padding(padding: const EdgeInsets.all(20), child: Text('Bir hata oluştu: $e')),
+              ),
+              data: (jobs) {
+                if (jobs.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                      child: _EmptyTodayState(onCreateJob: () => context.push('/jobs/new')),
+                    ),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                  sliver: SliverList.separated(
+                    itemCount: jobs.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) => _JobCard(item: jobs[index]),
+                  ),
+                );
+              },
             ),
             const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(bottom: 90),
-                child: BrandFooter(),
-              ),
+              child: Padding(padding: EdgeInsets.only(bottom: 90), child: BrandFooter()),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Yeni iş oluşturma yakında.')),
-          );
-        },
+        onPressed: () => context.push('/jobs/new'),
         icon: const Icon(Icons.add),
         label: const Text('Yeni İş'),
       ),
@@ -88,18 +127,13 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _CollectionSummaryCard extends StatelessWidget {
-  const _CollectionSummaryCard({required this.amount});
+  const _CollectionSummaryCard({required this.amountMinor});
 
-  final double amount;
+  final int amountMinor;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final formatted = NumberFormat.currency(
-      locale: 'tr_TR',
-      symbol: '₺',
-      decimalDigits: 0,
-    ).format(amount);
 
     return Card(
       child: Padding(
@@ -122,16 +156,16 @@ class _CollectionSummaryCard extends StatelessWidget {
                 children: [
                   Text(
                     'Bugün tahsil edilmesi beklenen',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    formatted,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    Money.formatMinor(amountMinor, decimals: false),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -144,53 +178,55 @@ class _CollectionSummaryCard extends StatelessWidget {
 }
 
 class _JobCard extends StatelessWidget {
-  const _JobCard({required this.job});
+  const _JobCard({required this.item});
 
-  final _MockJob job;
+  final JobWithCustomer item;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final job = item.job;
+    final timeLabel = job.appointmentDate != null
+        ? DateFormat('HH:mm').format(job.appointmentDate!)
+        : '--:--';
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                Text(
-                  job.time,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    job.customerName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    job.description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => context.push('/jobs/${job.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                timeLabel,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
-            ),
-            _PriorityChip(priority: job.priority),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.customer.name,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      job.title,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              _PriorityChip(priority: job.priority),
+            ],
+          ),
         ),
       ),
     );
@@ -200,15 +236,12 @@ class _JobCard extends StatelessWidget {
 class _PriorityChip extends StatelessWidget {
   const _PriorityChip({required this.priority});
 
-  final _Priority priority;
+  final String priority;
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (priority) {
-      _Priority.high => ('Yüksek', Colors.red),
-      _Priority.normal => ('Normal', Colors.blue),
-      _Priority.low => ('Düşük', Colors.grey),
-    };
+    final color = jobPriorityColors[priority] ?? Colors.grey;
+    final label = jobPriorityLabels[priority] ?? priority;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -216,56 +249,43 @@ class _PriorityChip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
+      child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+    );
+  }
+}
+
+class _EmptyTodayState extends StatelessWidget {
+  const _EmptyTodayState({required this.onCreateJob});
+  final VoidCallback onCreateJob;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          children: [
+            Icon(Icons.wb_sunny_outlined, size: 48, color: scheme.onSurfaceVariant),
+            const SizedBox(height: 12),
+            Text(
+              'Bugün için planlanmış iş yok',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Yeni bir iş oluşturarak günü planla.',
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onCreateJob,
+              icon: const Icon(Icons.add),
+              label: const Text('İş Oluştur'),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
-enum _Priority { high, normal, low }
-
-class _MockJob {
-  const _MockJob({
-    required this.time,
-    required this.customerName,
-    required this.description,
-    required this.priority,
-    required this.expectedAmount,
-  });
-
-  final String time;
-  final String customerName;
-  final String description;
-  final _Priority priority;
-  final double expectedAmount;
-}
-
-const _mockTodayJobs = [
-  _MockJob(
-    time: '10:00',
-    customerName: 'ABC Market',
-    description: 'Kamera arızası',
-    priority: _Priority.high,
-    expectedAmount: 2500,
-  ),
-  _MockJob(
-    time: '14:00',
-    customerName: 'Mehmet Kaya',
-    description: 'Bilgisayar kurulumu',
-    priority: _Priority.normal,
-    expectedAmount: 1200,
-  ),
-  _MockJob(
-    time: '18:00',
-    customerName: 'XYZ Apartmanı',
-    description: 'İnterkom arızası',
-    priority: _Priority.normal,
-    expectedAmount: 1050,
-  ),
-];

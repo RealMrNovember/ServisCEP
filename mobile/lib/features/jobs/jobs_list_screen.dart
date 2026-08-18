@@ -1,0 +1,203 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+import '../../core/constants/job_constants.dart';
+import 'data/jobs_repository.dart';
+
+class JobsListScreen extends ConsumerStatefulWidget {
+  const JobsListScreen({super.key});
+
+  @override
+  ConsumerState<JobsListScreen> createState() => _JobsListScreenState();
+}
+
+class _JobsListScreenState extends ConsumerState<JobsListScreen> {
+  String? _statusFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final jobsAsync = ref.watch(jobsListProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('İşler')),
+      body: Column(
+        children: [
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              children: [
+                _FilterChipItem(
+                  label: 'Tümü',
+                  selected: _statusFilter == null,
+                  onTap: () => setState(() => _statusFilter = null),
+                ),
+                for (final entry in jobStatusLabels.entries)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: _FilterChipItem(
+                      label: entry.value,
+                      selected: _statusFilter == entry.key,
+                      onTap: () => setState(() => _statusFilter = entry.key),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: jobsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
+              data: (jobs) {
+                final filtered = _statusFilter == null
+                    ? jobs
+                    : jobs.where((j) => j.job.status == _statusFilter).toList();
+
+                if (jobs.isEmpty) {
+                  return _EmptyState(onAdd: () => context.push('/jobs/new'));
+                }
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Text('Bu durumda iş yok', style: TextStyle(color: scheme.onSurfaceVariant)),
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) => _JobTile(item: filtered[index]),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/jobs/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Yeni İş'),
+      ),
+    );
+  }
+}
+
+class _FilterChipItem extends StatelessWidget {
+  const _FilterChipItem({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onTap());
+  }
+}
+
+class _JobTile extends StatelessWidget {
+  const _JobTile({required this.item});
+  final JobWithCustomer item;
+
+  @override
+  Widget build(BuildContext context) {
+    final job = item.job;
+    final statusColor = jobStatusColors[job.status] ?? Colors.grey;
+    final priorityColor = jobPriorityColors[job.priority] ?? Colors.grey;
+    final dateLabel = job.appointmentDate != null
+        ? DateFormat('d MMM, HH:mm', 'tr_TR').format(job.appointmentDate!)
+        : 'Tarih belirlenmedi';
+
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => context.push('/jobs/${job.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      job.title,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                  ),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: priorityColor, shape: BoxShape.circle),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(item.customer.name, style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.schedule, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text(
+                    dateLabel,
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      jobStatusLabels[job.status] ?? job.status,
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onAdd});
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.work_outline_rounded, size: 56, color: scheme.onSurfaceVariant),
+            const SizedBox(height: 16),
+            Text(
+              'Henüz iş yok',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'İlk işini oluşturarak başla.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add), label: const Text('İş Oluştur')),
+          ],
+        ),
+      ),
+    );
+  }
+}
