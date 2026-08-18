@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/job_constants.dart';
+import '../../core/services/notification_service.dart';
 import '../auth/data/session_controller.dart';
 import '../customers/data/customers_repository.dart';
 import 'data/jobs_repository.dart';
@@ -69,7 +70,7 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
     final appointment = DateTime(_date.year, _date.month, _date.day, _time.hour, _time.minute);
 
     try {
-      await ref
+      final job = await ref
           .read(jobsRepositoryProvider)
           .create(
             companyId: session.companyId,
@@ -84,6 +85,7 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
                 '${_time.hour.toString().padLeft(2, '0')}:${_time.minute.toString().padLeft(2, '0')}',
             priority: _priority,
           );
+      await NotificationService.scheduleJobReminder(job);
       if (mounted) context.pop();
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

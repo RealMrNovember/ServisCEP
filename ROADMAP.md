@@ -38,10 +38,10 @@ gerçek kullanımı                                   derinlik      genişleme  
 | **M10** | Finans — Gelir/Gider/Tahsilat + Dashboard'un gerçek veriye bağlanması | Phase 14 + 15 | ✅ Tamamlandı — Finans ekranı (Özet/Gelir/Gider), müşteri detayından tahsilat kaydı (otomatik cari ALACAK) |
 | **M11** | Belge Merkezi + PDF üretimi (Teklif, Proforma, Servis Formu) — kurumsal tasarım, WhatsApp/Android Share ile paylaşım | Phase 13 | ✅ Tamamlandı |
 | **M12** | Daha Fazla / Ayarlar / Hakkında (BrandFooter, çıkış yap, şirket ayarları) | Phase 6 (genişletme) | ✅ Tamamlandı (temel), ayar alt ekranları sırada |
-| **M13** | Takvim görünümü | Phase 18 (kısmi) | Sonraki oturum |
-| **M14** | Yerel hatırlatma bildirimleri (push/FCM değil — cihaz içi zamanlanmış bildirim) | Phase 18 (kısmi) | Sonraki oturum |
+| **M13** | Takvim görünümü — aylık takvim + günlük iş listesi | Phase 18 (kısmi) | ✅ Tamamlandı |
+| **M14** | Yerel hatırlatma bildirimleri (push/FCM değil — cihaz içi zamanlanmış bildirim) — randevudan 30 dk önce, inexact scheduling, durum TAMAMLANDI/İPTAL olunca otomatik iptal | Phase 18 (kısmi) | ✅ Tamamlandı |
 
-> **Dürüst kapsam notu:** M0–M5 ve M12 (temel) tamamlandı ve gerçek cihazda derlenip doğrulandı. M6–M11 aktif olarak sırayla inşa ediliyor, kesintisiz devam ediyor. M13, M14 — harita entegrasyonu ve push bildirimleri (Firebase proje kurulumu gerektirir) — bir sonraki oturumun ilk maddeleridir; bunları "bugün bitti" diye işaretlemeyeceğiz, çünkü gerçekten bitmemiş bir şeyi bitti göstermek profesyonel değildir. Backend senkronizasyonu (Phase 3 derinliği + Phase 17) ayrı bir sonraki büyük faz olarak kalır.
+> **Dürüst kapsam notu:** M0–M14 tamamlandı ve gerçek cihazda derlenip doğrulandı. M0-M14 kapsamındaki mobil M-listesi bu haliyle tamamlanmış durumda. Sunucu tarafı push bildirimleri (FCM, Firebase proje kurulumu gerektirir — bkz. [docs/06](docs/06-teknik-mimari.md)) ve global barkod sağlayıcı entegrasyonu (bkz. [docs/16](docs/16-stok-ve-barkod.md)) kasıtlı olarak kapsam dışı bırakıldı; bunları "bugün bitti" diye işaretlemeyeceğiz, çünkü gerçekten bitmemiş bir şeyi bitti göstermek profesyonel değildir. Backend senkronizasyonu (Phase 3 derinliği + Phase 17) ve Web Arayüzü (login/signup + panel) ayrı, sonraki büyük fazlar olarak kalır.
 
 ---
 

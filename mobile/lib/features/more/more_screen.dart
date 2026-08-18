@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../shared/brand_footer.dart';
 import '../auth/data/session_controller.dart';
+import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
 import '../stock/products_list_screen.dart';
 
@@ -33,6 +34,15 @@ class MoreScreen extends ConsumerWidget {
               subtitle: Text(session.companyName),
             ),
           const Divider(height: 24),
+          ListTile(
+            leading: const Icon(Icons.calendar_month_outlined),
+            title: const Text('Takvim'),
+            subtitle: const Text('Randevular ve iş planı'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const CalendarScreen())),
+          ),
           ListTile(
             leading: const Icon(Icons.account_balance_wallet_outlined),
             title: const Text('Finans'),

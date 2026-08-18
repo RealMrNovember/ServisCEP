@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/customer_types.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/database/app_database.dart';
+import '../../core/utils/map_launcher.dart';
 import '../../core/utils/money.dart';
 import '../auth/data/session_controller.dart';
 import '../finance/data/finance_repository.dart';
@@ -138,7 +139,16 @@ class _GeneralTab extends StatelessWidget {
         if (customer.email?.isNotEmpty == true)
           _InfoRow(icon: Icons.email_outlined, label: 'E-posta', value: customer.email!),
         if (customer.address?.isNotEmpty == true)
-          _InfoRow(icon: Icons.location_on_outlined, label: 'Adres', value: customer.address!),
+          _InfoRow(
+            icon: Icons.location_on_outlined,
+            label: 'Adres',
+            value: customer.address!,
+            trailing: IconButton(
+              icon: const Icon(Icons.map_outlined, size: 20),
+              tooltip: 'Haritada Aç',
+              onPressed: () => MapLauncher.openAddress(customer.address!),
+            ),
+          ),
         if (customer.taxInfo?.isNotEmpty == true)
           _InfoRow(icon: Icons.receipt_long_outlined, label: 'Vergi bilgisi', value: customer.taxInfo!),
         if (customer.notes?.isNotEmpty == true)
@@ -294,10 +304,11 @@ class _EmptyTab extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label, required this.value});
+  const _InfoRow({required this.icon, required this.label, required this.value, this.trailing});
   final IconData icon;
   final String label;
   final String value;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -319,6 +330,7 @@ class _InfoRow extends StatelessWidget {
               ],
             ),
           ),
+          ?trailing,
         ],
       ),
     );

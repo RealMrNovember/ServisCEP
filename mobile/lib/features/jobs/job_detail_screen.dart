@@ -9,7 +9,9 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/database/app_database.dart';
 import '../../core/providers/company_provider.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/services/pdf_service.dart';
+import '../../core/utils/map_launcher.dart';
 import '../../core/utils/money.dart';
 import '../customers/data/customers_repository.dart';
 import 'data/job_media_repository.dart';
@@ -64,6 +66,9 @@ class _JobDetailContent extends ConsumerWidget {
     );
     if (selected != null && selected != job.status) {
       await ref.read(jobsRepositoryProvider).updateStatus(job.id, selected);
+      if (selected == 'TAMAMLANDI' || selected == 'IPTAL') {
+        await NotificationService.cancelJobReminder(job.id);
+      }
     }
   }
 
@@ -142,7 +147,16 @@ class _JobDetailContent extends ConsumerWidget {
               value: DateFormat('d MMMM y, EEEE HH:mm', 'tr_TR').format(job.appointmentDate!),
             ),
           if (job.address?.isNotEmpty == true)
-            _InfoTile(icon: Icons.location_on_outlined, label: 'Adres', value: job.address!),
+            _InfoTile(
+              icon: Icons.location_on_outlined,
+              label: 'Adres',
+              value: job.address!,
+              trailing: IconButton(
+                icon: const Icon(Icons.map_outlined, size: 20),
+                tooltip: 'Haritada Aç',
+                onPressed: () => MapLauncher.openAddress(job.address!),
+              ),
+            ),
           if (job.description?.isNotEmpty == true)
             _InfoTile(icon: Icons.description_outlined, label: 'Açıklama', value: job.description!),
           _InfoTile(
@@ -203,6 +217,7 @@ class _JobDetailContent extends ConsumerWidget {
 
     final minor = Money.parseToMinor(result);
     await ref.read(jobsRepositoryProvider).completeWithPrice(job, minor);
+    await NotificationService.cancelJobReminder(job.id);
   }
 }
 
@@ -458,10 +473,11 @@ class _SignatureSection extends ConsumerWidget {
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.icon, required this.label, required this.value});
+  const _InfoTile({required this.icon, required this.label, required this.value, this.trailing});
   final IconData icon;
   final String label;
   final String value;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -483,6 +499,7 @@ class _InfoTile extends StatelessWidget {
               ],
             ),
           ),
+          ?trailing,
         ],
       ),
     );
