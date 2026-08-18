@@ -61,6 +61,79 @@ class AuthRepository {
     return company != null;
   }
 
+  /// Google ile giriş yapmış bir kullanıcı zaten var mı? — bkz. docs/09
+  /// § Kimlik Doğrulama Yöntemleri.
+  Future<User?> findUserByEmail(String email) {
+    return (_db.select(_db.users)..where((u) => u.email.equals(email))).getSingleOrNull();
+  }
+
+  /// Google kimliği doğrulanmış bir kullanıcı için oturum açar — parola
+  /// kontrolü yapılmaz, Google'ın kendi doğrulaması güvenilir kabul edilir.
+  Future<AuthSession> loginVerifiedEmail(String email) async {
+    final user = await findUserByEmail(email);
+    if (user == null) {
+      throw AuthException('Bu e-posta ile kayıtlı hesap yok.');
+    }
+    final company = await (_db.select(
+      _db.companies,
+    )..where((c) => c.id.equals(user.companyId))).getSingle();
+
+    await _persistSession(userId: user.id, companyId: user.companyId);
+
+    return AuthSession(
+      userId: user.id,
+      companyId: user.companyId,
+      fullName: user.fullName,
+      companyName: company.name,
+    );
+  }
+
+  /// Google ile kayıt — parola gerekmez (Google kimliği doğrulamış sayılır).
+  /// `passwordHash` özel bir işaretçi (`GOOGLE_AUTH`) ile doldurulur; bu
+  /// hesapla e-posta/parola girişi yapılamaz, yalnızca Google ile.
+  Future<AuthSession> registerWithGoogle({
+    required String companyName,
+    required List<String> businessTypes,
+    required String ownerFullName,
+    required String email,
+  }) async {
+    final existing = await findUserByEmail(email);
+    if (existing != null) {
+      throw AuthException('Bu e-posta ile zaten bir hesap var.');
+    }
+
+    final companyId = _uuid.v4();
+    final userId = _uuid.v4();
+
+    await _db.into(_db.companies).insert(
+      CompaniesCompanion.insert(
+        id: companyId,
+        name: companyName,
+        businessTypes: Value(businessTypes.join(',')),
+      ),
+    );
+
+    await _db.into(_db.users).insert(
+      UsersCompanion.insert(
+        id: userId,
+        companyId: companyId,
+        fullName: ownerFullName,
+        email: email,
+        passwordHash: 'GOOGLE_AUTH',
+        role: const Value('OWNER'),
+      ),
+    );
+
+    await _persistSession(userId: userId, companyId: companyId);
+
+    return AuthSession(
+      userId: userId,
+      companyId: companyId,
+      fullName: ownerFullName,
+      companyName: companyName,
+    );
+  }
+
   Future<AuthSession> register({
     required String companyName,
     required List<String> businessTypes,

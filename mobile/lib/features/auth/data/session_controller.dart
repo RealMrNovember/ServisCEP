@@ -48,6 +48,29 @@ class SessionController extends StateNotifier<AsyncValue<AuthSession?>> {
     state = AsyncValue.data(session);
   }
 
+  /// Google ile doğrulanmış bir e-posta için mevcut hesaba giriş yapar.
+  /// Hesap yoksa `AuthException` fırlatır — çağıran taraf bunu yakalayıp
+  /// kullanıcıyı kayıt akışına yönlendirmelidir.
+  Future<void> loginWithVerifiedGoogleEmail(String email) async {
+    final session = await _repository.loginVerifiedEmail(email);
+    state = AsyncValue.data(session);
+  }
+
+  Future<void> registerWithGoogle({
+    required String companyName,
+    required List<String> businessTypes,
+    required String ownerFullName,
+    required String email,
+  }) async {
+    final session = await _repository.registerWithGoogle(
+      companyName: companyName,
+      businessTypes: businessTypes,
+      ownerFullName: ownerFullName,
+      email: email,
+    );
+    state = AsyncValue.data(session);
+  }
+
   Future<void> logout() async {
     await _repository.logout();
     state = const AsyncValue.data(null);

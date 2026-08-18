@@ -3,12 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'data/auth_repository.dart';
+import 'data/google_auth_service.dart';
 import 'data/session_controller.dart';
 
 /// Kayıt / Onboarding ekranı — bkz. docs/10 § SaaS Vizyonu örnek akışı:
 /// işletme türü → firma bilgileri → sahip bilgileri → hazır.
+///
+/// [googlePrefill] doluysa (Login ekranından "Google ile devam et" ile
+/// gelindiyse) e-posta/ad Google'dan alınır, parola alanları gizlenir —
+/// bkz. docs/09 § Kimlik Doğrulama Yöntemleri.
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.googlePrefill});
+
+  final GoogleAuthResult? googlePrefill;
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -19,8 +26,8 @@ const _businessTypeOptions = ['Elektrik', 'Kamera / Güvenlik', 'Bilgisayar', 'D
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _companyNameController = TextEditingController();
-  final _ownerNameController = TextEditingController();
-  final _emailController = TextEditingController();
+  late final _ownerNameController = TextEditingController(text: widget.googlePrefill?.displayName ?? '');
+  late final _emailController = TextEditingController(text: widget.googlePrefill?.email ?? '');
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
@@ -28,6 +35,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final Set<String> _selectedBusinessTypes = {};
   bool _isSubmitting = false;
   String? _errorText;
+
+  bool get _isGoogleFlow => widget.googlePrefill != null;
 
   @override
   void dispose() {
@@ -51,16 +60,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      await ref
-          .read(sessionControllerProvider.notifier)
-          .register(
-            companyName: _companyNameController.text.trim(),
-            businessTypes: _selectedBusinessTypes.toList(),
-            ownerFullName: _ownerNameController.text.trim(),
-            email: _emailController.text.trim(),
-            phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-            password: _passwordController.text,
-          );
+      if (_isGoogleFlow) {
+        await ref
+            .read(sessionControllerProvider.notifier)
+            .registerWithGoogle(
+              companyName: _companyNameController.text.trim(),
+              businessTypes: _selectedBusinessTypes.toList(),
+              ownerFullName: _ownerNameController.text.trim(),
+              email: _emailController.text.trim(),
+            );
+      } else {
+        await ref
+            .read(sessionControllerProvider.notifier)
+            .register(
+              companyName: _companyNameController.text.trim(),
+              businessTypes: _selectedBusinessTypes.toList(),
+              ownerFullName: _ownerNameController.text.trim(),
+              email: _emailController.text.trim(),
+              phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+              password: _passwordController.text,
+            );
+      }
       if (mounted) context.go('/dashboard');
     } on AuthException catch (e) {
       setState(() => _errorText = e.message);
@@ -92,7 +112,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'İşletmeni birkaç adımda kur, hemen kullanmaya başla.',
+                  _isGoogleFlow
+                      ? 'Google hesabınla bağlandın — son adım: işletme bilgilerin.'
+                      : 'İşletmeni birkaç adımda kur, hemen kullanmaya başla.',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
@@ -144,40 +166,48 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _emailController,
+                  enabled: !_isGoogleFlow,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'E-posta'),
+                  decoration: InputDecoration(
+                    labelText: 'E-posta',
+                    suffixIcon: _isGoogleFlow
+                        ? const Icon(Icons.verified, size: 18, color: Colors.green)
+                        : null,
+                  ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'E-posta gerekli';
                     if (!v.contains('@')) return 'Geçerli bir e-posta gir';
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(labelText: 'Telefon (opsiyonel)'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Parola'),
-                  validator: (v) {
-                    if (v == null || v.length < 6) return 'En az 6 karakter olmalı';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _passwordConfirmController,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Parola (tekrar)'),
-                  validator: (v) {
-                    if (v != _passwordController.text) return 'Parolalar eşleşmiyor';
-                    return null;
-                  },
-                ),
+                if (!_isGoogleFlow) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(labelText: 'Telefon (opsiyonel)'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Parola'),
+                    validator: (v) {
+                      if (v == null || v.length < 6) return 'En az 6 karakter olmalı';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _passwordConfirmController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Parola (tekrar)'),
+                    validator: (v) {
+                      if (v != _passwordController.text) return 'Parolalar eşleşmiyor';
+                      return null;
+                    },
+                  ),
+                ],
 
                 if (_errorText != null) ...[
                   const SizedBox(height: 16),

@@ -5,9 +5,10 @@
 ## 0. Kimlik Doğrulama Yöntemleri
 
 - **E-posta + Parola** — temel yöntem, tüm kullanıcı tipleri için.
-- **Google OAuth (Sign in with Google)** — Laravel Socialite ile; hem web (showroom/panel) hem mobil giriş/kayıt akışında kullanılabilir.
-  - Callback route: `/auth/google/callback` (aynı domain, `serviscep.cicibyte.com`).
-  - Mobilde native Google Sign-In yerine, backend-mediated (WebView/Custom Tabs → aynı callback) akış tercih edilir — bu, client secret'ın mobil istemciye hiç gömülmemesini sağlar.
+- **Google OAuth (Sign in with Google)** — hem web (showroom/panel, Laravel Socialite ile) hem mobil giriş/kayıt akışında kullanılabilir.
+  - Web callback route: `/auth/google/callback` (aynı domain, `serviscep.cicibyte.com`).
+  - **Mobil (mevcut durum):** `google_sign_in` paketiyle **native** Android akışı kullanılıyor (backend henüz derinleşmediği için — bkz. ROADMAP.md). Google'dan yalnızca e-posta/ad bilgisi alınır, hesap eşleştirme/oluşturma **yerel veritabanında** yapılır (bkz. `AuthRepository.loginVerifiedEmail` / `registerWithGoogle`). Backend Phase 3 derinleştiğinde, idToken sunucuya gönderilip doğrulanacak şekilde genişletilecek — arayüz değişmeyecek.
+  - ⚠️ **Native Android akışının çalışması için Google Cloud Console'da ayrı bir "Android" tipi OAuth client gereklidir** (paket adı: `com.cicibyte.serviscep` + imza SHA-1). Bu, daha önce oluşturulan "Web application" tipi client'tan **farklıdır** ve yalnızca kullanıcı tarafından Google Cloud Console'da eklenebilir (Claude bu adımı otomatikleştiremez). Debug ve release keystore'un SHA-1'leri sohbet geçmişinde paylaşıldı; release keystore değişirse (bkz. [06 § OTA](06-teknik-mimari.md#mobil-uygulama-otomatik-güncelleme-ota)) SHA-1 de güncellenmelidir.
   - ⚠️ **Kural:** OAuth client ID/secret **asla repoya commit edilmez**; yalnızca sunucu `.env` dosyasında tutulur (bkz. [`.gitignore`](../.gitignore)).
 - Kayıt/giriş sonrası oturum, [07 — API ve Veritabanı](07-api-ve-veritabani.md) içindeki token tabanlı authentication akışına girer.
 

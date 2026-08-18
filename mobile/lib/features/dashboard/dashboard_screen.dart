@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/utils/money.dart';
 import '../../shared/brand_footer.dart';
+import '../../shared/update_banner.dart';
 import '../auth/data/session_controller.dart';
 import '../jobs/data/jobs_repository.dart';
 
@@ -51,6 +52,9 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+            ),
+            const SliverToBoxAdapter(
+              child: Padding(padding: EdgeInsets.only(top: 8), child: UpdateBanner()),
             ),
             SliverToBoxAdapter(
               child: jobsAsync.when(

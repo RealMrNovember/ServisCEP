@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ag erisimi: Google Sign-In, guncelleme kontrolu, gelecekteki API -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Barkod tarama (mobile_scanner) ve iş/servis fotoğrafları için -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>

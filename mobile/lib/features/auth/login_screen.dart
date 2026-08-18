@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import 'data/auth_repository.dart';
+import 'data/google_auth_service.dart';
 import 'data/session_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -17,7 +18,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _googleAuth = GoogleAuthService();
   bool _isSubmitting = false;
+  bool _isGoogleSubmitting = false;
   String? _errorText;
 
   @override
@@ -44,6 +47,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() => _errorText = 'Giriş sırasında bir sorun oluştu, tekrar dene.');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _continueWithGoogle() async {
+    setState(() {
+      _isGoogleSubmitting = true;
+      _errorText = null;
+    });
+    try {
+      final result = await _googleAuth.signIn();
+      if (result == null) return; // kullanıcı iptal etti
+
+      try {
+        await ref
+            .read(sessionControllerProvider.notifier)
+            .loginWithVerifiedGoogleEmail(result.email);
+        if (mounted) context.go('/dashboard');
+      } on AuthException {
+        // Bu e-postayla hesap yok — kayıt akışına, Google bilgileri
+        // ön-dolu şekilde yönlendir (bkz. docs/09).
+        if (mounted) context.go('/onboarding', extra: result);
+      }
+    } catch (_) {
+      setState(() => _errorText = 'Google ile giriş başarısız oldu, tekrar dene.');
+    } finally {
+      if (mounted) setState(() => _isGoogleSubmitting = false);
     }
   }
 
@@ -90,7 +119,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         context,
                       ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
+                    OutlinedButton.icon(
+                      onPressed: _isGoogleSubmitting ? null : _continueWithGoogle,
+                      icon: _isGoogleSubmitting
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const _GoogleIcon(),
+                      label: const Text('Google ile devam et'),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: scheme.outlineVariant)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'veya e-posta ile',
+                            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: scheme.outlineVariant)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -139,4 +194,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+}
+
+/// Google'ın resmi çok renkli "G" logosu (marka kurallarına uygun basit
+/// vektör — Google Sign-In butonlarında harici asset olmadan kullanılabilir).
+class _GoogleIcon extends StatelessWidget {
+  const _GoogleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 18,
+      width: 18,
+      child: CustomPaint(painter: _GoogleGPainter()),
+    );
+  }
+}
+
+class _GoogleGPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.shortestSide;
+    final center = Offset(size.width / 2, size.height / 2);
+    final r = s / 2;
+    final strokeWidth = s * 0.22;
+    final rect = Rect.fromCircle(center: center, radius: r - strokeWidth / 2);
+
+    void arc(double startDeg, double sweepDeg, Color color) {
+      final paint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.butt;
+      canvas.drawArc(rect, startDeg * 3.14159265 / 180, sweepDeg * 3.14159265 / 180, false, paint);
+    }
+
+    arc(-45, 90, const Color(0xFF4285F4));
+    arc(45, 90, const Color(0xFF34A853));
+    arc(135, 45, const Color(0xFFFBBC05));
+    arc(180, 45, const Color(0xFFEA4335));
+
+    final barPaint = Paint()..color = const Color(0xFF4285F4);
+    canvas.drawRect(
+      Rect.fromLTWH(center.dx, center.dy - strokeWidth / 2, r, strokeWidth),
+      barPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -116,7 +116,7 @@ Mobil Uygulama                         Backend
       │  kur (mevcut kurulumun üzerine)    │
 ```
 
-- **Kontrol noktası:** Uygulama açılışında ve/veya periyodik arka plan kontrolünde `app/version` endpoint'i sorgulanır.
+- **Kontrol noktası (mevcut geçici çözüm):** Backend `app/version` endpoint'i henüz yok. Bunun yerine uygulama, Dashboard açılışında GitHub'ın **kendi herkese açık Releases API**'sini (`api.github.com/repos/.../releases/latest`) doğrudan sorgular (bkz. `lib/core/services/update_checker.dart`), mevcut sürümle karşılaştırır ve yeni sürüm varsa bir banner gösterir ("v0.2.1 çıktı — Güncelle" butonu doğrudan APK indirme linkini açar). Bu, backend'e ihtiyaç duymadan gerçek "otomatik güncelleme tespiti" sağlar. Backend Phase 3 derinleştiğinde bu, sunucu tabanlı `app/version` sorgusuna geçirilecektir (force-update, min_supported_version gibi ek kontroller o zaman eklenir) — arayüz (UpdateBanner) değişmeden kalır.
 - **APK barındırma — GitHub Releases:** Play Store'da yayın yapılamadığı MVP döneminde (lisanslama süreci tamamlanana kadar), APK sunucuda değil **GitHub Releases** üzerinde barındırılır:
   - Her sürüm, repo üzerinde bir GitHub Release olarak yayınlanır (`vX.Y.Z` tag'i, APK dosyası release asset'i olarak eklenir).
   - GitHub'ın **sabit "latest" URL deseni** kullanılır, böylece tek bir bağlantı her zaman en güncel sürümü çözer — yeni sürüm çıktığında link **değişmez**:

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/database/app_database.dart';
+import '../features/auth/data/google_auth_service.dart';
 import '../features/auth/data/session_controller.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/onboarding_screen.dart';
@@ -50,7 +51,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) =>
+            OnboardingScreen(googlePrefill: state.extra as GoogleAuthResult?),
+      ),
 
       // Müşteri detay/form ekranları — shell'in üzerine tam ekran açılır.
       GoRoute(
