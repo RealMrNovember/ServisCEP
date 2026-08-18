@@ -19,33 +19,49 @@ class UpdateBanner extends ConsumerWidget {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.system_update_alt_rounded, color: scheme.onPrimaryContainer),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'v${update.version} çıktı',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.system_update_alt_rounded, color: scheme.onPrimaryContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'v${update.version} çıktı',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Yeni sürüm indirilebilir',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
+                    ),
+                  ],
                 ),
-                Text(
-                  'Yeni sürüm indirilebilir',
-                  style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => launchUrl(Uri.parse(update.downloadUrl), mode: LaunchMode.externalApplication),
-            child: const Text('Güncelle'),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () =>
+                  launchUrl(Uri.parse(update.downloadUrl), mode: LaunchMode.externalApplication),
+              child: const Text('Güncelle'),
+            ),
           ),
         ],
       ),
