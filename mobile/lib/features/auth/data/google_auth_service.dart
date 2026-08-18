@@ -15,7 +15,13 @@ class GoogleAuthResult {
 /// loginVerifiedEmail). Backend hazır olduğunda burada dönen idToken sunucuya
 /// gönderilip doğrulanacak şekilde genişletilecektir.
 class GoogleAuthService {
-  final _googleSignIn = GoogleSignIn(scopes: const ['email', 'profile']);
+  // serverClientId = "Web application" tipi OAuth client (docs/09) — backend
+  // Phase 3'te idToken/serverAuthCode dogrulamasi icin hazir tutulur, su an
+  // kullanilmiyor (yalnizca yerel e-posta/ad akisi aktif).
+  final _googleSignIn = GoogleSignIn(
+    scopes: const ['email', 'profile'],
+    serverClientId: '1043015237090-4nj92cgobk1rfbormmmlpi2uj8g9bkhk.apps.googleusercontent.com',
+  );
 
   Future<GoogleAuthResult?> signIn() async {
     final account = await _googleSignIn.signIn();

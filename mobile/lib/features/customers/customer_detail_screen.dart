@@ -7,9 +7,46 @@ import '../../core/constants/customer_types.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/database/app_database.dart';
 import '../../core/utils/money.dart';
+import '../auth/data/session_controller.dart';
+import '../finance/data/finance_repository.dart';
 import '../jobs/data/jobs_repository.dart';
 import 'data/customer_ledger_repository.dart';
 import 'data/customers_repository.dart';
+
+Future<void> _showRecordPaymentDialog(BuildContext context, WidgetRef ref, String customerId) async {
+  final controller = TextEditingController();
+  final result = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Tahsilat Ekle'),
+      content: TextField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(prefixText: '₺ ', labelText: 'Tutar'),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, controller.text),
+          child: const Text('Kaydet'),
+        ),
+      ],
+    ),
+  );
+  if (result == null || result.trim().isEmpty) return;
+
+  final session = ref.read(sessionControllerProvider).valueOrNull;
+  if (session == null) return;
+
+  await ref
+      .read(financeRepositoryProvider)
+      .recordPayment(
+        companyId: session.companyId,
+        customerId: customerId,
+        amountMinor: Money.parseToMinor(result),
+      );
+}
 
 final _customerProvider = FutureProvider.family<Customer?, String>((ref, id) {
   return ref.watch(customersRepositoryProvider).byId(id);
@@ -137,6 +174,12 @@ class _FinanceTab extends ConsumerWidget {
                   style: Theme.of(
                     context,
                   ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _showRecordPaymentDialog(context, ref, customerId),
+                  icon: const Icon(Icons.payments_outlined, size: 18),
+                  label: const Text('Tahsilat Ekle'),
                 ),
               ],
             ),

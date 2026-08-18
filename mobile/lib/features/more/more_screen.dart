@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../shared/brand_footer.dart';
 import '../auth/data/session_controller.dart';
+import '../finance/finance_screen.dart';
 import '../stock/products_list_screen.dart';
 
 class MoreScreen extends ConsumerWidget {
@@ -32,6 +33,15 @@ class MoreScreen extends ConsumerWidget {
               subtitle: Text(session.companyName),
             ),
           const Divider(height: 24),
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet_outlined),
+            title: const Text('Finans'),
+            subtitle: const Text('Gelir, gider, aylık özet'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
+          ),
           ListTile(
             leading: const Icon(Icons.inventory_2_outlined),
             title: const Text('Stok Yönetimi'),
