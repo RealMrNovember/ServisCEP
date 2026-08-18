@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants/job_constants.dart';
+import '../../core/utils/customer_display.dart';
 import '../service_requests/data/service_requests_repository.dart';
 import '../service_requests/service_request_form_screen.dart';
 import 'data/jobs_repository.dart';
@@ -208,7 +209,7 @@ class _RequestTile extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    item.customer.name,
+                    item.customer.displayName,
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ),
@@ -292,7 +293,7 @@ class _JobTile extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(item.customer.name, style: Theme.of(context).textTheme.bodyMedium),
+              Text(item.customer.displayName, style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 8),
               Row(
                 children: [

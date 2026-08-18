@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/customer_display.dart';
 import '../../core/utils/money.dart';
 import '../proformas/data/proformas_repository.dart';
 import '../proformas/proforma_detail_screen.dart';
@@ -95,7 +96,7 @@ class _QuotesTab extends ConsumerWidget {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => QuoteDetailScreen(quoteId: item.quote.id)),
                 ),
-                title: Text(item.customer.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(item.customer.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${item.quote.code} · ${Money.formatMinor(item.quote.totalMinor)}'),
                 trailing: Chip(
                   label: Text(
@@ -140,7 +141,7 @@ class _ProformasTab extends ConsumerWidget {
                     builder: (_) => ProformaDetailScreen(proformaId: item.proforma.id),
                   ),
                 ),
-                title: Text(item.customer.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(item.customer.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text(
                   '${item.proforma.code} · ${Money.formatMinor(item.proforma.totalMinor)}',
                 ),

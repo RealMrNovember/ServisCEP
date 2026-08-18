@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/job_constants.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/utils/customer_display.dart';
 import '../auth/data/session_controller.dart';
 import '../customers/data/customers_repository.dart';
 import 'data/jobs_repository.dart';
@@ -118,7 +119,7 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
                     decoration: const InputDecoration(labelText: 'Müşteri'),
                     items: [
                       for (final c in customers)
-                        DropdownMenuItem(value: c.id, child: Text(c.name)),
+                        DropdownMenuItem(value: c.id, child: Text(c.displayName)),
                     ],
                     onChanged: (v) => setState(() => _customerId = v),
                     validator: (v) => v == null ? 'Müşteri seçmelisin' : null,

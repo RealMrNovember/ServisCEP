@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class JobNote extends Model
+{
+    use HasUuids;
+
+    public $timestamps = false;
+
+    protected $fillable = ['job_id', 'note'];
+
+    protected function casts(): array
+    {
+        return ['created_at' => 'datetime'];
+    }
+
+    public function job(): BelongsTo
+    {
+        return $this->belongsTo(Job::class);
+    }
+}

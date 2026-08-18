@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants/job_constants.dart';
+import '../../core/utils/customer_display.dart';
 import '../../core/utils/money.dart';
 import '../../shared/brand_footer.dart';
 import '../../shared/update_banner.dart';
@@ -213,7 +214,7 @@ class _JobCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.customer.name,
+                      item.customer.displayName,
                       style: Theme.of(
                         context,
                       ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),

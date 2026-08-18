@@ -11,6 +11,7 @@ import '../../core/database/app_database.dart';
 import '../../core/providers/company_provider.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/pdf_service.dart';
+import '../../core/utils/customer_display.dart';
 import '../../core/utils/map_launcher.dart';
 import '../../core/utils/money.dart';
 import '../customers/data/customers_repository.dart';
@@ -136,7 +137,7 @@ class _JobDetailContent extends ConsumerWidget {
               return _InfoTile(
                 icon: Icons.person_outline,
                 label: 'Müşteri',
-                value: customer?.name ?? '...',
+                value: customer?.displayName ?? '...',
               );
             },
           ),

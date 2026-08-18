@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/customer_types.dart';
 import '../../core/database/app_database.dart';
+import '../../core/utils/customer_display.dart';
 import 'data/customers_repository.dart';
 
 class CustomersListScreen extends ConsumerStatefulWidget {
@@ -54,7 +55,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                     : customers
                           .where(
                             (c) =>
-                                c.name.toLowerCase().contains(_query) ||
+                                c.displayName.toLowerCase().contains(_query) ||
                                 (c.phone ?? '').contains(_query),
                           )
                           .toList();
@@ -108,11 +109,11 @@ class _CustomerTile extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: scheme.primary.withValues(alpha: 0.12),
           child: Text(
-            customer.name.isNotEmpty ? customer.name[0].toUpperCase() : '?',
+            customer.displayName.isNotEmpty ? customer.displayName[0].toUpperCase() : '?',
             style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700),
           ),
         ),
-        title: Text(customer.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(customer.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(customer.phone?.isNotEmpty == true ? customer.phone! : customer.code),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

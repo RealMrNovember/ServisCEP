@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/customer_types.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/database/app_database.dart';
+import '../../core/utils/customer_display.dart';
 import '../../core/utils/map_launcher.dart';
 import '../../core/utils/money.dart';
 import '../auth/data/session_controller.dart';
@@ -87,7 +88,7 @@ class _CustomerDetailContent extends StatelessWidget {
       length: 5,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(customer.name),
+          title: Text(customer.displayName),
           actions: [
             IconButton(
               icon: const Icon(Icons.edit_outlined),
@@ -134,6 +135,12 @@ class _GeneralTab extends StatelessWidget {
           label: 'Tip',
           value: customerTypeLabels[customer.type] ?? customer.type,
         ),
+        if (customer.contactName?.isNotEmpty == true)
+          _InfoRow(icon: Icons.person_outline, label: 'Yetkili adı soyadı', value: customer.contactName!),
+        if (customer.companyName?.isNotEmpty == true)
+          _InfoRow(icon: Icons.apartment_outlined, label: 'Firma adı', value: customer.companyName!),
+        if (customer.iban?.isNotEmpty == true)
+          _InfoRow(icon: Icons.account_balance_outlined, label: 'IBAN', value: customer.iban!),
         if (customer.phone?.isNotEmpty == true)
           _InfoRow(icon: Icons.phone_outlined, label: 'Telefon', value: customer.phone!),
         if (customer.email?.isNotEmpty == true)

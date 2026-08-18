@@ -47,7 +47,12 @@ class Customers extends Table {
   TextColumn get id => text()();
   TextColumn get companyId => text().references(Companies, #id)();
   TextColumn get code => text()();
-  TextColumn get name => text()();
+  /// Yetkili adı soyadı ve firma adı ayrı alanlardır — ikisinden en az biri
+  /// dolu olmalıdır (bkz. customer_form_screen.dart doğrulaması), aynı anda
+  /// ikisini birden girmek zorunlu değildir.
+  TextColumn get contactName => text().nullable()();
+  TextColumn get companyName => text().nullable()();
+  TextColumn get iban => text().nullable()();
   /// BIREYSEL / FIRMA / APARTMAN / SITE / KAMU / DIGER
   TextColumn get type => text().withDefault(const Constant('BIREYSEL'))();
   TextColumn get phone => text().nullable()();

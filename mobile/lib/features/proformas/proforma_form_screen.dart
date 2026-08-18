@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/doc_item_draft.dart';
+import '../../core/utils/customer_display.dart';
 import '../../shared/document_items_editor.dart';
 import '../auth/data/session_controller.dart';
 import '../customers/data/customers_repository.dart';
@@ -80,7 +81,7 @@ class _ProformaFormScreenState extends ConsumerState<ProformaFormScreen> {
               initialValue: _customerId,
               decoration: const InputDecoration(labelText: 'Müşteri'),
               items: [
-                for (final c in customers) DropdownMenuItem(value: c.id, child: Text(c.name)),
+                for (final c in customers) DropdownMenuItem(value: c.id, child: Text(c.displayName)),
               ],
               onChanged: (v) => setState(() => _customerId = v),
             ),

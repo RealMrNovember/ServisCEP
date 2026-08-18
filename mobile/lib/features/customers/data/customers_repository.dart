@@ -26,7 +26,9 @@ class CustomersRepository {
 
   Future<Customer> create({
     required String companyId,
-    required String name,
+    String? contactName,
+    String? companyName,
+    String? iban,
     required String type,
     String? phone,
     String? email,
@@ -36,6 +38,10 @@ class CustomersRepository {
     String? taxInfo,
     String? notes,
   }) async {
+    assert(
+      (contactName?.trim().isNotEmpty ?? false) || (companyName?.trim().isNotEmpty ?? false),
+      'Yetkili adı soyadı veya firma adından en az biri dolu olmalı',
+    );
     final countThisYear = await (_db.select(_db.customers)
           ..where((c) => c.companyId.equals(companyId)))
         .get()
@@ -47,7 +53,9 @@ class CustomersRepository {
       id: id,
       companyId: companyId,
       code: code,
-      name: name,
+      contactName: Value(contactName),
+      companyName: Value(companyName),
+      iban: Value(iban),
       type: Value(type),
       phone: Value(phone),
       email: Value(email),

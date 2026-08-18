@@ -23,7 +23,13 @@ class CustomerFormScreen extends ConsumerStatefulWidget {
 
 class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _nameController = TextEditingController(text: widget.existing?.name ?? '');
+  late final _contactNameController = TextEditingController(
+    text: widget.existing?.contactName ?? '',
+  );
+  late final _companyNameController = TextEditingController(
+    text: widget.existing?.companyName ?? '',
+  );
+  late final _ibanController = TextEditingController(text: widget.existing?.iban ?? '');
   late final _phoneController = TextEditingController(text: widget.existing?.phone ?? '');
   late final _emailController = TextEditingController(text: widget.existing?.email ?? '');
   late final _addressController = TextEditingController(text: widget.existing?.address ?? '');
@@ -40,7 +46,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _contactNameController.dispose();
+    _companyNameController.dispose();
+    _ibanController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
@@ -51,6 +59,12 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
     super.dispose();
   }
 
+  String? _validateNameFields(String? _) {
+    if (_contactNameController.text.trim().isNotEmpty) return null;
+    if (_companyNameController.text.trim().isNotEmpty) return null;
+    return 'Yetkili adı soyadı veya firma adından en az birini gir';
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
@@ -59,7 +73,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
     try {
       if (_isEditing) {
         final updated = widget.existing!.copyWith(
-          name: _nameController.text.trim(),
+          contactName: Value(_emptyToNull(_contactNameController.text)),
+          companyName: Value(_emptyToNull(_companyNameController.text)),
+          iban: Value(_emptyToNull(_ibanController.text)),
           type: _type,
           phone: Value(_emptyToNull(_phoneController.text)),
           email: Value(_emptyToNull(_emailController.text)),
@@ -75,7 +91,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
         if (session == null) return;
         await repo.create(
           companyId: session.companyId,
-          name: _nameController.text.trim(),
+          contactName: _emptyToNull(_contactNameController.text),
+          companyName: _emptyToNull(_companyNameController.text),
+          iban: _emptyToNull(_ibanController.text),
           type: _type,
           phone: _emptyToNull(_phoneController.text),
           email: _emptyToNull(_emailController.text),
@@ -105,10 +123,30 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             children: [
               TextFormField(
-                controller: _nameController,
+                controller: _contactNameController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Ad Soyad / Firma adı'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
+                decoration: const InputDecoration(labelText: 'Yetkili adı soyadı'),
+                validator: _validateNameFields,
+                onChanged: (_) => _formKey.currentState?.validate(),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _companyNameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Firma adı'),
+                validator: _validateNameFields,
+                onChanged: (_) => _formKey.currentState?.validate(),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'İkisinden en az birini gir — aynı anda ikisini birden doldurman gerekmiyor.',
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _ibanController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(labelText: 'IBAN (opsiyonel)'),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(

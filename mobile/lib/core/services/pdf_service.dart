@@ -7,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../database/app_database.dart';
+import '../utils/customer_display.dart';
 import '../utils/money.dart';
 
 /// PDF Motoru — bkz. docs/03 § PDF Motoru.
@@ -69,7 +70,12 @@ abstract final class PdfService {
         pw.Container(height: 1, color: PdfColors.grey300),
         pw.SizedBox(height: 16),
         pw.Text('Müşteri', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
-        pw.Text(customer.name, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+        pw.Text(
+          customer.displayName,
+          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+        ),
+        if (customer.companyName?.isNotEmpty == true && customer.contactName?.isNotEmpty == true)
+          pw.Text('Yetkili: ${customer.contactName}', style: const pw.TextStyle(fontSize: 10)),
         if (customer.address?.isNotEmpty == true)
           pw.Text(customer.address!, style: const pw.TextStyle(fontSize: 10)),
         if (customer.phone?.isNotEmpty == true)

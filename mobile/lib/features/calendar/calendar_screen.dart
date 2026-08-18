@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/constants/job_constants.dart';
+import '../../core/utils/customer_display.dart';
 import '../jobs/data/jobs_repository.dart';
 
 /// Randevu / Takvim — bkz. docs/05 § Randevu / Takvim.
@@ -102,7 +103,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 DateFormat('HH:mm').format(job.appointmentDate!),
                                 style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
-                              subtitle: Text('${item.customer.name} · ${job.title}'),
+                              subtitle: Text('${item.customer.displayName} · ${job.title}'),
                               trailing: Text(jobStatusLabels[job.status] ?? job.status),
                             ),
                           );

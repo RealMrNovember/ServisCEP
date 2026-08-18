@@ -963,14 +963,36 @@ class $CustomersTable extends Customers
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  static const VerificationMeta _contactNameMeta = const VerificationMeta(
+    'contactName',
+  );
   @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
+  late final GeneratedColumn<String> contactName = GeneratedColumn<String>(
+    'contact_name',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyNameMeta = const VerificationMeta(
+    'companyName',
+  );
+  @override
+  late final GeneratedColumn<String> companyName = GeneratedColumn<String>(
+    'company_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ibanMeta = const VerificationMeta('iban');
+  @override
+  late final GeneratedColumn<String> iban = GeneratedColumn<String>(
+    'iban',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
@@ -1098,7 +1120,9 @@ class $CustomersTable extends Customers
     id,
     companyId,
     code,
-    name,
+    contactName,
+    companyName,
+    iban,
     type,
     phone,
     email,
@@ -1145,13 +1169,29 @@ class $CustomersTable extends Customers
     } else if (isInserting) {
       context.missing(_codeMeta);
     }
-    if (data.containsKey('name')) {
+    if (data.containsKey('contact_name')) {
       context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+        _contactNameMeta,
+        contactName.isAcceptableOrUnknown(
+          data['contact_name']!,
+          _contactNameMeta,
+        ),
       );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
+    }
+    if (data.containsKey('company_name')) {
+      context.handle(
+        _companyNameMeta,
+        companyName.isAcceptableOrUnknown(
+          data['company_name']!,
+          _companyNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('iban')) {
+      context.handle(
+        _ibanMeta,
+        iban.isAcceptableOrUnknown(data['iban']!, _ibanMeta),
+      );
     }
     if (data.containsKey('type')) {
       context.handle(
@@ -1243,10 +1283,18 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}code'],
       )!,
-      name: attachedDatabase.typeMapping.read(
+      contactName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
+        data['${effectivePrefix}contact_name'],
+      ),
+      companyName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_name'],
+      ),
+      iban: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}iban'],
+      ),
       type: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}type'],
@@ -1308,7 +1356,13 @@ class Customer extends DataClass implements Insertable<Customer> {
   final String id;
   final String companyId;
   final String code;
-  final String name;
+
+  /// Yetkili adı soyadı ve firma adı ayrı alanlardır — ikisinden en az biri
+  /// dolu olmalıdır (bkz. customer_form_screen.dart doğrulaması), aynı anda
+  /// ikisini birden girmek zorunlu değildir.
+  final String? contactName;
+  final String? companyName;
+  final String? iban;
 
   /// BIREYSEL / FIRMA / APARTMAN / SITE / KAMU / DIGER
   final String type;
@@ -1327,7 +1381,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     required this.id,
     required this.companyId,
     required this.code,
-    required this.name,
+    this.contactName,
+    this.companyName,
+    this.iban,
     required this.type,
     this.phone,
     this.email,
@@ -1347,7 +1403,15 @@ class Customer extends DataClass implements Insertable<Customer> {
     map['id'] = Variable<String>(id);
     map['company_id'] = Variable<String>(companyId);
     map['code'] = Variable<String>(code);
-    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || contactName != null) {
+      map['contact_name'] = Variable<String>(contactName);
+    }
+    if (!nullToAbsent || companyName != null) {
+      map['company_name'] = Variable<String>(companyName);
+    }
+    if (!nullToAbsent || iban != null) {
+      map['iban'] = Variable<String>(iban);
+    }
     map['type'] = Variable<String>(type);
     if (!nullToAbsent || phone != null) {
       map['phone'] = Variable<String>(phone);
@@ -1386,7 +1450,13 @@ class Customer extends DataClass implements Insertable<Customer> {
       id: Value(id),
       companyId: Value(companyId),
       code: Value(code),
-      name: Value(name),
+      contactName: contactName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contactName),
+      companyName: companyName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(companyName),
+      iban: iban == null && nullToAbsent ? const Value.absent() : Value(iban),
       type: Value(type),
       phone: phone == null && nullToAbsent
           ? const Value.absent()
@@ -1423,7 +1493,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       id: serializer.fromJson<String>(json['id']),
       companyId: serializer.fromJson<String>(json['companyId']),
       code: serializer.fromJson<String>(json['code']),
-      name: serializer.fromJson<String>(json['name']),
+      contactName: serializer.fromJson<String?>(json['contactName']),
+      companyName: serializer.fromJson<String?>(json['companyName']),
+      iban: serializer.fromJson<String?>(json['iban']),
       type: serializer.fromJson<String>(json['type']),
       phone: serializer.fromJson<String?>(json['phone']),
       email: serializer.fromJson<String?>(json['email']),
@@ -1445,7 +1517,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       'id': serializer.toJson<String>(id),
       'companyId': serializer.toJson<String>(companyId),
       'code': serializer.toJson<String>(code),
-      'name': serializer.toJson<String>(name),
+      'contactName': serializer.toJson<String?>(contactName),
+      'companyName': serializer.toJson<String?>(companyName),
+      'iban': serializer.toJson<String?>(iban),
       'type': serializer.toJson<String>(type),
       'phone': serializer.toJson<String?>(phone),
       'email': serializer.toJson<String?>(email),
@@ -1465,7 +1539,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     String? id,
     String? companyId,
     String? code,
-    String? name,
+    Value<String?> contactName = const Value.absent(),
+    Value<String?> companyName = const Value.absent(),
+    Value<String?> iban = const Value.absent(),
     String? type,
     Value<String?> phone = const Value.absent(),
     Value<String?> email = const Value.absent(),
@@ -1482,7 +1558,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     id: id ?? this.id,
     companyId: companyId ?? this.companyId,
     code: code ?? this.code,
-    name: name ?? this.name,
+    contactName: contactName.present ? contactName.value : this.contactName,
+    companyName: companyName.present ? companyName.value : this.companyName,
+    iban: iban.present ? iban.value : this.iban,
     type: type ?? this.type,
     phone: phone.present ? phone.value : this.phone,
     email: email.present ? email.value : this.email,
@@ -1501,7 +1579,13 @@ class Customer extends DataClass implements Insertable<Customer> {
       id: data.id.present ? data.id.value : this.id,
       companyId: data.companyId.present ? data.companyId.value : this.companyId,
       code: data.code.present ? data.code.value : this.code,
-      name: data.name.present ? data.name.value : this.name,
+      contactName: data.contactName.present
+          ? data.contactName.value
+          : this.contactName,
+      companyName: data.companyName.present
+          ? data.companyName.value
+          : this.companyName,
+      iban: data.iban.present ? data.iban.value : this.iban,
       type: data.type.present ? data.type.value : this.type,
       phone: data.phone.present ? data.phone.value : this.phone,
       email: data.email.present ? data.email.value : this.email,
@@ -1525,7 +1609,9 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('id: $id, ')
           ..write('companyId: $companyId, ')
           ..write('code: $code, ')
-          ..write('name: $name, ')
+          ..write('contactName: $contactName, ')
+          ..write('companyName: $companyName, ')
+          ..write('iban: $iban, ')
           ..write('type: $type, ')
           ..write('phone: $phone, ')
           ..write('email: $email, ')
@@ -1547,7 +1633,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     id,
     companyId,
     code,
-    name,
+    contactName,
+    companyName,
+    iban,
     type,
     phone,
     email,
@@ -1568,7 +1656,9 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.id == this.id &&
           other.companyId == this.companyId &&
           other.code == this.code &&
-          other.name == this.name &&
+          other.contactName == this.contactName &&
+          other.companyName == this.companyName &&
+          other.iban == this.iban &&
           other.type == this.type &&
           other.phone == this.phone &&
           other.email == this.email &&
@@ -1587,7 +1677,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String> id;
   final Value<String> companyId;
   final Value<String> code;
-  final Value<String> name;
+  final Value<String?> contactName;
+  final Value<String?> companyName;
+  final Value<String?> iban;
   final Value<String> type;
   final Value<String?> phone;
   final Value<String?> email;
@@ -1605,7 +1697,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.id = const Value.absent(),
     this.companyId = const Value.absent(),
     this.code = const Value.absent(),
-    this.name = const Value.absent(),
+    this.contactName = const Value.absent(),
+    this.companyName = const Value.absent(),
+    this.iban = const Value.absent(),
     this.type = const Value.absent(),
     this.phone = const Value.absent(),
     this.email = const Value.absent(),
@@ -1624,7 +1718,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     required String id,
     required String companyId,
     required String code,
-    required String name,
+    this.contactName = const Value.absent(),
+    this.companyName = const Value.absent(),
+    this.iban = const Value.absent(),
     this.type = const Value.absent(),
     this.phone = const Value.absent(),
     this.email = const Value.absent(),
@@ -1640,13 +1736,14 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        companyId = Value(companyId),
-       code = Value(code),
-       name = Value(name);
+       code = Value(code);
   static Insertable<Customer> custom({
     Expression<String>? id,
     Expression<String>? companyId,
     Expression<String>? code,
-    Expression<String>? name,
+    Expression<String>? contactName,
+    Expression<String>? companyName,
+    Expression<String>? iban,
     Expression<String>? type,
     Expression<String>? phone,
     Expression<String>? email,
@@ -1665,7 +1762,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (id != null) 'id': id,
       if (companyId != null) 'company_id': companyId,
       if (code != null) 'code': code,
-      if (name != null) 'name': name,
+      if (contactName != null) 'contact_name': contactName,
+      if (companyName != null) 'company_name': companyName,
+      if (iban != null) 'iban': iban,
       if (type != null) 'type': type,
       if (phone != null) 'phone': phone,
       if (email != null) 'email': email,
@@ -1686,7 +1785,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String>? id,
     Value<String>? companyId,
     Value<String>? code,
-    Value<String>? name,
+    Value<String?>? contactName,
+    Value<String?>? companyName,
+    Value<String?>? iban,
     Value<String>? type,
     Value<String?>? phone,
     Value<String?>? email,
@@ -1705,7 +1806,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       id: id ?? this.id,
       companyId: companyId ?? this.companyId,
       code: code ?? this.code,
-      name: name ?? this.name,
+      contactName: contactName ?? this.contactName,
+      companyName: companyName ?? this.companyName,
+      iban: iban ?? this.iban,
       type: type ?? this.type,
       phone: phone ?? this.phone,
       email: email ?? this.email,
@@ -1734,8 +1837,14 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (code.present) {
       map['code'] = Variable<String>(code.value);
     }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
+    if (contactName.present) {
+      map['contact_name'] = Variable<String>(contactName.value);
+    }
+    if (companyName.present) {
+      map['company_name'] = Variable<String>(companyName.value);
+    }
+    if (iban.present) {
+      map['iban'] = Variable<String>(iban.value);
     }
     if (type.present) {
       map['type'] = Variable<String>(type.value);
@@ -1785,7 +1894,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('id: $id, ')
           ..write('companyId: $companyId, ')
           ..write('code: $code, ')
-          ..write('name: $name, ')
+          ..write('contactName: $contactName, ')
+          ..write('companyName: $companyName, ')
+          ..write('iban: $iban, ')
           ..write('type: $type, ')
           ..write('phone: $phone, ')
           ..write('email: $email, ')
@@ -12812,7 +12923,9 @@ typedef $$CustomersTableCreateCompanionBuilder =
       required String id,
       required String companyId,
       required String code,
-      required String name,
+      Value<String?> contactName,
+      Value<String?> companyName,
+      Value<String?> iban,
       Value<String> type,
       Value<String?> phone,
       Value<String?> email,
@@ -12832,7 +12945,9 @@ typedef $$CustomersTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> companyId,
       Value<String> code,
-      Value<String> name,
+      Value<String?> contactName,
+      Value<String?> companyName,
+      Value<String?> iban,
       Value<String> type,
       Value<String?> phone,
       Value<String?> email,
@@ -13009,8 +13124,18 @@ class $$CustomersTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
+  ColumnFilters<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get companyName => $composableBuilder(
+    column: $table.companyName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iban => $composableBuilder(
+    column: $table.iban,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13268,8 +13393,18 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
+  ColumnOrderings<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get companyName => $composableBuilder(
+    column: $table.companyName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iban => $composableBuilder(
+    column: $table.iban,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -13372,8 +13507,18 @@ class $$CustomersTableAnnotationComposer
   GeneratedColumn<String> get code =>
       $composableBuilder(column: $table.code, builder: (column) => column);
 
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get contactName => $composableBuilder(
+    column: $table.contactName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get companyName => $composableBuilder(
+    column: $table.companyName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get iban =>
+      $composableBuilder(column: $table.iban, builder: (column) => column);
 
   GeneratedColumn<String> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
@@ -13627,7 +13772,9 @@ class $$CustomersTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> companyId = const Value.absent(),
                 Value<String> code = const Value.absent(),
-                Value<String> name = const Value.absent(),
+                Value<String?> contactName = const Value.absent(),
+                Value<String?> companyName = const Value.absent(),
+                Value<String?> iban = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
                 Value<String?> email = const Value.absent(),
@@ -13645,7 +13792,9 @@ class $$CustomersTableTableManager
                 id: id,
                 companyId: companyId,
                 code: code,
-                name: name,
+                contactName: contactName,
+                companyName: companyName,
+                iban: iban,
                 type: type,
                 phone: phone,
                 email: email,
@@ -13665,7 +13814,9 @@ class $$CustomersTableTableManager
                 required String id,
                 required String companyId,
                 required String code,
-                required String name,
+                Value<String?> contactName = const Value.absent(),
+                Value<String?> companyName = const Value.absent(),
+                Value<String?> iban = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
                 Value<String?> email = const Value.absent(),
@@ -13683,7 +13834,9 @@ class $$CustomersTableTableManager
                 id: id,
                 companyId: companyId,
                 code: code,
-                name: name,
+                contactName: contactName,
+                companyName: companyName,
+                iban: iban,
                 type: type,
                 phone: phone,
                 email: email,

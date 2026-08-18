@@ -11,14 +11,32 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
+        // Bkz. docs/07 § Veritabanı Ana Modeli — alan adları mobildeki
+        // Drift şemasıyla (mobile/lib/core/database/tables.dart) kasıtlı
+        // olarak tutarlı tutulur ki senkronizasyon (Phase 17) eşlemesi basit
+        // olsun.
+        Schema::create('companies', function (Blueprint $table) {
+            $table->uuid('id')->primary();
             $table->string('name');
+            $table->text('business_types')->default('');
+            $table->string('iban')->nullable();
+            $table->string('logo_path')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+        });
+
+        Schema::create('users', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('company_id')->constrained('companies')->restrictOnDelete();
+            $table->string('full_name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('phone')->nullable();
             $table->string('password');
+            $table->string('google_id')->nullable()->unique();
+            // OWNER / ADMIN / TECHNICIAN / ACCOUNTING / VIEWER — MVP'de yalnızca OWNER.
+            $table->string('role')->default('OWNER');
+            $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -29,7 +47,7 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
+            $table->foreignUuid('user_id')->nullable()->index();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
@@ -42,8 +60,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('companies');
     }
 };
