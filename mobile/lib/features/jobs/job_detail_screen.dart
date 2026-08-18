@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants/job_constants.dart';
 import '../../core/database/app_database.dart';
+import '../../core/providers/company_provider.dart';
+import '../../core/services/pdf_service.dart';
 import '../../core/utils/money.dart';
 import '../customers/data/customers_repository.dart';
 import 'data/job_media_repository.dart';
@@ -64,13 +67,46 @@ class _JobDetailContent extends ConsumerWidget {
     }
   }
 
+  Future<void> _shareServiceFormPdf(BuildContext context, WidgetRef ref) async {
+    final company = await ref.read(currentCompanyProvider.future);
+    final customer = await ref.read(customersRepositoryProvider).byId(job.customerId);
+    if (company == null || customer == null) return;
+
+    final notes = await ref.read(jobMediaRepositoryProvider).watchNotes(job.id).first;
+    final signatures = await ref.read(jobMediaRepositoryProvider).watchSignatures(job.id).first;
+    final signature = signatures.isNotEmpty ? signatures.first : null;
+
+    final file = await PdfService.buildServiceFormPdf(
+      job: job,
+      company: company,
+      customer: customer,
+      notes: notes,
+      signatureFile: signature != null ? File(signature.filePath) : null,
+      signerName: signature?.signerName,
+    );
+    if (context.mounted) {
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], text: 'Servis Formu ${job.code}'),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customerAsync = ref.watch(customersRepositoryProvider).byId(job.customerId);
     final statusColor = jobStatusColors[job.status] ?? Colors.grey;
 
     return Scaffold(
-      appBar: AppBar(title: Text(job.code)),
+      appBar: AppBar(
+        title: Text(job.code),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Servis Formu PDF Paylaş',
+            onPressed: () => _shareServiceFormPdf(context, ref),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/database/app_database.dart';
+import '../../core/providers/company_provider.dart';
+import '../../core/services/pdf_service.dart';
 import '../../core/utils/money.dart';
+import '../customers/data/customers_repository.dart';
 import 'data/quotes_repository.dart';
 
 const _quoteStatusLabels = {
@@ -44,6 +48,26 @@ class QuoteDetailScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _sharePdf(BuildContext context, WidgetRef ref, Quote quote) async {
+    final company = await ref.read(currentCompanyProvider.future);
+    final customer = await ref.read(customersRepositoryProvider).byId(quote.customerId);
+    final items = await ref.read(quotesRepositoryProvider).watchItems(quote.id).first;
+    if (company == null || customer == null) return;
+
+    final file = await PdfService.buildQuoteOrProformaPdf(
+      documentTitle: 'TEKLİF',
+      code: quote.code,
+      date: quote.createdAt,
+      company: company,
+      customer: customer,
+      items: items.map((i) => i.toLineItem()).toList(),
+      notes: quote.notes,
+    );
+    if (context.mounted) {
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: 'Teklif ${quote.code}'));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final quoteAsync = ref.watch(_quoteProvider(quoteId));
@@ -57,7 +81,16 @@ class QuoteDetailScreen extends ConsumerWidget {
         final itemsAsync = ref.watch(quoteItemsProvider(quote.id));
 
         return Scaffold(
-          appBar: AppBar(title: Text(quote.code)),
+          appBar: AppBar(
+            title: Text(quote.code),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share_outlined),
+                tooltip: 'PDF Paylaş',
+                onPressed: () => _sharePdf(context, ref, quote),
+              ),
+            ],
+          ),
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -80,7 +113,9 @@ class QuoteDetailScreen extends ConsumerWidget {
                       Card(
                         child: ListTile(
                           title: Text(item.description),
-                          subtitle: Text('${item.quantity} ${item.unit} × ${Money.formatMinor(item.unitPriceMinor)}'),
+                          subtitle: Text(
+                            '${item.quantity} ${item.unit} × ${Money.formatMinor(item.unitPriceMinor)}',
+                          ),
                         ),
                       ),
                   ],
@@ -88,7 +123,10 @@ class QuoteDetailScreen extends ConsumerWidget {
               ),
               if (quote.notes?.isNotEmpty == true) ...[
                 const SizedBox(height: 16),
-                Text('Notlar', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  'Notlar',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 4),
                 Text(quote.notes!),
               ],
@@ -105,6 +143,12 @@ class QuoteDetailScreen extends ConsumerWidget {
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ],
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () => _sharePdf(context, ref, quote),
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                label: const Text('PDF Oluştur ve Paylaş'),
               ),
             ],
           ),

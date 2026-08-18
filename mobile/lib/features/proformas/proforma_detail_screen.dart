@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/database/app_database.dart';
+import '../../core/providers/company_provider.dart';
+import '../../core/services/pdf_service.dart';
 import '../../core/utils/money.dart';
+import '../customers/data/customers_repository.dart';
 import 'data/proformas_repository.dart';
 
 final _proformaProvider = FutureProvider.family<Proforma?, String>((ref, id) {
@@ -13,6 +17,29 @@ final _proformaProvider = FutureProvider.family<Proforma?, String>((ref, id) {
 class ProformaDetailScreen extends ConsumerWidget {
   const ProformaDetailScreen({super.key, required this.proformaId});
   final String proformaId;
+
+  Future<void> _sharePdf(BuildContext context, WidgetRef ref, Proforma proforma) async {
+    final company = await ref.read(currentCompanyProvider.future);
+    final customer = await ref.read(customersRepositoryProvider).byId(proforma.customerId);
+    final items = await ref.read(proformasRepositoryProvider).watchItems(proforma.id).first;
+    if (company == null || customer == null) return;
+
+    final file = await PdfService.buildQuoteOrProformaPdf(
+      documentTitle: 'PROFORMA',
+      code: proforma.code,
+      date: proforma.createdAt,
+      company: company,
+      customer: customer,
+      items: items.map((i) => i.toLineItem()).toList(),
+      notes: proforma.notes,
+      validUntil: proforma.validUntil,
+    );
+    if (context.mounted) {
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], text: 'Proforma ${proforma.code}'),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +56,16 @@ class ProformaDetailScreen extends ConsumerWidget {
         final itemsAsync = ref.watch(proformaItemsProvider(proforma.id));
 
         return Scaffold(
-          appBar: AppBar(title: Text(proforma.code)),
+          appBar: AppBar(
+            title: Text(proforma.code),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share_outlined),
+                tooltip: 'PDF Paylaş',
+                onPressed: () => _sharePdf(context, ref, proforma),
+              ),
+            ],
+          ),
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -85,6 +121,12 @@ class ProformaDetailScreen extends ConsumerWidget {
                     ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ],
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () => _sharePdf(context, ref, proforma),
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                label: const Text('PDF Oluştur ve Paylaş'),
               ),
             ],
           ),
