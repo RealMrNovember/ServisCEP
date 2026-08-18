@@ -161,6 +161,7 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 | **APK İndirme (GitHub Releases)** | Play Store yerine, showroom'dan tek tıkla her zaman en güncel APK indirme | W4 (Showroom) + Phase 18-19 (OTA update ile paylaşılan mekanizma) | [docs/13 § APK İndirme](docs/13-web-arayuzu-ve-showroom.md#2-apk-i̇ndirme-play-store-yerine) |
 | **Cari Hesap (Müşteri Ekstresi)** | Özet bakiye yerine tam kronolojik borç/alacak hareketleri + PDF ekstre. Yalnızca müşteri carisi (tedarikçi MVP dışı) | Phase 7 (Customer Management) + Phase 15 (Payments) ile birlikte | [docs/15 — Cari Hesap](docs/15-cari-hesap.md) |
 | **Stok & Barkod Modülü** | Teklif/proforma kalemleri stok kataloğundan seçilebilir, stok durumu uygulama içi (belgelerde değil) renkli badge ile gösterilir, kamera ile barkod okuma + global barkod veri kaynağından otomatik ürün bilgisi | M8 (bkz. yukarıdaki BUGÜN planı) — Phase 25-26'nın genişletilmiş hali | [docs/16 — Stok ve Barkod Modülü](docs/16-stok-ve-barkod.md) |
+| **Google Play Dağıtımı** | GitHub Releases'e ek olarak Play Store — Play In-App Update API ile tamamen görünmez güncelleme. Geliştirici hesabı mozkarci1991@gmail.com üzerinden, kapalı test aşamasında (12 test kullanıcısı + 14 gün zorunlu bekleme) | Phase 18-19 (OTA) ile paralel, sonradan eklendi (2026-08-18) | [docs/17 — Play Store Listesi](docs/17-play-store-listesi.md) |
 
 ### Web Arayüzü — Paralel Faz Sıralaması
 
