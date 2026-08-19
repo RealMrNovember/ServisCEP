@@ -74,6 +74,16 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // R8 tam mod + kod karartma acikca burada tanimlanir (Flutter
+            // CLI bayraklarina bagli dolayli davranisa guvenmek yerine) ve
+            // proguard-rules.pro, Google Sign-In gibi yansima kullanan
+            // kutuphanelerin R8 tarafindan kirilmasini engeller.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

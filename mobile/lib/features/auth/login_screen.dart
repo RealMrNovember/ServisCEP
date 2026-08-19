@@ -69,8 +69,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // ön-dolu şekilde yönlendir (bkz. docs/09).
         if (mounted) context.go('/onboarding', extra: result);
       }
-    } catch (_) {
-      setState(() => _errorText = 'Google ile giriş başarısız oldu, tekrar dene.');
+    } catch (e) {
+      // Ham hata mesajı bilinçli olarak gösteriliyor — jenerik metin,
+      // destek talebi geldiğinde asıl nedeni (ör. ApiException: 10)
+      // gizliyordu ve teşhisi imkansız kılıyordu.
+      setState(() => _errorText = 'Google ile giriş başarısız oldu: $e');
     } finally {
       if (mounted) setState(() => _isGoogleSubmitting = false);
     }
