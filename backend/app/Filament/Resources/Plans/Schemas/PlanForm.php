@@ -27,7 +27,19 @@ class PlanForm
                     ->label('Açıklama')
                     ->columnSpanFull(),
                 TextInput::make('price_minor')
-                    ->label('Fiyat (₺)')
+                    ->label('Aylık Fiyat (₺)')
+                    ->numeric()
+                    ->step(0.01)
+                    ->minValue(0)
+                    ->default(0)
+                    ->required()
+                    ->dehydrateStateUsing(fn ($state) => (int) round(((float) $state) * 100))
+                    ->afterStateHydrated(function (TextInput $component, $state) {
+                        $component->state(is_numeric($state) ? $state / 100 : 0);
+                    }),
+                TextInput::make('price_yearly_minor')
+                    ->label('Yıllık Fiyat (₺)')
+                    ->helperText('Genelde 12 aylık fiyattan indirimli olur.')
                     ->numeric()
                     ->step(0.01)
                     ->minValue(0)

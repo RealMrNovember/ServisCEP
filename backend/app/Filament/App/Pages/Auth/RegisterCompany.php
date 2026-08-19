@@ -48,9 +48,7 @@ class RegisterCompany extends Register
 
     protected function handleRegistration(#[SensitiveParameter] array $data): Model
     {
-        $company = Company::create([
-            'name' => $data['company_name'],
-        ]);
+        $company = Company::startTrial($data['company_name']);
 
         return User::create([
             'company_id' => $company->id,

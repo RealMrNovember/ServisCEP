@@ -54,7 +54,13 @@ class ProductsTable
                             ->label('Hareket Tipi')
                             ->options(['IN' => 'Giriş', 'OUT' => 'Çıkış'])
                             ->required()
+                            ->live()
                             ->native(false),
+                        TextInput::make('vendor_name')
+                            ->label('Tedarikçi Firma')
+                            ->helperText('Aynı ürün farklı tedarikçilerden alınabilir — her girişte ayrı kaydedilir.')
+                            ->visible(fn ($get) => $get('type') === 'IN')
+                            ->maxLength(255),
                         TextInput::make('quantity')
                             ->label('Miktar')
                             ->numeric()
@@ -74,6 +80,7 @@ class ProductsTable
                             StockMovement::create([
                                 'product_id' => $product->id,
                                 'type' => $data['type'],
+                                'vendor_name' => $data['type'] === 'IN' ? ($data['vendor_name'] ?? null) : null,
                                 'quantity' => $data['quantity'],
                                 'reference_type' => 'manual_adjustment',
                                 'note' => $data['note'] ?? null,

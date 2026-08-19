@@ -55,7 +55,14 @@ class Subscription extends Page implements HasForms
                     ->components([
                         Select::make('plan_id')
                             ->label('Talep edilen paket')
-                            ->options(fn () => Plan::query()->where('is_active', true)->pluck('name', 'id'))
+                            ->options(fn () => Plan::query()->where('is_active', true)->get()->mapWithKeys(
+                                fn (Plan $plan) => [$plan->id => sprintf(
+                                    '%s — %s ₺/ay veya %s ₺/yıl',
+                                    $plan->name,
+                                    number_format($plan->price_minor / 100, 2, ',', '.'),
+                                    number_format($plan->price_yearly_minor / 100, 2, ',', '.'),
+                                )]
+                            ))
                             ->native(false),
                         TextInput::make('claimed_amount_tl')
                             ->label('Yatırdığınız tutar (₺)')

@@ -2,11 +2,13 @@
 
 namespace App\Filament\App\Resources\Customers\Schemas;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class CustomerForm
 {
@@ -73,6 +75,13 @@ class CustomerForm
                         TextInput::make('tags')
                             ->label('Etiketler')
                             ->maxLength(255),
+                        FileUpload::make('tax_certificate_path')
+                            ->label('Vergi Levhası')
+                            ->disk('local')
+                            ->directory(fn () => 'tax-certificates/'.Auth::user()->company_id)
+                            ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                            ->maxSize(10240)
+                            ->columnSpanFull(),
                         Textarea::make('notes')
                             ->label('Notlar')
                             ->columnSpanFull(),

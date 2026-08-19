@@ -43,6 +43,23 @@ class Company extends Model
     }
 
     /**
+     * Yeni kayıt olan her şirket 14 günlük deneme süresiyle başlar —
+     * süresiz erişim yalnızca admin onaylı bir ödeme talebiyle kazanılır
+     * (bkz. PaymentRequest::approve()).
+     */
+    public static function startTrial(string $name): self
+    {
+        $trialPlan = Plan::where('slug', 'deneme')->first();
+
+        return static::create([
+            'name' => $name,
+            'plan_id' => $trialPlan?->id,
+            'subscription_expires_at' => now()->addDays($trialPlan?->duration_days ?? 14),
+            'is_active' => true,
+        ]);
+    }
+
+    /**
      * Süresi dolmamış VE manuel olarak askıya alınmamış olmalı — admin
      * panelden erişim kontrolü bu tek metoda dayanır.
      */

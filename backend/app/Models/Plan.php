@@ -13,7 +13,7 @@ class Plan extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'name', 'slug', 'description', 'price_minor', 'duration_days',
+        'name', 'slug', 'description', 'price_minor', 'price_yearly_minor', 'duration_days',
         'max_users', 'is_active', 'sort_order',
     ];
 
@@ -21,6 +21,7 @@ class Plan extends Model
     {
         return [
             'price_minor' => 'integer',
+            'price_yearly_minor' => 'integer',
             'duration_days' => 'integer',
             'max_users' => 'integer',
             'is_active' => 'boolean',

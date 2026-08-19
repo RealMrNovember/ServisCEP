@@ -22,7 +22,11 @@ class PlansTable
                     ->weight(FontWeight::SemiBold)
                     ->searchable(),
                 TextColumn::make('price_minor')
-                    ->label('Fiyat')
+                    ->label('Aylık')
+                    ->formatStateUsing(fn ($state) => number_format($state / 100, 2, ',', '.').' ₺')
+                    ->sortable(),
+                TextColumn::make('price_yearly_minor')
+                    ->label('Yıllık')
                     ->formatStateUsing(fn ($state) => number_format($state / 100, 2, ',', '.').' ₺')
                     ->sortable(),
                 TextColumn::make('duration_days')

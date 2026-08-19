@@ -36,9 +36,7 @@ class GoogleAuthController extends Controller
             }
         } else {
             $user = DB::transaction(function () use ($googleUser) {
-                $company = Company::create([
-                    'name' => $googleUser->getName() ?: $googleUser->getEmail(),
-                ]);
+                $company = Company::startTrial($googleUser->getName() ?: $googleUser->getEmail());
 
                 return User::create([
                     'company_id' => $company->id,

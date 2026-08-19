@@ -18,7 +18,7 @@ class Customer extends Model
 
     protected $fillable = [
         'company_id', 'code', 'contact_name', 'company_name', 'iban', 'type', 'phone', 'email',
-        'address', 'il', 'ilce', 'tax_info', 'notes', 'tags',
+        'address', 'il', 'ilce', 'tax_info', 'tax_certificate_path', 'notes', 'tags',
     ];
 
     protected function casts(): array

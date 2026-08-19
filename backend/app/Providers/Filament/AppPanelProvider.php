@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\App\Pages\Auth\EditProfile;
 use App\Filament\App\Pages\Auth\RegisterCompany;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -32,6 +33,7 @@ class AppPanelProvider extends PanelProvider
             ->login()
             ->registration(RegisterCompany::class)
             ->passwordReset()
+            ->profile(EditProfile::class, isSimple: false)
             ->colors([
                 'primary' => Color::Emerald,
             ])
