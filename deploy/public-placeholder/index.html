@@ -3,122 +3,518 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="ServisCEP — saha teknik servis işletmeleri için mobil-first, offline-first işletme yönetim platformu. Müşteri, iş, teklif/proforma, stok ve finans tek uygulamada.">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>ServisCEP — Çok Yakında</title>
+<title>ServisCEP — Saha Servis Yönetimi</title>
 <style>
   :root {
-    color-scheme: light dark;
-    --bg: #0b1120;
-    --fg: #e5e9f2;
-    --muted: #8892a6;
+    color-scheme: dark;
+    --bg: #0a0e1a;
+    --fg: #f3f5f9;
+    --muted: #97a1b5;
     --accent: #3B82F6;
+    --accent-2: #60a5fa;
     --card: #121a2b;
-    --border: #202b42;
+    --border: #1f2a42;
+    --border-soft: rgba(255,255,255,0.06);
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
     margin: 0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(circle at 50% 0%, #16213d 0%, var(--bg) 60%);
+    background: var(--bg);
     color: var(--fg);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    text-align: center;
-    padding: 24px;
+    -webkit-font-smoothing: antialiased;
   }
-  .card {
-    max-width: 560px;
-    padding: 48px 40px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  a { color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10,14,26,0.75);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-soft);
   }
-  .logo {
-    width: 72px;
-    height: 72px;
-    margin: 0 auto 24px;
-    border-radius: 18px;
-    display: block;
+  nav .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 68px;
   }
-  h1 {
-    font-size: 28px;
-    margin: 0 0 12px;
-    letter-spacing: -0.02em;
-  }
-  p {
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .brand img { width: 32px; height: 32px; border-radius: 8px; display: block; }
+  .brand span { font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+  .nav-links { display: flex; align-items: center; gap: 28px; }
+  .nav-links a {
     color: var(--muted);
-    line-height: 1.6;
-    margin: 0 0 8px;
-    font-size: 15px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
   }
-  .badge {
-    display: inline-block;
-    margin-top: 24px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    background: rgba(79,140,255,0.12);
-    color: var(--accent);
-    font-size: 13px;
+  .nav-links a:hover { color: var(--fg); }
+  .nav-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    background: var(--accent);
+    color: #fff !important;
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: transform 0.15s ease, opacity 0.15s ease;
   }
-  .download-btn {
+  .nav-cta:hover { opacity: 0.92; transform: translateY(-1px); }
+  @media (max-width: 720px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 88px 0 64px;
+    background:
+      radial-gradient(680px 420px at 82% -10%, rgba(59,130,246,0.22), transparent 60%),
+      radial-gradient(520px 360px at 8% 10%, rgba(59,130,246,0.10), transparent 65%);
+  }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
+  @media (max-width: 900px) { .hero .wrap { grid-template-columns: 1fr; } }
+
+  .eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-top: 28px;
-    padding: 14px 28px;
+    padding: 7px 14px 7px 10px;
+    border-radius: 999px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    color: var(--accent-2);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 22px;
+  }
+  .eyebrow .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 0 3px rgba(52,211,153,0.18);
+  }
+  .hero h1 {
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    margin: 0 0 20px;
+    font-weight: 800;
+  }
+  .hero h1 .accent-text {
+    background: linear-gradient(90deg, var(--accent-2), #93c5fd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p.lead {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 0 34px;
+  }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 28px; }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 26px;
     background: var(--accent);
     color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(59,130,246,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(59,130,246,0.45); }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 15px 22px;
+    background: transparent;
+    color: var(--fg);
     text-decoration: none;
     font-weight: 600;
     font-size: 15px;
     border-radius: 12px;
-    transition: opacity 0.15s ease;
+    border: 1px solid var(--border);
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .download-btn:hover { opacity: 0.9; }
-  .download-note {
-    margin-top: 14px;
-    font-size: 13px;
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.03); }
+  .hero-note { font-size: 13px; color: var(--muted); }
+  .hero-note strong { color: var(--fg); }
+
+  .quick-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .quick-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 13px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 12.5px;
     color: var(--muted);
-  }
-  footer {
-    margin-top: 28px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  footer a {
-    color: var(--accent);
     font-weight: 600;
-    text-decoration: none;
   }
-  footer a:hover { text-decoration: underline; }
+  .quick-badge svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--accent-2); }
+
+  /* ---------- phone mockup ---------- */
+  .phone-stage { display: flex; justify-content: center; position: relative; }
+  .phone {
+    position: relative;
+    width: 260px;
+    height: 540px;
+    background: #3F3F46;
+    border-radius: 42px;
+    padding: 12px;
+    box-shadow:
+      0 30px 60px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(255,255,255,0.06) inset;
+  }
+  .phone::before {
+    content: "";
+    position: absolute;
+    top: 12px; left: 50%; transform: translateX(-50%);
+    width: 46px; height: 5px; border-radius: 3px;
+    background: rgba(0,0,0,0.35);
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: linear-gradient(165deg, #17233d, #0c1322);
+    border-radius: 32px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 16px 16px;
+  }
+  .phone-screen .ps-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .phone-screen .ps-title { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .phone-screen .ps-name { font-size: 15px; font-weight: 700; color: #fff; }
+  .ps-card {
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 13px;
+    margin-bottom: 10px;
+  }
+  .ps-card .ps-row { display: flex; justify-content: space-between; align-items: center; }
+  .ps-card .ps-label { font-size: 12px; font-weight: 600; color: #fff; }
+  .ps-card .ps-sub { font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+  .ps-pill {
+    font-size: 9.5px; font-weight: 700; padding: 4px 8px; border-radius: 999px;
+  }
+  .ps-pill.blue { background: rgba(59,130,246,0.18); color: #93c5fd; }
+  .ps-pill.green { background: rgba(52,211,153,0.18); color: #6ee7b7; }
+  .ps-pill.amber { background: rgba(251,191,36,0.18); color: #fcd34d; }
+  .ps-fab {
+    margin-top: auto;
+    align-self: flex-end;
+    width: 42px; height: 42px; border-radius: 14px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 18px rgba(59,130,246,0.45);
+  }
+  .ps-fab svg { width: 18px; height: 18px; color: #fff; }
+  .phone-glow {
+    position: absolute;
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, rgba(59,130,246,0.35), transparent 70%);
+    filter: blur(10px);
+    z-index: -1;
+  }
+
+  /* ---------- sections ---------- */
+  section { padding: 84px 0; }
+  .section-head { max-width: 620px; margin: 0 auto 52px; text-align: center; }
+  .section-eyebrow {
+    font-size: 13px; font-weight: 700; color: var(--accent-2);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+  }
+  .section-head h2 {
+    font-size: clamp(26px, 3.6vw, 36px);
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+    font-weight: 800;
+  }
+  .section-head p { color: var(--muted); font-size: 16px; line-height: 1.6; margin: 0; }
+
+  /* ---------- features grid ---------- */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 980px) { .features { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 26px 22px;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .feature-card:hover { border-color: rgba(59,130,246,0.35); transform: translateY(-3px); }
+  .feature-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: rgba(59,130,246,0.14);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+  }
+  .feature-icon svg { width: 21px; height: 21px; color: var(--accent-2); }
+  .feature-card h3 { font-size: 15.5px; margin: 0 0 8px; font-weight: 700; letter-spacing: -0.01em; }
+  .feature-card p { font-size: 13.5px; line-height: 1.55; color: var(--muted); margin: 0; }
+
+  /* ---------- offline strip ---------- */
+  .strip {
+    background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(59,130,246,0.02));
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 44px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    text-align: center;
+  }
+  @media (max-width: 760px) { .strip { grid-template-columns: 1fr; } }
+  .strip .stat-num { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+  .strip .stat-num .accent-text {
+    background: linear-gradient(90deg, var(--accent-2), #93c5fd);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .strip .stat-label { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+
+  /* ---------- CTA ---------- */
+  .cta {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 64px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(500px 260px at 50% 0%, rgba(59,130,246,0.18), transparent 70%);
+  }
+  .cta > * { position: relative; }
+  .cta h2 { font-size: clamp(24px, 3.4vw, 32px); margin: 0 0 14px; letter-spacing: -0.02em; font-weight: 800; }
+  .cta p { color: var(--muted); font-size: 15.5px; margin: 0 0 30px; }
+  .cta .hero-actions { justify-content: center; margin-bottom: 18px; }
+
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--border-soft); padding: 40px 0; }
+  footer .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+  .footer-brand { display: flex; align-items: center; gap: 10px; }
+  .footer-brand img { width: 26px; height: 26px; border-radius: 7px; }
+  .footer-brand span { font-size: 13.5px; color: var(--muted); }
+  .footer-brand a { color: var(--accent-2); text-decoration: none; font-weight: 600; }
+  .footer-links { display: flex; gap: 22px; }
+  .footer-links a { font-size: 13.5px; color: var(--muted); text-decoration: none; }
+  .footer-links a:hover { color: var(--fg); }
 </style>
 </head>
 <body>
-  <div class="card">
-    <img class="logo" src="/logo.png" alt="ServisCEP logosu" width="72" height="72">
-    <h1>ServisCEP çok yakında burada.</h1>
-    <p>Saha teknik servis işletmeleri için mobil-first, offline-first işletme yönetim platformu üzerinde çalışıyoruz.</p>
-    <p>Bu alan aktif geliştirme aşamasındadır.</p>
-    <span class="badge">Geliştirme Aşamasında</span>
 
-    <div>
-      <a class="download-btn" href="https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk">
-        Android için indir (APK)
-      </a>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <img src="/logo.png" alt="ServisCEP logosu" width="32" height="32">
+      <span>ServisCEP</span>
+    </a>
+    <div class="nav-links">
+      <a href="#ozellikler">Özellikler</a>
+      <a href="#neden">Neden ServisCEP</a>
+      <a class="nav-cta" href="https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk">İndir</a>
     </div>
-    <p class="download-note">Erken test sürümü. Kurulum için "bilinmeyen kaynaklardan yükleme" izni gerekebilir. Sonraki güncellemeler otomatik gelir.</p>
   </div>
+</nav>
 
-  <footer>
-    ServisCEP · <a href="https://cicibyte.com" target="_blank" rel="noopener">Cicibyte Teknoloji</a> tarafından geliştirilmiştir
-  </footer>
+<div id="top"></div>
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Aktif geliştirme — erken erişim</div>
+      <h1>Saha işinizi <span class="accent-text">cebinizden</span> yönetin.</h1>
+      <p class="lead">Müşteri, iş, teklif/proforma, stok ve finansı tek bir yerden yönetin. İnternet olmasa bile tam işlevsel — veriler önce cihazınızda, güvenle saklanır.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Android için indir
+        </a>
+        <a class="btn-secondary" href="#ozellikler">Özellikleri incele</a>
+      </div>
+      <p class="hero-note"><strong>Erken test sürümü.</strong> Kurulum için "bilinmeyen kaynaklardan yükleme" izni gerekebilir. Sonraki güncellemeler uygulama içinden otomatik gelir.</p>
+
+      <div class="quick-badges">
+        <span class="quick-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zM8 12l2.5 2.5L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Offline çalışır</span>
+        <span class="quick-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v4H4zM4 12h10v8H4zM17 12h3v8h-3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Barkod okuma</span>
+        <span class="quick-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1018 0 9 9 0 00-18 0zM12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Otomatik güncelleme</span>
+      </div>
+    </div>
+
+    <div class="phone-stage">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="ps-header">
+            <div>
+              <div class="ps-title">Bugün</div>
+              <div class="ps-name">4 işiniz var</div>
+            </div>
+          </div>
+          <div class="ps-card">
+            <div class="ps-row">
+              <div>
+                <div class="ps-label">Ahmet Yılmaz</div>
+                <div class="ps-sub">Klima bakımı · 09:30</div>
+              </div>
+              <span class="ps-pill blue">Planlandı</span>
+            </div>
+          </div>
+          <div class="ps-card">
+            <div class="ps-row">
+              <div>
+                <div class="ps-label">Deniz Elektrik Ltd.</div>
+                <div class="ps-sub">Kamera kurulumu · 13:00</div>
+              </div>
+              <span class="ps-pill green">Devam ediyor</span>
+            </div>
+          </div>
+          <div class="ps-card">
+            <div class="ps-row">
+              <div>
+                <div class="ps-label">Merve Kaya</div>
+                <div class="ps-sub">Teklif #TKF-0042</div>
+              </div>
+              <span class="ps-pill amber">Bekliyor</span>
+            </div>
+          </div>
+          <div class="ps-fab">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="ozellikler">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">Özellikler</div>
+      <h2>Sahadaki her adım için tek uygulama</h2>
+      <p>Kağıt takibinden, dağınık WhatsApp mesajlarından ve unutulan tahsilatlardan kurtulun.</p>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Müşteri Yönetimi</h3>
+        <p>Yetkili adı/firma adı, iletişim bilgileri, adres ve cari hesap ekstresi tek ekranda.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>İş / Servis Takibi</h3>
+        <p>Randevu planlama, durum akışı, teknisyen ataması ve öncelik seviyeleri.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg></div>
+        <h3>Servis Formu</h3>
+        <p>Kategorili fotoğraf ekleme (öncesi/arıza/sonrası) ve dijital imza toplama.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v4H4zM4 12h10v8H4zM17 12h3v8h-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <h3>Stok &amp; Barkod</h3>
+        <p>Kamera ile barkod okuma, stok durumu rozetleri, teklif kalemlerini doğrudan stoktan seçme.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6M9 13h6M9 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Teklif &amp; Proforma</h3>
+        <p>Kurumsal görünümlü PDF belgeler, WhatsApp/Android paylaşım ile tek dokunuşta gönderim.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Cari Hesap</h3>
+        <p>Özet bakiye değil, tam kronolojik borç/alacak hareket dökümü — her kuruş izlenebilir.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18M7 15l4-4 3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Finans Paneli</h3>
+        <p>Gelir/gider takibi, tahsilat kaydı, günün ve ayın özetini tek bakışta görün.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Takvim &amp; Hatırlatmalar</h3>
+        <p>Aylık takvim görünümü ve randevu saatinden önce internet gerektirmeyen bildirimler.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="neden">
+  <div class="wrap">
+    <div class="strip">
+      <div>
+        <div class="stat-num"><span class="accent-text">%100</span></div>
+        <div class="stat-label">İnternetsiz çalışabilirlik — tüm veriler önce cihazda</div>
+      </div>
+      <div>
+        <div class="stat-num"><span class="accent-text">0</span> tık</div>
+        <div class="stat-label">Güncellemeler uygulama içinden otomatik gelir</div>
+      </div>
+      <div>
+        <div class="stat-num"><span class="accent-text">1</span> uygulama</div>
+        <div class="stat-label">Müşteri, iş, belge ve finans tek yerde</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta">
+      <h2>Bugün indirin, birkaç dakikada kurulum yapın.</h2>
+      <p>Hesap oluşturmak ücretsiz ve anında tamamlanır — onay beklemez.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Android için indir
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-brand">
+      <img src="/logo.png" alt="ServisCEP logosu" width="26" height="26">
+      <span>ServisCEP · <a href="https://cicibyte.com" target="_blank" rel="noopener">Cicibyte Teknoloji</a> tarafından geliştirilmiştir</span>
+    </div>
+    <div class="footer-links">
+      <a href="/privacy.html">Gizlilik Politikası</a>
+      <a href="/account-deletion.html">Hesap Silme</a>
+      <a href="mailto:info@cicibyte.com">İletişim</a>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>
