@@ -4,7 +4,9 @@ namespace App\Filament\Resources\PaymentRequests\Tables;
 
 use App\Models\AdminUser;
 use App\Models\PaymentRequest;
+use App\Models\Plan;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -29,6 +31,11 @@ class PaymentRequestsTable
                 TextColumn::make('plan.name')
                     ->label('Talep edilen paket')
                     ->badge()
+                    ->placeholder('—'),
+                TextColumn::make('approvedPlan.name')
+                    ->label('Onaylanan paket')
+                    ->badge()
+                    ->color('success')
                     ->placeholder('—'),
                 TextColumn::make('claimed_amount_minor')
                     ->label('Beyan edilen tutar')
@@ -73,8 +80,24 @@ class PaymentRequestsTable
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (PaymentRequest $record) => $record->status === 'PENDING')
-                    ->requiresConfirmation()
-                    ->schema([
+                    ->schema(fn (PaymentRequest $record) => [
+                        Placeholder::make('summary')
+                            ->label('Talep Özeti')
+                            ->content(sprintf(
+                                'Talep edilen paket: %s  ·  Beyan edilen tutar: %s%s',
+                                $record->plan?->name ?? 'Belirtilmemiş',
+                                $record->claimed_amount_minor !== null
+                                    ? number_format($record->claimed_amount_minor / 100, 2, ',', '.').' ₺'
+                                    : '—',
+                                $record->customer_note ? "\nMüşteri notu: {$record->customer_note}" : '',
+                            )),
+                        Select::make('approved_plan_id')
+                            ->label('Onaylanacak Paket')
+                            ->helperText('Müşterinin talebiyle aynı olmak zorunda değil — gönderilen tutar farklı bir pakete karşılık geliyorsa burada düzeltin.')
+                            ->options(fn () => Plan::query()->where('is_active', true)->pluck('name', 'id'))
+                            ->default($record->plan_id)
+                            ->required()
+                            ->native(false),
                         Select::make('duration')
                             ->label('Aktivasyon Süresi')
                             ->options(['MONTHLY' => '1 Ay', 'YEARLY' => '1 Yıl'])
@@ -86,7 +109,7 @@ class PaymentRequestsTable
                     ->action(function (PaymentRequest $record, array $data): void {
                         /** @var AdminUser $admin */
                         $admin = auth('admin')->user();
-                        $record->approve($data['duration'], $admin, $data['note'] ?? null);
+                        $record->approve($data['duration'], $admin, $data['note'] ?? null, $data['approved_plan_id']);
 
                         Notification::make()
                             ->title('Ödeme onaylandı, abonelik güncellendi')

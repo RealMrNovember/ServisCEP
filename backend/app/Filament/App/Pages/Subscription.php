@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Pages;
 
+use App\Models\Company;
 use App\Models\PaymentRequest;
 use App\Models\Plan;
 use App\Models\Setting;
@@ -44,6 +45,27 @@ class Subscription extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill();
+    }
+
+    public function selectPlan(string $planId): void
+    {
+        $this->data['plan_id'] = $planId;
+
+        $this->dispatch('plan-selected');
+    }
+
+    public function getPlans(): Collection
+    {
+        return Plan::query()
+            ->where('is_active', true)
+            ->where('slug', '!=', 'deneme')
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    public function getCurrentCompany(): Company
+    {
+        return Filament::auth()->user()->company;
     }
 
     public function form(Schema $schema): Schema
@@ -115,7 +137,7 @@ class Subscription extends Page implements HasForms
     {
         $companyId = Filament::auth()->user()->company_id;
 
-        return PaymentRequest::with('plan')
+        return PaymentRequest::with(['plan', 'approvedPlan'])
             ->where('company_id', $companyId)
             ->orderByDesc('created_at')
             ->limit(20)

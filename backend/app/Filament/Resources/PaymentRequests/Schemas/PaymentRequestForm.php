@@ -22,6 +22,10 @@ class PaymentRequestForm
                     ->label('Talep edilen paket')
                     ->relationship('plan', 'name')
                     ->disabled(),
+                Select::make('approved_plan_id')
+                    ->label('Onaylanan paket')
+                    ->relationship('approvedPlan', 'name')
+                    ->disabled(),
                 TextInput::make('claimed_amount_minor')
                     ->label('Beyan edilen tutar (kuruş)')
                     ->numeric()
