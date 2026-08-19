@@ -30,6 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('ServisCEP Admin')
             ->authGuard('admin')
             ->login()
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->colors([
                 'primary' => Color::Blue,
             ])

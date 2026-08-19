@@ -21,7 +21,7 @@
             <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-4">
                     <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                        <x-heroicon-o-shield-check class="h-7 w-7" />
+                        <x-filament::icon icon="heroicon-o-shield-check" class="h-7 w-7" />
                     </div>
                     <div>
                         <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Aktif Paketiniz</div>
@@ -111,7 +111,7 @@
 
                     <div class="flex items-center gap-3">
                         <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                            <x-dynamic-component :component="$icon" class="h-6 w-6" />
+                            <x-filament::icon :icon="$icon" class="h-6 w-6" />
                         </div>
                         <div class="text-lg font-bold">{{ $plan->name }}</div>
                     </div>
@@ -138,12 +138,12 @@
                     <ul class="mt-4 flex-1 space-y-2.5">
                         @foreach ($parsed['features'] as $feature)
                             <li class="flex items-start gap-x-2 text-sm text-gray-600 dark:text-gray-300">
-                                <x-heroicon-o-check-circle class="mt-0.5 h-4 w-4 shrink-0 text-success-500" />
+                                <x-filament::icon icon="heroicon-o-check-circle" class="mt-0.5 h-4 w-4 shrink-0 text-success-500" />
                                 <span>{{ $feature }}</span>
                             </li>
                         @endforeach
                         <li class="flex items-start gap-x-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                            <x-heroicon-o-users class="mt-0.5 h-4 w-4 shrink-0 text-primary-500" />
+                            <x-filament::icon icon="heroicon-o-users" class="mt-0.5 h-4 w-4 shrink-0 text-primary-500" />
                             <span>{{ $plan->max_users ? "Maksimum {$plan->max_users} kullanıcı" : 'Sınırsız kullanıcı' }}</span>
                         </li>
                     </ul>
@@ -164,7 +164,7 @@
     <x-filament::section>
         <x-slot name="heading">
             <div class="flex items-center gap-x-2">
-                <x-heroicon-o-banknotes class="h-5 w-5 text-primary-500" />
+                <x-filament::icon icon="heroicon-o-banknotes" class="h-5 w-5 text-primary-500" />
                 <span>Havale/EFT Bilgileri</span>
             </div>
         </x-slot>
@@ -187,8 +187,12 @@
                             class="text-gray-400 hover:text-primary-500"
                             title="Kopyala"
                         >
-                            <x-heroicon-o-clipboard-document x-show="!copied" class="h-4 w-4" />
-                            <x-heroicon-o-check class="h-4 w-4 text-success-500" x-show="copied" x-cloak />
+                            <span x-show="!copied">
+                                <x-filament::icon icon="heroicon-o-clipboard-document" class="h-4 w-4" />
+                            </span>
+                            <span x-show="copied" x-cloak>
+                                <x-filament::icon icon="heroicon-o-check" class="h-4 w-4 text-success-500" />
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -214,7 +218,7 @@
         <x-filament::section>
             <x-slot name="heading">
                 <div class="flex items-center gap-x-2">
-                    <x-heroicon-o-paper-airplane class="h-5 w-5 text-primary-500" />
+                    <x-filament::icon icon="heroicon-o-paper-airplane" class="h-5 w-5 text-primary-500" />
                     <span>Yeni Ödeme Talebi</span>
                 </div>
             </x-slot>
@@ -238,7 +242,7 @@
     <x-filament::section heading="Geçmiş Ödeme Talepleri">
         @if ($requests->isEmpty())
             <div class="flex flex-col items-center justify-center py-8 text-center">
-                <x-heroicon-o-inbox class="h-10 w-10 text-gray-300 dark:text-gray-600" />
+                <x-filament::icon icon="heroicon-o-inbox" class="h-10 w-10 text-gray-300 dark:text-gray-600" />
                 <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">Henüz bir ödeme talebiniz yok.</p>
             </div>
         @else

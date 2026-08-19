@@ -73,3 +73,8 @@ npm-debug.log*
 # ─── Build / Dist ──────────────────────────────────────
 dist/
 build/
+# Filament panel'lerinin özel Tailwind derlemesi — sunucuda Node.js
+# sürümü yetersiz olduğu için (bkz. deploy notları) bu çıktı commit
+# edilir; local'de `npm run build` ile yeniden üretilebilir.
+!backend/public/build/
+!backend/public/build/**
