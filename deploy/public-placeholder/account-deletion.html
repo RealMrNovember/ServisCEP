@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>ServisCEP — Hesap ve Veri Silme</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0b1120;
+    --fg: #e5e9f2;
+    --muted: #8892a6;
+    --accent: #3B82F6;
+    --card: #121a2b;
+    --border: #202b42;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, #16213d 0%, var(--bg) 60%);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 24px;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 40px 64px;
+  }
+  .logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: block;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: 30px;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .updated {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 40px;
+  }
+  h2 {
+    font-size: 18px;
+    margin: 36px 0 12px;
+    color: var(--fg);
+  }
+  p, li {
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  ol, ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--fg); }
+  a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  a:hover { text-decoration: underline; }
+  .card {
+    margin-top: 32px;
+    padding: 20px 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .mail-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 14px 28px;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+  .mail-btn:hover { opacity: 0.9; text-decoration: none; }
+  footer {
+    margin-top: 48px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="logo" src="/logo.png" alt="ServisCEP logosu" width="56" height="56">
+    <h1>Hesap ve Veri Silme</h1>
+    <p class="updated">Son güncelleme: 19 Ağustos 2026</p>
+
+    <p>ServisCEP kullanıcıları, hesaplarını ve hesaplarıyla ilişkili tüm verileri
+    silme talebinde bulunabilir. Bu sayfa, talebin nasıl iletileceğini ve
+    silme sürecinde neler olacağını açıklar.</p>
+
+    <h2>Silme talebi nasıl gönderilir</h2>
+    <ol>
+      <li>Uygulamaya kayıtlı e-posta adresinizden <a href="mailto:info@cicibyte.com?subject=ServisCEP%20Hesap%20Silme%20Talebi">info@cicibyte.com</a>
+      adresine "Hesap Silme Talebi" konu başlığıyla bir e-posta gönderin.</li>
+      <li>E-postada şirket adınızı ve uygulamaya kayıtlı e-posta adresinizi belirtin.</li>
+      <li>Talebiniz, kimliğiniz e-posta üzerinden doğrulandıktan sonra
+      <strong>en geç 30 gün içinde</strong> işleme alınır ve size onay
+      e-postası gönderilir.</li>
+    </ol>
+
+    <div class="card">
+      <p style="margin:0 0 12px"><strong>Hızlı erişim:</strong></p>
+      <a class="mail-btn" href="mailto:info@cicibyte.com?subject=ServisCEP%20Hesap%20Silme%20Talebi">
+        Silme talebi e-postası gönder
+      </a>
+    </div>
+
+    <h2>Hangi veriler silinir</h2>
+    <p>Talebiniz onaylandığında, hesabınızla ilişkili aşağıdaki tüm veriler
+    kalıcı olarak silinir:</p>
+    <ul>
+      <li>Hesap bilgileri (ad soyad, e-posta, telefon, şirket bilgileri)</li>
+      <li>Müşteri kayıtları (yetkili adı/firma adı, iletişim bilgileri, adres, IBAN)</li>
+      <li>İş/servis kayıtları, fotoğraflar ve dijital imzalar</li>
+      <li>Teklif, proforma ve finansal kayıtlar (tahsilat, gelir/gider, cari hesap hareketleri)</li>
+    </ul>
+
+    <h2>Hangi veriler saklanabilir</h2>
+    <p>Yürürlükteki mevzuat gereği (örn. faturalandırma/muhasebe kayıtlarının
+    yasal saklama süresi) bazı finansal kayıtların belirli bir süre saklanması
+    gerekebilir. Böyle bir zorunluluk yoksa, talep edilen tüm veriler tamamen
+    silinir. Cihaz üzerinde yerel olarak tutulan veriler, uygulamanın
+    kaldırılmasıyla cihazdan da silinir.</p>
+
+    <div class="card">
+      <p style="margin:0">Sorularınız için <a href="mailto:info@cicibyte.com">info@cicibyte.com</a>
+      üzerinden bize ulaşabilirsiniz. Ayrıca bkz.
+      <a href="/privacy.html">Gizlilik Politikası</a>.</p>
+    </div>
+  </div>
+
+  <footer>
+    ServisCEP · <a href="https://cicibyte.com" target="_blank" rel="noopener">Cicibyte Teknoloji</a> tarafından geliştirilmiştir
+  </footer>
+</body>
+</html>
