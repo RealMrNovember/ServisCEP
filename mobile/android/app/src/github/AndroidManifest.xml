@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Yalnızca GitHub Releases (Play dışı) dağıtım kanalı için — uygulama
+         içi APK indirme/kurulum özelliği bu izni gerektirir (bkz. docs/06,
+         core/services/apk_updater.dart). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+</manifest>

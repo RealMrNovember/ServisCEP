@@ -36,6 +36,23 @@ android {
         versionName = flutter.versionName
     }
 
+    // Dağıtım kanalına göre iki flavor — bkz. docs/06 § Mobil Uygulama
+    // Otomatik Güncelleme. "github" flavor'ı REQUEST_INSTALL_PACKAGES iznini
+    // içerir (uygulama içi APK indirme/kurulum için); "play" flavor'ı bu
+    // izne sahip DEĞİLDİR, çünkü Play Store sürümü resmi Play In-App Update
+    // API'sini kullanır ve bu izin için Google'a ayrıca beyan sunmaya gerek
+    // kalmaz. applicationId her iki flavor'da da aynı kalır (paket adı
+    // değişmez).
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("github") {
+            dimension = "distribution"
+        }
+        create("play") {
+            dimension = "distribution"
+        }
+    }
+
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
             create("release") {
