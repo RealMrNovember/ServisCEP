@@ -21,6 +21,21 @@
 /public/js/filament
 /public/fonts/filament
 /public/storage
+
+# Sunucuda docRoot backend/public'e taşındığında, tanıtım/showcase
+# statik dosyaları repo kökünden buraya sembolik link ile bağlanır
+# (bkz. deploy notları) — bu yüzden burada takip edilmezler.
+/public/favicon.ico
+/public/robots.txt
+/public/index.html
+/public/privacy.html
+/public/account-deletion.html
+/public/logo.png
+/public/apple-touch-icon.png
+/public/404.html
+/public/502.html
+/public/assets
+/public/.well-known
 /storage/*.key
 /storage/pail
 /vendor
