@@ -36,6 +36,8 @@ class PersonnelResource extends Resource
 
     protected static ?int $navigationSort = 9;
 
+    protected static ?string $slug = 'personel';
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
