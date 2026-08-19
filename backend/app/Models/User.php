@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasName;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,7 +15,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['company_id', 'full_name', 'email', 'phone', 'password', 'google_id', 'role'])]
 #[Hidden(['password', 'remember_token', 'google_id'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser, HasName
 {
     use HasApiTokens, HasUuids, Notifiable;
 
@@ -30,5 +33,15 @@ class User extends Authenticatable
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $panel->getId() === 'app';
+    }
+
+    public function getFilamentName(): string
+    {
+        return $this->full_name;
     }
 }

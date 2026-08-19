@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    // Web (Filament tenant panel) Google Sign-In — bkz. docs/09 § 0.
+    // ⚠️ Mobil tarafta ayrı bir "Android" tipi OAuth client kullanılır,
+    // bu web client'tan farklıdır. Client ID/secret asla repoya commit
+    // edilmez, yalnızca sunucu .env dosyasında tutulur.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
 ];

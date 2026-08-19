@@ -8,6 +8,7 @@ Desktop.ini
 .idea/
 *.swp
 *.swo
+.claude/
 
 # ─── Environment & Secrets ────────────────────────────
 .env

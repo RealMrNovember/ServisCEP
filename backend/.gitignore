@@ -17,6 +17,9 @@
 /public/build
 /public/fonts-manifest.dev.json
 /public/hot
+/public/css/filament
+/public/js/filament
+/public/fonts/filament
 /public/storage
 /storage/*.key
 /storage/pail
