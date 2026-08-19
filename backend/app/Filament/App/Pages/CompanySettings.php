@@ -75,6 +75,8 @@ class CompanySettings extends Page implements HasForms
                         Textarea::make('business_types')
                             ->label('İşletme Türleri')
                             ->helperText('Örn. Klima Montaj/Servis, Beyaz Eşya Servisi')
+                            ->default('')
+                            ->dehydrateStateUsing(fn (?string $state) => $state ?? '')
                             ->columnSpanFull(),
                     ]),
             ])
