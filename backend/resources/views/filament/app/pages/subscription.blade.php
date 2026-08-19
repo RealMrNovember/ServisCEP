@@ -148,13 +148,23 @@
                         </li>
                     </ul>
 
-                    <x-filament::button
-                        :color="$isCurrent ? 'gray' : 'primary'"
-                        class="mt-6 w-full justify-center"
-                        wire:click="selectPlan('{{ $plan->id }}')"
-                    >
-                        {{ $isCurrent ? 'Bu Paketi Yenile' : 'Bu Paketi Seç' }}
-                    </x-filament::button>
+                    <div class="mt-6 grid grid-cols-2 gap-2">
+                        <x-filament::button
+                            :color="$isCurrent ? 'gray' : 'primary'"
+                            outlined
+                            class="justify-center"
+                            wire:click="selectPlan('{{ $plan->id }}', 'MONTHLY')"
+                        >
+                            Aylık Seç
+                        </x-filament::button>
+                        <x-filament::button
+                            :color="$isCurrent ? 'gray' : 'primary'"
+                            class="justify-center"
+                            wire:click="selectPlan('{{ $plan->id }}', 'YEARLY')"
+                        >
+                            Yıllık Seç
+                        </x-filament::button>
+                    </div>
                 </div>
             @endforeach
         </div>

@@ -16,7 +16,7 @@ class PaymentRequest extends Model
 
     protected $fillable = [
         'company_id', 'requested_by_user_id', 'plan_id', 'approved_plan_id',
-        'claimed_amount_minor', 'customer_note', 'status',
+        'claimed_amount_minor', 'requested_duration', 'customer_note', 'status',
         'approved_duration', 'admin_note', 'reviewed_by_admin_id', 'reviewed_at',
     ];
 

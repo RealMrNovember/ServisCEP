@@ -26,6 +26,9 @@ class PaymentRequestForm
                     ->label('Onaylanan paket')
                     ->relationship('approvedPlan', 'name')
                     ->disabled(),
+                TextInput::make('requested_duration')
+                    ->label('Talep edilen süre')
+                    ->disabled(),
                 TextInput::make('claimed_amount_minor')
                     ->label('Beyan edilen tutar (kuruş)')
                     ->numeric()

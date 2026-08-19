@@ -37,6 +37,13 @@ class PaymentRequestsTable
                     ->badge()
                     ->color('success')
                     ->placeholder('—'),
+                TextColumn::make('requested_duration')
+                    ->label('Talep Edilen Süre')
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'MONTHLY' => 'Aylık',
+                        'YEARLY' => 'Yıllık',
+                        default => '—',
+                    }),
                 TextColumn::make('claimed_amount_minor')
                     ->label('Beyan edilen tutar')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format($state / 100, 2, ',', '.').' ₺'),
@@ -84,8 +91,13 @@ class PaymentRequestsTable
                         Placeholder::make('summary')
                             ->label('Talep Özeti')
                             ->content(sprintf(
-                                'Talep edilen paket: %s  ·  Beyan edilen tutar: %s%s',
+                                'Talep edilen paket: %s  ·  Talep edilen süre: %s  ·  Beyan edilen tutar: %s%s',
                                 $record->plan?->name ?? 'Belirtilmemiş',
+                                match ($record->requested_duration) {
+                                    'MONTHLY' => 'Aylık',
+                                    'YEARLY' => 'Yıllık',
+                                    default => 'Belirtilmemiş',
+                                },
                                 $record->claimed_amount_minor !== null
                                     ? number_format($record->claimed_amount_minor / 100, 2, ',', '.').' ₺'
                                     : '—',
@@ -100,7 +112,9 @@ class PaymentRequestsTable
                             ->native(false),
                         Select::make('duration')
                             ->label('Aktivasyon Süresi')
+                            ->helperText('Müşterinin beyan ettiği tutarla eşleşen süreyi seçin.')
                             ->options(['MONTHLY' => '1 Ay', 'YEARLY' => '1 Yıl'])
+                            ->default($record->requested_duration)
                             ->required()
                             ->native(false),
                         Textarea::make('note')

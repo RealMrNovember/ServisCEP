@@ -47,9 +47,13 @@ class Subscription extends Page implements HasForms
         $this->form->fill();
     }
 
-    public function selectPlan(string $planId): void
+    public function selectPlan(string $planId, ?string $period = null): void
     {
         $this->data['plan_id'] = $planId;
+
+        if ($period) {
+            $this->data['billing_period'] = $period;
+        }
 
         $this->dispatch('plan-selected');
     }
@@ -115,7 +119,17 @@ class Subscription extends Page implements HasForms
                                     number_format($plan->price_yearly_minor / 100, 2, ',', '.'),
                                 )]
                             ))
-                            ->native(false),
+                            ->native(false)
+                            ->required(),
+                        Select::make('billing_period')
+                            ->label('Ödeme Periyodu')
+                            ->helperText('Aylık mı yıllık mı ödeme yaptınız?')
+                            ->options([
+                                'MONTHLY' => 'Aylık',
+                                'YEARLY' => 'Yıllık',
+                            ])
+                            ->native(false)
+                            ->required(),
                         TextInput::make('claimed_amount_tl')
                             ->label('Yatırdığınız tutar (₺)')
                             ->numeric()
@@ -139,6 +153,7 @@ class Subscription extends Page implements HasForms
             'company_id' => $user->company_id,
             'requested_by_user_id' => $user->id,
             'plan_id' => $data['plan_id'] ?? null,
+            'requested_duration' => $data['billing_period'] ?? null,
             'claimed_amount_minor' => filled($data['claimed_amount_tl'] ?? null) ? (int) round($data['claimed_amount_tl'] * 100) : null,
             'customer_note' => $data['customer_note'] ?? null,
             'status' => 'PENDING',
