@@ -45,15 +45,36 @@ gerçek kullanımı                                   derinlik      genişleme  
 
 ---
 
+## Backend Mimarisi — Güncel Durum (2026-08-21)
+
+> Bu bölüm, Phase 3'ün gerçek durumunu yansıtır — aşağıdaki "Faz Sırası" tablosundaki Phase 3 satırı artık **güncel değildir**, bilgi burada tutulur.
+
+Backend, iki katmanlı olarak ilerliyor ve **her ikisi de kalıcı, birbirini tamamlayan parçalar** (biri diğerinin yerine geçmiyor):
+
+1. **Filament tabanlı web/admin paneli** — şirket (tenant) paneli (`/panel`) ve admin paneli, Companies/Customers/Jobs/Quotes/Proformas/Products/Warranties/Personnel/Plans/PaymentRequests/Settings kaynakları, abonelik sistemi (14 günlük deneme + admin onaylı ödeme talebi), Google OAuth web akışı. Bu katman zaten oldukça olgun; docRoot ve production HTTPS ayarları yapılmış durumda.
+2. **Mobil için JSON REST API** (`/api/v1/*`, Sanctum token) — 2026-08-21'de eklenmeye başlandı. Web panelinin kullandığı **aynı veri modelini** (Company/Customer/Job/...) tüketir, ayrı bir veri kopyası değildir.
+
+| # | Adım | Kapsam | Durum |
+|---|---|---|---|
+| **B1** | Test altyapısı | `phpunit.xml` (sqlite in-memory), Docker üzerinden çalıştırma (bkz. [backend/README.md](backend/README.md)) | ✅ Tamamlandı ve doğrulandı |
+| **B2** | API routing + Sanctum wiring | `routes/api.php`, `bootstrap/app.php`'de `api:` girişi | ✅ Tamamlandı ve doğrulandı |
+| **B3** | Authentication API | Register (web'deki `RegisterCompany` ile aynı `Company::startTrial()` akışı), Login, Logout, Me | ✅ Tamamlandı ve doğrulandı (24/24 test yeşil — kayıt sonrası hemen giriş dahil, çifte parola hash'leme riskine karşı regresyon testi eklendi) |
+| **B4** | Customer API + izolasyon testi | `/api/v1/customers` CRUD, `CustomerPolicy`, iki şirketin verisinin karışmadığını kanıtlayan testler | ✅ Tamamlandı ve doğrulandı |
+| **B5** | Authorization katmanı (genişletme) | `CustomerPolicy` kalıbı kuruldu; diğer kaynaklara B6+ ile tekrarlanacak | 🟡 Kalıp hazır |
+| **B6** | ServiceRequest + Job API | Mobil senkron için (web panelinde zaten Filament resource olarak var, mobile REST karşılığı eksik) | Sırada |
+| **B7** | Servis formu + medya API | JobNote/JobPhoto/JobSignature upload, dosya erişim kontrolü (bkz. docs/09 §3) | Sırada |
+| **B8** | Ticari belge + finans API | Quote/Proforma/Payment/Income/Expense/CustomerLedgerEntry | Sırada |
+| **B9** | Senkronizasyon motoru | Sync queue, conflict handling (Phase 16-17) | Sırada |
+
 ## MVP — Faz Sırası (Phase 1–20)
 
-> **Öncelik notu (2026-08-18):** Kullanıcı kararıyla **mobil uygulama backend'den daha yüksek öncelikli**. Backend (Phase 3) şimdilik yalnızca temel/çalışır iskelet düzeyinde tutulacak; asıl derinlik Flutter tarafında (Phase 4+) ilerleyecek. Bu, Sprint gruplamasını değil, faz içi efor dağılımını etkiler. Bugünkü yürütme sırası için bkz. yukarıdaki **BUGÜN — Mobil Tamamlama Planı**.
+> **Öncelik notu (2026-08-18, kısmen güncel değil):** Bu notun yazıldığı tarihte backend gerçekten temel iskeletti; artık değil (yukarıdaki bölüme bakın). Mobil hâlâ birincil kullanıcı deneyimi olmaya devam ediyor, ama backend artık paralel, aktif geliştirilen bir katman.
 
 | Faz | Kapsam | Sprint | Durum |
 |---|---|---|---|
 | **1** | Project Architecture — repo yapısı, ortam kurulumu, temel konvansiyonlar | Sprint 1 | ✅ Tamamlandı |
-| **2** | Database Schema — PostgreSQL şeması, migration altyapısı (bkz. [docs/07](docs/07-api-ve-veritabani.md)) | Sprint 1 | Sırada |
-| **3** | Laravel API Foundation — proje iskeleti, katman yapısı (bkz. [docs/06 § Backend](docs/06-teknik-mimari.md#7-backend-yapısı-laravel)) | Sprint 1 | 🟡 Temel iskelet hazır, derinlik ertelendi |
+| **2** | Database Schema — PostgreSQL şeması, migration altyapısı (bkz. [docs/07](docs/07-api-ve-veritabani.md)) | Sprint 1 | ✅ Tamamlandı |
+| **3** | Laravel API Foundation — proje iskeleti, katman yapısı (bkz. [docs/06 § Backend](docs/06-teknik-mimari.md#7-backend-yapısı-laravel)) | Sprint 1 | 🟡 Derinleşiyor — bkz. yukarıdaki **Backend Mimarisi — Güncel Durum** |
 | **4** | Flutter Foundation — proje iskeleti, state management/routing seçimi | Sprint 1 | 🟡 Temel + M0-M8 tamamlandı, **v0.2.0 yayınlandı** (auth, müşteri, iş, talep, stok/barkod, foto/imza) |
 | **5** | Authentication — token tabanlı kimlik doğrulama | Sprint 1 |
 | **6** | Company Profile — şirket/kullanıcı kurulumu, `company_id` izolasyonunun temeli | Sprint 1 |

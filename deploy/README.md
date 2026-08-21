@@ -29,8 +29,13 @@ Script:
 
 Script **yalnızca kendi site dizinine dokunur** — sunucudaki başka hiçbir site veya servisi etkilemez.
 
-## Backend Devreye Girdiğinde Yapılacaklar (Phase 3+)
+## Backend Devreye Alma — Durum (2026-08-21)
 
-- nginx `root` yönergesi `/www/wwwroot/serviscep.cicibyte.com` yerine `/www/wwwroot/serviscep.cicibyte.com/backend/public` olarak güncellenmelidir (yalnızca bu sitenin nginx conf dosyası değişir).
-- `backend/.env` dosyası, sunucudaki veritabanı kimlik bilgileriyle (root-only saklanan dosyadan) doldurulmalıdır — bu dosya **asla** git'e commitlenmez (`.gitignore` içinde zaten hariç tutulmuştur).
-- `deploy.sh` içindeki yorumlanmış composer/artisan adımları etkinleştirilmelidir.
+Aşağıdaki adımların hepsi **tamamlandı**, backend (Filament admin+web paneli) production'da canlı:
+
+- nginx `root` yönergesi `/www/wwwroot/serviscep.cicibyte.com/backend/public` olarak ayarlı (`/panel` ve `/admin` gerçek login sayfalarına yönleniyor).
+- `backend/.env` sunucuda mevcut, gerçek PostgreSQL kimlik bilgileriyle dolu (bu dosya **asla** git'e commitlenmez).
+- `deploy/apply.sh` içindeki composer/migration/cache adımları etkinleştirildi.
+- Tüm migration'lar production'da çalıştırılmış durumda (bkz. `php artisan migrate:status`).
+
+**Kalıcı kural:** Zaten production'da çalıştırılmış bir migration dosyası **asla düzenlenmez** — `php artisan migrate` onu atlar, değişiklik hiçbir yere ulaşmaz. Şema düzeltmesi gerekiyorsa her zaman **yeni bir migration** yazılır (örnek: [2026_08_21_100001_fix_personal_access_tokens_tokenable_id_to_uuid.php](../backend/database/migrations/2026_08_21_100001_fix_personal_access_tokens_tokenable_id_to_uuid.php)).

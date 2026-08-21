@@ -19,20 +19,20 @@ cp -f deploy/public-placeholder/favicon.ico favicon.ico
 cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png
 cp -f deploy/public-placeholder/logo.png logo.png
 
-# ── Backend (Laravel) devreye girdiğinde aşağıdaki adımlar açılacak ──
-# if [ -f backend/artisan ]; then
-#   echo "==> Composer bağımlılıkları"
-#   (cd backend && composer install --no-dev --optimize-autoloader)
-#
-#   echo "==> Migration"
-#   (cd backend && php artisan migrate --force)
-#
-#   echo "==> Config/route/view cache"
-#   (cd backend && php artisan config:cache && php artisan route:cache && php artisan view:cache)
-#
-#   echo "==> Storage symlink"
-#   (cd backend && php artisan storage:link || true)
-# fi
+# ── Backend (Laravel + Filament + mobil API) — canlıya alındı (2026-08-21) ──
+if [ -f backend/artisan ]; then
+  echo "==> Composer bağımlılıkları"
+  (cd backend && composer install --no-dev --optimize-autoloader)
+
+  echo "==> Migration"
+  (cd backend && php artisan migrate --force)
+
+  echo "==> Config/route/view cache"
+  (cd backend && php artisan config:cache && php artisan route:cache && php artisan view:cache)
+
+  echo "==> Storage symlink"
+  (cd backend && php artisan storage:link || true)
+fi
 
 echo "==> İzinler ayarlanıyor (yalnızca repo dosyaları — aaPanel'in yönettiği"
 echo "    .user.ini / .well-known gibi dosyalara dokunulmaz)"
