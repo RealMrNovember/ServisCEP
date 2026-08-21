@@ -36,6 +36,12 @@ class CustomerCrudTest extends TestCase
             ->assertJsonPath('data.code', 'M-0001')
             ->assertJsonPath('data.display_name', 'Ahmet Yılmaz');
 
+        // created_at, DB'nin useCurrent() varsayılanıyla dolduruluyor
+        // (Customer::$timestamps = false) — controller create() sonrası
+        // modeli refresh() etmezse bu alan yanıtta null döner (gerçek
+        // production bug'ı, smoke test ile bulundu ve düzeltildi).
+        $this->assertNotNull($response->json('data.created_at'));
+
         $this->assertDatabaseHas('customers', [
             'code' => 'M-0001',
             'company_id' => $user->company_id,

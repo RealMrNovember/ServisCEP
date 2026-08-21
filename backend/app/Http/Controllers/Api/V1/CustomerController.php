@@ -43,6 +43,11 @@ class CustomerController extends Controller
 
         $customer = Customer::create($request->validated());
 
+        // created_at, DB'nin useCurrent() varsayılanıyla dolduruluyor
+        // (Customer::$timestamps = false) — bellekteki modelde bu değer
+        // yoktur, refresh() ile DB'den geri okunmalı.
+        $customer->refresh();
+
         return (new CustomerResource($customer))->response()->setStatusCode(201);
     }
 
