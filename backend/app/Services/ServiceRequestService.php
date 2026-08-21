@@ -42,7 +42,11 @@ class ServiceRequestService
                 'converted_job_id' => $job->id,
             ]);
 
-            return $job;
+            // created_at, DB'nin useCurrent() varsayılanıyla doluyor
+            // (Job::$timestamps = false) — bellekteki modelde bu değer
+            // yoktur, refresh() ile DB'den geri okunmalı (bkz.
+            // CustomerController::store() ile aynı hata kalıbı).
+            return $job->refresh();
         });
     }
 }

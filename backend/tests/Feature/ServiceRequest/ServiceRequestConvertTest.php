@@ -39,6 +39,11 @@ class ServiceRequestConvertTest extends TestCase
             ->assertJsonPath('data.address', 'Kadıköy / İstanbul')
             ->assertJsonPath('data.status', 'TALEP');
 
+        // created_at, DB'nin useCurrent() varsayılanıyla doluyor — service
+        // katmanı dönen Job'ı refresh() etmezse null görünür (gerçek
+        // production bug'ı, smoke test ile bulundu ve düzeltildi).
+        $this->assertNotNull($response->json('data.created_at'));
+
         $jobId = $response->json('data.id');
 
         $this->assertDatabaseHas('service_requests', [
