@@ -20,6 +20,7 @@ class StoreProformaRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => ['sometimes', 'uuid'],
             'code' => ['required', 'string', 'max:50'],
             'customer_id' => [
                 'required', 'uuid',
@@ -30,6 +31,7 @@ class StoreProformaRequest extends FormRequest
             'valid_until' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['sometimes', 'uuid'],
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit' => ['nullable', 'string', 'max:20'],

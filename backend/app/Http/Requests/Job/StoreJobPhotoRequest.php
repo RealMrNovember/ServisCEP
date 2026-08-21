@@ -19,6 +19,7 @@ class StoreJobPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => ['sometimes', 'uuid'],
             'category' => ['required', 'string', 'in:ONCESI,ARIZA,MONTAJ,SONRASI,MALZEME,DIGER'],
             'file' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
         ];

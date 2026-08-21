@@ -13,7 +13,7 @@ class JobNote extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['job_id', 'note'];
+    protected $fillable = ['id', 'job_id', 'note'];
 
     protected function casts(): array
     {

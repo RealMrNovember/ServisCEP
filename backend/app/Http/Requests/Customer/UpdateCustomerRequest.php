@@ -19,6 +19,9 @@ class UpdateCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // İstemcinin son gördüğü sürüm — optimistic concurrency için
+            // zorunlu. Bkz. ROADMAP.md § B10, DetectsSyncConflicts.
+            'base_version' => ['required', 'integer', 'min:1'],
             'code' => ['sometimes', 'string', 'max:50'],
             'contact_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'company_name' => ['sometimes', 'nullable', 'string', 'max:255'],

@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
+use App\Http\Concerns\DetectsSyncConflicts;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Job\StoreJobRequest;
 use App\Http\Requests\Job\UpdateJobRequest;
 use App\Http\Resources\JobResource;
+use App\Http\Resources\SyncConflictResource;
 use App\Models\CustomerLedgerEntry;
 use App\Models\Job;
 use App\Services\AuditLogService;
 use App\Services\CustomerLedgerService;
+use App\Services\SyncConflictService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,9 +24,13 @@ use Illuminate\Support\Facades\Gate;
 
 class JobController extends Controller
 {
+    use AcceptsClientGeneratedId;
+    use DetectsSyncConflicts;
+
     public function __construct(
         private readonly CustomerLedgerService $customerLedgerService,
         private readonly AuditLogService $auditLogService,
+        private readonly SyncConflictService $syncConflictService,
     ) {
     }
 
@@ -49,6 +57,10 @@ class JobController extends Controller
     {
         Gate::authorize('create', Job::class);
 
+        if ($existing = $this->findExistingByClientId(Job::class, $request->input('id'))) {
+            return (new JobResource($existing))->response()->setStatusCode(200);
+        }
+
         $job = Job::create($request->validated());
         $job->refresh();
 
@@ -62,14 +74,26 @@ class JobController extends Controller
         return new JobResource($job);
     }
 
-    public function update(UpdateJobRequest $request, Job $job): JobResource
+    public function update(UpdateJobRequest $request, Job $job): JsonResponse
     {
         Gate::authorize('update', $job);
 
+        $data = $request->validated();
+        $baseVersion = $data['base_version'];
+        unset($data['base_version']);
+
+        $conflict = $this->detectVersionConflict(
+            $this->syncConflictService, $request->user(), $job, 'job', $data, $baseVersion
+        );
+
+        if ($conflict) {
+            return (new SyncConflictResource($conflict))->response()->setStatusCode(409);
+        }
+
         $previousStatus = $job->status;
 
-        DB::transaction(function () use ($request, $job) {
-            $job->update($request->validated());
+        DB::transaction(function () use ($data, $job) {
+            $job->update($data);
 
             // İş tamamlandı + gerçek fiyat girildiğinde otomatik BORÇ kaydı
             // — bkz. docs/15 § Otomatik Kayıt Oluşturma. Borç kaynağı
@@ -103,6 +127,6 @@ class JobController extends Controller
             );
         }
 
-        return new JobResource($job);
+        return (new JobResource($job))->response();
     }
 }

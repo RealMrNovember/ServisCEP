@@ -23,7 +23,7 @@ class JobCompletionLedgerTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken);
         $job = Job::factory()->create(['company_id' => $user->company_id, 'status' => 'DEVAM_EDIYOR']);
 
-        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'TAMAMLANDI', 'actual_price_minor' => 150000])
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 1, 'status' => 'TAMAMLANDI', 'actual_price_minor' => 150000])
             ->assertOk();
 
         $this->assertDatabaseHas('customer_ledger_entries', [
@@ -41,7 +41,7 @@ class JobCompletionLedgerTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken);
         $job = Job::factory()->create(['company_id' => $user->company_id, 'status' => 'DEVAM_EDIYOR']);
 
-        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'TAMAMLANDI'])->assertOk();
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 1, 'status' => 'TAMAMLANDI'])->assertOk();
 
         $this->assertDatabaseMissing('customer_ledger_entries', ['reference_type' => 'job', 'reference_id' => $job->id]);
     }
@@ -52,8 +52,10 @@ class JobCompletionLedgerTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken);
         $job = Job::factory()->create(['company_id' => $user->company_id, 'status' => 'DEVAM_EDIYOR']);
 
-        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'TAMAMLANDI'])->assertOk();
-        $this->putJson("/api/v1/jobs/{$job->id}", ['actual_price_minor' => 80000])->assertOk();
+        // Her başarılı güncelleme version'ı artırır (HasVersion) — ikinci
+        // istek bu yüzden base_version=2 göndermeli.
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 1, 'status' => 'TAMAMLANDI'])->assertOk();
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 2, 'actual_price_minor' => 80000])->assertOk();
 
         $this->assertDatabaseHas('customer_ledger_entries', [
             'reference_type' => 'job', 'reference_id' => $job->id, 'amount_minor' => 80000,
@@ -67,8 +69,8 @@ class JobCompletionLedgerTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken);
         $job = Job::factory()->create(['company_id' => $user->company_id, 'status' => 'DEVAM_EDIYOR']);
 
-        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'TAMAMLANDI', 'actual_price_minor' => 150000])->assertOk();
-        $this->putJson("/api/v1/jobs/{$job->id}", ['notes' => 'ek not'])->assertOk();
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 1, 'status' => 'TAMAMLANDI', 'actual_price_minor' => 150000])->assertOk();
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 2, 'notes' => 'ek not'])->assertOk();
 
         $this->assertDatabaseCount('customer_ledger_entries', 1);
     }

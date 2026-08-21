@@ -22,6 +22,7 @@ class StoreIncomeEntryRequest extends FormRequest
         $companyId = $this->user()->company_id;
 
         return [
+            'id' => ['sometimes', 'uuid'],
             'date' => ['nullable', 'date'],
             'description' => ['required', 'string', 'max:255'],
             'customer_id' => [

@@ -19,6 +19,7 @@ class StoreJobSignatureRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => ['sometimes', 'uuid'],
             'signer_name' => ['required', 'string', 'max:255'],
             'file' => ['required', 'file', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
         ];

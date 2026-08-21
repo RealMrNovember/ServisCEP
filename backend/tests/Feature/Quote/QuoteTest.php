@@ -59,7 +59,7 @@ class QuoteTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken);
         $quote = Quote::factory()->create(['company_id' => $user->company_id]);
 
-        $this->putJson("/api/v1/quotes/{$quote->id}", ['status' => 'GONDERILDI'])
+        $this->putJson("/api/v1/quotes/{$quote->id}", ['base_version' => 1, 'status' => 'GONDERILDI'])
             ->assertOk()
             ->assertJsonPath('data.status', 'GONDERILDI');
     }

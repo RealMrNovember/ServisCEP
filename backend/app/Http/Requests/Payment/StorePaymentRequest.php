@@ -22,6 +22,7 @@ class StorePaymentRequest extends FormRequest
         $companyId = $this->user()->company_id;
 
         return [
+            'id' => ['sometimes', 'uuid'],
             'job_id' => [
                 'nullable', 'uuid',
                 Rule::exists('jobs', 'id')->where(fn ($query) => $query->where('company_id', $companyId)),

@@ -84,7 +84,7 @@ class CustomerCrudTest extends TestCase
         $user = $this->actingUser();
         $customer = Customer::factory()->create(['company_id' => $user->company_id]);
 
-        $this->putJson("/api/v1/customers/{$customer->id}", ['phone' => '5559998877'])
+        $this->putJson("/api/v1/customers/{$customer->id}", ['base_version' => 1, 'phone' => '5559998877'])
             ->assertOk()
             ->assertJsonPath('data.phone', '5559998877');
 

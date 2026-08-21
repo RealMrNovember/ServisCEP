@@ -17,11 +17,12 @@ use Illuminate\Support\Facades\Storage;
  */
 class JobMediaService
 {
-    public function storePhoto(Job $job, UploadedFile $file, string $category): JobPhoto
+    public function storePhoto(Job $job, UploadedFile $file, string $category, ?string $id = null): JobPhoto
     {
         $path = $file->store($this->jobDirectory($job).'/photos', 'local');
 
         return JobPhoto::create([
+            'id' => $id,
             'job_id' => $job->id,
             'category' => $category,
             'file_path' => $path,
@@ -34,11 +35,12 @@ class JobMediaService
         $photo->delete();
     }
 
-    public function storeSignature(Job $job, UploadedFile $file, string $signerName): JobSignature
+    public function storeSignature(Job $job, UploadedFile $file, string $signerName, ?string $id = null): JobSignature
     {
         $path = $file->store($this->jobDirectory($job).'/signatures', 'local');
 
         return JobSignature::create([
+            'id' => $id,
             'job_id' => $job->id,
             'signer_name' => $signerName,
             'file_path' => $path,

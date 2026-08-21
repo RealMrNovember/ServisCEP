@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreExpenseEntryRequest;
 use App\Http\Resources\ExpenseEntryResource;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Gate;
 
 class ExpenseEntryController extends Controller
 {
+    use AcceptsClientGeneratedId;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', ExpenseEntry::class);
@@ -29,6 +32,10 @@ class ExpenseEntryController extends Controller
     public function store(StoreExpenseEntryRequest $request): JsonResponse
     {
         Gate::authorize('create', ExpenseEntry::class);
+
+        if ($existing = $this->findExistingByClientId(ExpenseEntry::class, $request->input('id'))) {
+            return (new ExpenseEntryResource($existing))->response()->setStatusCode(200);
+        }
 
         $entry = ExpenseEntry::create($request->validated())->refresh();
 

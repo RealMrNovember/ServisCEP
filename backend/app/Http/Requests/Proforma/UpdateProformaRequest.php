@@ -19,6 +19,7 @@ class UpdateProformaRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'base_version' => ['required', 'integer', 'min:1'],
             'valid_until' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
         ];

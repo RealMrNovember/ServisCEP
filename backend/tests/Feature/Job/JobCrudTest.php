@@ -85,7 +85,7 @@ class JobCrudTest extends TestCase
         $user = $this->actingUser();
         $job = Job::factory()->create(['company_id' => $user->company_id]);
 
-        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'TAMAMLANDI', 'actual_price_minor' => 200000])
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 1, 'status' => 'TAMAMLANDI', 'actual_price_minor' => 200000])
             ->assertOk()
             ->assertJsonPath('data.status', 'TAMAMLANDI')
             ->assertJsonPath('data.actual_price_minor', 200000);
@@ -98,7 +98,7 @@ class JobCrudTest extends TestCase
         $user = $this->actingUser();
         $job = Job::factory()->create(['company_id' => $user->company_id]);
 
-        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'IPTAL'])
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 1, 'status' => 'IPTAL'])
             ->assertOk()
             ->assertJsonPath('data.status', 'IPTAL');
 

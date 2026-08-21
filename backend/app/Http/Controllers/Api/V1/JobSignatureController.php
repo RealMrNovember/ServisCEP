@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Job\StoreJobSignatureRequest;
 use App\Http\Resources\JobSignatureResource;
@@ -18,6 +19,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class JobSignatureController extends Controller
 {
+    use AcceptsClientGeneratedId;
+
     public function __construct(private readonly JobMediaService $jobMediaService)
     {
     }
@@ -33,10 +36,15 @@ class JobSignatureController extends Controller
     {
         Gate::authorize('update', $job);
 
+        if ($existing = $this->findExistingByClientId(JobSignature::class, $request->input('id'))) {
+            return (new JobSignatureResource($existing))->response()->setStatusCode(200);
+        }
+
         $signature = $this->jobMediaService->storeSignature(
             $job,
             $request->file('file'),
-            $request->string('signer_name')->toString()
+            $request->string('signer_name')->toString(),
+            $request->input('id')
         );
 
         return (new JobSignatureResource($signature))->response()->setStatusCode(201);

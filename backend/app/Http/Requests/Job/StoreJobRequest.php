@@ -22,6 +22,7 @@ class StoreJobRequest extends FormRequest
         $companyId = $this->user()->company_id;
 
         return [
+            'id' => ['sometimes', 'uuid'],
             'code' => ['required', 'string', 'max:50'],
             'customer_id' => [
                 'required', 'uuid',

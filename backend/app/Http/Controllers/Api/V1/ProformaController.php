@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
 use App\Http\Concerns\CalculatesDocumentTotal;
+use App\Http\Concerns\DetectsSyncConflicts;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Proforma\StoreProformaRequest;
 use App\Http\Requests\Proforma\UpdateProformaRequest;
 use App\Http\Resources\ProformaResource;
+use App\Http\Resources\SyncConflictResource;
 use App\Models\Proforma;
 use App\Services\AuditLogService;
+use App\Services\SyncConflictService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,10 +23,14 @@ use Illuminate\Support\Facades\Gate;
 
 class ProformaController extends Controller
 {
+    use AcceptsClientGeneratedId;
     use CalculatesDocumentTotal;
+    use DetectsSyncConflicts;
 
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly SyncConflictService $syncConflictService,
+    ) {
     }
 
     public function index(Request $request): AnonymousResourceCollection
@@ -40,6 +48,10 @@ class ProformaController extends Controller
     public function store(StoreProformaRequest $request): JsonResponse
     {
         Gate::authorize('create', Proforma::class);
+
+        if ($existing = $this->findExistingByClientId(Proforma::class, $request->input('id'))) {
+            return (new ProformaResource($existing->load('items')))->response()->setStatusCode(200);
+        }
 
         $data = $request->validated();
         $items = $data['items'];
@@ -73,12 +85,24 @@ class ProformaController extends Controller
         return new ProformaResource($proforma->load('items'));
     }
 
-    public function update(UpdateProformaRequest $request, Proforma $proforma): ProformaResource
+    public function update(UpdateProformaRequest $request, Proforma $proforma): JsonResponse
     {
         Gate::authorize('update', $proforma);
 
-        $proforma->update($request->validated());
+        $data = $request->validated();
+        $baseVersion = $data['base_version'];
+        unset($data['base_version']);
 
-        return new ProformaResource($proforma->load('items'));
+        $conflict = $this->detectVersionConflict(
+            $this->syncConflictService, $request->user(), $proforma, 'proforma', $data, $baseVersion
+        );
+
+        if ($conflict) {
+            return (new SyncConflictResource($conflict))->response()->setStatusCode(409);
+        }
+
+        $proforma->update($data);
+
+        return (new ProformaResource($proforma->load('items')))->response();
     }
 }

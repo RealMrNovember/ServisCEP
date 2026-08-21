@@ -13,7 +13,7 @@ class JobSignature extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['job_id', 'signer_name', 'file_path'];
+    protected $fillable = ['id', 'job_id', 'signer_name', 'file_path'];
 
     protected function casts(): array
     {

@@ -19,6 +19,7 @@ class UpdateServiceRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'base_version' => ['required', 'integer', 'min:1'],
             'description' => ['sometimes', 'string'],
             'priority' => ['sometimes', 'string', 'in:YUKSEK,NORMAL,DUSUK'],
             'address' => ['sometimes', 'nullable', 'string'],

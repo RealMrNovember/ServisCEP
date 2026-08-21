@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProformaController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
+use App\Http\Controllers\Api\V1\SyncConflictController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
@@ -42,6 +43,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        Route::apiResource('sync-conflicts', SyncConflictController::class)->only(['index']);
+        Route::post('sync-conflicts/{syncConflict}/resolve', [SyncConflictController::class, 'resolve'])
+            ->name('sync-conflicts.resolve');
+
+        // Not: /customers/trash, {customer} joker parametresiyle çakışmaması
+        // için apiResource'tan ÖNCE tanımlanmalı (Laravel ilk eşleşeni kullanır).
+        Route::get('customers/trash', [CustomerController::class, 'trashed'])->name('customers.trashed');
+        Route::post('customers/{customer}/restore', [CustomerController::class, 'restore'])->name('customers.restore');
 
         Route::apiResource('customers', CustomerController::class);
 

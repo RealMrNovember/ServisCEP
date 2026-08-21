@@ -19,6 +19,7 @@ class UpdateQuoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'base_version' => ['required', 'integer', 'min:1'],
             'status' => ['sometimes', 'string', 'in:TASLAK,GONDERILDI,BEKLEMEDE,KABUL_EDILDI,REDDEDILDI,SURESI_DOLDU'],
             'notes' => ['sometimes', 'nullable', 'string'],
         ];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Job\StoreJobNoteRequest;
 use App\Http\Resources\JobNoteResource;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Gate;
 
 class JobNoteController extends Controller
 {
+    use AcceptsClientGeneratedId;
+
     public function index(Job $job): AnonymousResourceCollection
     {
         Gate::authorize('view', $job);
@@ -26,6 +29,10 @@ class JobNoteController extends Controller
     public function store(StoreJobNoteRequest $request, Job $job): JsonResponse
     {
         Gate::authorize('update', $job);
+
+        if ($existing = $this->findExistingByClientId(JobNote::class, $request->input('id'))) {
+            return (new JobNoteResource($existing))->response()->setStatusCode(200);
+        }
 
         $note = $job->jobNotes()->create($request->validated());
         $note->refresh();

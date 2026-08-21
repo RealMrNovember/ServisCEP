@@ -20,6 +20,9 @@ class StoreCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Mobil offline oluşturduğu kaydın UUID'sini korur — bkz.
+            // ROADMAP.md § B10, AcceptsClientGeneratedId.
+            'id' => ['sometimes', 'uuid'],
             'code' => ['required', 'string', 'max:50'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],

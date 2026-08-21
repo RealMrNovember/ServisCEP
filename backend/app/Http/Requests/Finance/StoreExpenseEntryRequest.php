@@ -19,6 +19,7 @@ class StoreExpenseEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => ['sometimes', 'uuid'],
             'date' => ['nullable', 'date'],
             'description' => ['required', 'string', 'max:255'],
             'category' => ['required', 'string', 'in:Malzeme,Yakıt,Araç,Kargo,Telefon,İnternet,Ekipman,Ofis,Personel,Diğer'],

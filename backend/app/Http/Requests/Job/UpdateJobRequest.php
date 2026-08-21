@@ -22,6 +22,7 @@ class UpdateJobRequest extends FormRequest
         $companyId = $this->user()->company_id;
 
         return [
+            'base_version' => ['required', 'integer', 'min:1'],
             'customer_id' => [
                 'sometimes', 'uuid',
                 Rule::exists('customers', 'id')->where(fn ($query) => $query->where('company_id', $companyId)),

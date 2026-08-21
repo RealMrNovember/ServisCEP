@@ -20,6 +20,7 @@ class StoreServiceRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => ['sometimes', 'uuid'],
             'code' => ['required', 'string', 'max:50'],
             'customer_id' => [
                 'required', 'uuid',

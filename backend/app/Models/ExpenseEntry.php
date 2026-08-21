@@ -14,7 +14,7 @@ class ExpenseEntry extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'company_id', 'date', 'description', 'category', 'amount_minor',
+        'id', 'company_id', 'date', 'description', 'category', 'amount_minor',
         'vendor_name', 'receipt_photo_path', 'method', 'note',
     ];
 

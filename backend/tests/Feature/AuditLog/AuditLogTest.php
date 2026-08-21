@@ -56,7 +56,7 @@ class AuditLogTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken);
         $job = Job::factory()->create(['company_id' => $user->company_id, 'status' => 'DEVAM_EDIYOR']);
 
-        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'TAMAMLANDI', 'actual_price_minor' => 50000])
+        $this->putJson("/api/v1/jobs/{$job->id}", ['base_version' => 1, 'status' => 'TAMAMLANDI', 'actual_price_minor' => 50000])
             ->assertOk();
 
         $this->assertDatabaseHas('audit_logs', [

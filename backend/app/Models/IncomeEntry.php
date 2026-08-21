@@ -15,7 +15,7 @@ class IncomeEntry extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'company_id', 'date', 'description', 'customer_id', 'job_id',
+        'id', 'company_id', 'date', 'description', 'customer_id', 'job_id',
         'category', 'amount_minor', 'method', 'note',
     ];
 

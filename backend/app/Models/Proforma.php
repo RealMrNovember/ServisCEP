@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\HasVersion;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,11 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Proforma extends Model
 {
-    use BelongsToCompany, HasFactory, HasUuids;
+    use BelongsToCompany, HasFactory, HasUuids, HasVersion;
 
     public $timestamps = false;
 
-    protected $fillable = ['company_id', 'code', 'customer_id', 'valid_until', 'notes', 'total_minor'];
+    protected $fillable = ['id', 'company_id', 'code', 'customer_id', 'valid_until', 'notes', 'total_minor'];
 
     protected function casts(): array
     {
@@ -23,6 +24,7 @@ class Proforma extends Model
             'valid_until' => 'datetime',
             'created_at' => 'datetime',
             'total_minor' => 'integer',
+            'version' => 'integer',
         ];
     }
 

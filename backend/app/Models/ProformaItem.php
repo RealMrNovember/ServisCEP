@@ -14,7 +14,7 @@ class ProformaItem extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'proforma_id', 'description', 'quantity', 'unit',
+        'id', 'proforma_id', 'description', 'quantity', 'unit',
         'unit_price_minor', 'tax_rate', 'discount_minor',
     ];
 

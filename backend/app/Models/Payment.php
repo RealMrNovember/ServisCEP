@@ -14,7 +14,7 @@ class Payment extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['company_id', 'customer_id', 'job_id', 'amount_minor', 'method', 'date', 'note'];
+    protected $fillable = ['id', 'company_id', 'customer_id', 'job_id', 'amount_minor', 'method', 'date', 'note'];
 
     protected function casts(): array
     {

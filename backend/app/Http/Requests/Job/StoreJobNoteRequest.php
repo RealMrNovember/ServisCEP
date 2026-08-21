@@ -19,6 +19,7 @@ class StoreJobNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => ['sometimes', 'uuid'],
             'note' => ['required', 'string'],
         ];
     }

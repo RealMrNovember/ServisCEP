@@ -13,7 +13,7 @@ class JobPhoto extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['job_id', 'category', 'file_path'];
+    protected $fillable = ['id', 'job_id', 'category', 'file_path'];
 
     protected function casts(): array
     {

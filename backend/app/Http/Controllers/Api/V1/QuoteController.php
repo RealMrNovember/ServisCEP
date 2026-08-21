@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
 use App\Http\Concerns\CalculatesDocumentTotal;
+use App\Http\Concerns\DetectsSyncConflicts;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Quote\StoreQuoteRequest;
 use App\Http\Requests\Quote\UpdateQuoteRequest;
 use App\Http\Resources\QuoteResource;
+use App\Http\Resources\SyncConflictResource;
 use App\Models\Quote;
 use App\Services\AuditLogService;
+use App\Services\SyncConflictService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,10 +23,14 @@ use Illuminate\Support\Facades\Gate;
 
 class QuoteController extends Controller
 {
+    use AcceptsClientGeneratedId;
     use CalculatesDocumentTotal;
+    use DetectsSyncConflicts;
 
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly SyncConflictService $syncConflictService,
+    ) {
     }
 
     public function index(Request $request): AnonymousResourceCollection
@@ -41,6 +49,10 @@ class QuoteController extends Controller
     public function store(StoreQuoteRequest $request): JsonResponse
     {
         Gate::authorize('create', Quote::class);
+
+        if ($existing = $this->findExistingByClientId(Quote::class, $request->input('id'))) {
+            return (new QuoteResource($existing->load('items')))->response()->setStatusCode(200);
+        }
 
         $data = $request->validated();
         $items = $data['items'];
@@ -75,12 +87,24 @@ class QuoteController extends Controller
         return new QuoteResource($quote->load('items'));
     }
 
-    public function update(UpdateQuoteRequest $request, Quote $quote): QuoteResource
+    public function update(UpdateQuoteRequest $request, Quote $quote): JsonResponse
     {
         Gate::authorize('update', $quote);
 
-        $quote->update($request->validated());
+        $data = $request->validated();
+        $baseVersion = $data['base_version'];
+        unset($data['base_version']);
 
-        return new QuoteResource($quote->load('items'));
+        $conflict = $this->detectVersionConflict(
+            $this->syncConflictService, $request->user(), $quote, 'quote', $data, $baseVersion
+        );
+
+        if ($conflict) {
+            return (new SyncConflictResource($conflict))->response()->setStatusCode(409);
+        }
+
+        $quote->update($data);
+
+        return (new QuoteResource($quote->load('items')))->response();
     }
 }

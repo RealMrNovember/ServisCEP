@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payment\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Customer;
+use App\Models\Payment;
 use App\Services\AuditLogService;
 use App\Services\CustomerLedgerService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +19,8 @@ use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
+    use AcceptsClientGeneratedId;
+
     public function __construct(
         private readonly CustomerLedgerService $customerLedgerService,
         private readonly AuditLogService $auditLogService,
@@ -37,6 +41,10 @@ class PaymentController extends Controller
     public function store(StorePaymentRequest $request, Customer $customer): JsonResponse
     {
         Gate::authorize('update', $customer);
+
+        if ($existing = $this->findExistingByClientId(Payment::class, $request->input('id'))) {
+            return (new PaymentResource($existing))->response()->setStatusCode(200);
+        }
 
         $payment = DB::transaction(function () use ($request, $customer) {
             $payment = $customer->payments()->create($request->validated());

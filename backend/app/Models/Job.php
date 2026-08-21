@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\HasVersion;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,12 +13,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Job extends Model
 {
-    use BelongsToCompany, HasFactory, HasUuids, SoftDeletes;
+    use BelongsToCompany, HasFactory, HasUuids, HasVersion, SoftDeletes;
 
     public $timestamps = false;
 
     protected $fillable = [
-        'company_id', 'code', 'customer_id', 'job_type_id', 'title', 'description',
+        'id', 'company_id', 'code', 'customer_id', 'job_type_id', 'title', 'description',
         'address', 'appointment_date', 'start_time', 'end_time', 'priority', 'status',
         'technician_user_id', 'estimated_price_minor', 'actual_price_minor', 'notes',
     ];
@@ -30,6 +31,7 @@ class Job extends Model
             'deleted_at' => 'datetime',
             'estimated_price_minor' => 'integer',
             'actual_price_minor' => 'integer',
+            'version' => 'integer',
         ];
     }
 

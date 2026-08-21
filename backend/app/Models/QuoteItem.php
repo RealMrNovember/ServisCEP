@@ -14,7 +14,7 @@ class QuoteItem extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'quote_id', 'description', 'quantity', 'unit',
+        'id', 'quote_id', 'description', 'quantity', 'unit',
         'unit_price_minor', 'tax_rate', 'discount_minor',
     ];
 

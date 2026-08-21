@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\HasVersion;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,12 +14,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
-    use BelongsToCompany, HasFactory, HasUuids, SoftDeletes;
+    use BelongsToCompany, HasFactory, HasUuids, HasVersion, SoftDeletes;
 
     public $timestamps = false;
 
     protected $fillable = [
-        'company_id', 'code', 'contact_name', 'company_name', 'iban', 'type', 'phone', 'email',
+        'id', 'company_id', 'code', 'contact_name', 'company_name', 'iban', 'type', 'phone', 'email',
         'address', 'il', 'ilce', 'tax_info', 'tax_certificate_path', 'notes', 'tags',
     ];
 
@@ -27,6 +28,7 @@ class Customer extends Model
         return [
             'created_at' => 'datetime',
             'deleted_at' => 'datetime',
+            'version' => 'integer',
         ];
     }
 

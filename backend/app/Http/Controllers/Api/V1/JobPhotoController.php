@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\AcceptsClientGeneratedId;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Job\StoreJobPhotoRequest;
 use App\Http\Resources\JobPhotoResource;
@@ -19,6 +20,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class JobPhotoController extends Controller
 {
+    use AcceptsClientGeneratedId;
+
     public function __construct(private readonly JobMediaService $jobMediaService)
     {
     }
@@ -34,7 +37,13 @@ class JobPhotoController extends Controller
     {
         Gate::authorize('update', $job);
 
-        $photo = $this->jobMediaService->storePhoto($job, $request->file('file'), $request->string('category')->toString());
+        if ($existing = $this->findExistingByClientId(JobPhoto::class, $request->input('id'))) {
+            return (new JobPhotoResource($existing))->response()->setStatusCode(200);
+        }
+
+        $photo = $this->jobMediaService->storePhoto(
+            $job, $request->file('file'), $request->string('category')->toString(), $request->input('id')
+        );
 
         return (new JobPhotoResource($photo))->response()->setStatusCode(201);
     }

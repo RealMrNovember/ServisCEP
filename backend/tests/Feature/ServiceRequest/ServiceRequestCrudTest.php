@@ -71,7 +71,7 @@ class ServiceRequestCrudTest extends TestCase
         $user = $this->actingUser();
         $serviceRequest = ServiceRequest::factory()->create(['company_id' => $user->company_id]);
 
-        $this->putJson("/api/v1/service-requests/{$serviceRequest->id}", ['status' => 'ISLEME_ALINDI'])
+        $this->putJson("/api/v1/service-requests/{$serviceRequest->id}", ['base_version' => 1, 'status' => 'ISLEME_ALINDI'])
             ->assertOk()
             ->assertJsonPath('data.status', 'ISLEME_ALINDI');
     }
@@ -81,7 +81,7 @@ class ServiceRequestCrudTest extends TestCase
         $user = $this->actingUser();
         $serviceRequest = ServiceRequest::factory()->create(['company_id' => $user->company_id]);
 
-        $this->putJson("/api/v1/service-requests/{$serviceRequest->id}", ['status' => 'ISE_DONUSTU'])
+        $this->putJson("/api/v1/service-requests/{$serviceRequest->id}", ['base_version' => 1, 'status' => 'ISE_DONUSTU'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
     }
