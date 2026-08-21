@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Payment\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Customer;
+use App\Services\AuditLogService;
 use App\Services\CustomerLedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,8 +17,10 @@ use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
-    public function __construct(private readonly CustomerLedgerService $customerLedgerService)
-    {
+    public function __construct(
+        private readonly CustomerLedgerService $customerLedgerService,
+        private readonly AuditLogService $auditLogService,
+    ) {
     }
 
     public function index(Customer $customer): AnonymousResourceCollection
@@ -43,6 +46,11 @@ class PaymentController extends Controller
 
             return $payment;
         });
+
+        $this->auditLogService->record(
+            $request->user(), 'payment.recorded', 'payment', $payment->id,
+            "Tahsilat kaydedildi ({$payment->method})", ['amount_minor' => $payment->amount_minor]
+        );
 
         return (new PaymentResource($payment))->response()->setStatusCode(201);
     }

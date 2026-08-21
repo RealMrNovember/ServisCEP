@@ -37,16 +37,4 @@ class JobIsolationTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_a_company_cannot_delete_another_companys_job(): void
-    {
-        $userA = User::factory()->create();
-        $userB = User::factory()->create();
-        $foreignJob = Job::factory()->create(['company_id' => $userB->company_id]);
-
-        $tokenA = $userA->createToken('test')->plainTextToken;
-
-        $this->withToken($tokenA)->deleteJson("/api/v1/jobs/{$foreignJob->id}")->assertNotFound();
-
-        $this->assertDatabaseHas('jobs', ['id' => $foreignJob->id, 'deleted_at' => null]);
-    }
 }

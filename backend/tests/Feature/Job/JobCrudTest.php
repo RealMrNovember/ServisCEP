@@ -91,13 +91,17 @@ class JobCrudTest extends TestCase
             ->assertJsonPath('data.actual_price_minor', 200000);
     }
 
-    public function test_soft_deletes_a_job(): void
+    public function test_cancels_a_job_via_status_instead_of_deleting_it(): void
     {
+        // Bkz. docs/09 § Veri Silme Prensibi — kritik belgelerde (iş dahil)
+        // silme yerine İPTAL durumu tercih edilir; API'de destroy yoktur.
         $user = $this->actingUser();
         $job = Job::factory()->create(['company_id' => $user->company_id]);
 
-        $this->deleteJson("/api/v1/jobs/{$job->id}")->assertNoContent();
+        $this->putJson("/api/v1/jobs/{$job->id}", ['status' => 'IPTAL'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'IPTAL');
 
-        $this->assertSoftDeleted('jobs', ['id' => $job->id]);
+        $this->assertDatabaseHas('jobs', ['id' => $job->id, 'status' => 'IPTAL', 'deleted_at' => null]);
     }
 }

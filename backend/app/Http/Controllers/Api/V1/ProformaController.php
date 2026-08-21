@@ -10,6 +10,7 @@ use App\Http\Requests\Proforma\StoreProformaRequest;
 use App\Http\Requests\Proforma\UpdateProformaRequest;
 use App\Http\Resources\ProformaResource;
 use App\Models\Proforma;
+use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,6 +20,10 @@ use Illuminate\Support\Facades\Gate;
 class ProformaController extends Controller
 {
     use CalculatesDocumentTotal;
+
+    public function __construct(private readonly AuditLogService $auditLogService)
+    {
+    }
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -52,6 +57,11 @@ class ProformaController extends Controller
             // bellekteki modelde bu değer yoktur, refresh() gerekir.
             return $proforma->refresh();
         });
+
+        $this->auditLogService->record(
+            $request->user(), 'proforma.created', 'proforma', $proforma->id,
+            "Proforma oluşturuldu: {$proforma->code}", ['total_minor' => $proforma->total_minor]
+        );
 
         return (new ProformaResource($proforma->load('items')))->response()->setStatusCode(201);
     }

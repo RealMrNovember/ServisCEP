@@ -8,14 +8,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\StoreLedgerAdjustmentRequest;
 use App\Http\Resources\CustomerLedgerEntryResource;
 use App\Models\Customer;
+use App\Services\AuditLogService;
 use App\Services\CustomerLedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class CustomerLedgerController extends Controller
 {
-    public function __construct(private readonly CustomerLedgerService $customerLedgerService)
-    {
+    public function __construct(
+        private readonly CustomerLedgerService $customerLedgerService,
+        private readonly AuditLogService $auditLogService,
+    ) {
     }
 
     /**
@@ -50,6 +53,12 @@ class CustomerLedgerController extends Controller
             $request->string('type')->toString(),
             (int) $request->input('amount_minor'),
             $request->string('description')->toString(),
+        );
+
+        $this->auditLogService->record(
+            $request->user(), 'ledger.manual_adjustment', 'customer_ledger_entry', $entry->id,
+            "Cari hesap manuel düzeltmesi: {$entry->description}",
+            ['type' => $entry->type, 'amount_minor' => $entry->amount_minor]
         );
 
         return (new CustomerLedgerEntryResource($entry))->response()->setStatusCode(201);

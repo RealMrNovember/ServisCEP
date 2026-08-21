@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerLedgerController;
 use App\Http\Controllers\Api\V1\CustomerController;
@@ -18,8 +19,12 @@ use App\Http\Controllers\Api\V1\ServiceRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
-    Route::post('/auth/register', [AuthController::class, 'register'])->name('auth.register');
-    Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
+    // Bkz. docs/09 § 2 Güvenlik Kontrol Listesi — "API rate limiting".
+    // Brute-force/spam koruması için IP başına dakikada 10 istek.
+    Route::middleware('throttle:10,1')->group(function (): void {
+        Route::post('/auth/register', [AuthController::class, 'register'])->name('auth.register');
+        Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
+    });
 
     // İmzalı, süreli dosya erişimi — kasıtlı olarak auth:sanctum dışında;
     // güvenliği `signed` middleware'i (URL::temporarySignedRoute) sağlar.
@@ -32,9 +37,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('/signatures/{signatureId}', [JobSignatureController::class, 'signedDownload'])->name('signatures.show');
     });
 
-    Route::middleware('auth:sanctum')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
         Route::apiResource('customers', CustomerController::class);
 
@@ -57,7 +64,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/service-requests/{serviceRequest}/convert', [ServiceRequestController::class, 'convert'])
             ->name('service-requests.convert');
 
-        Route::apiResource('jobs', JobController::class);
+        // Not: destroy yok — bkz. docs/09 § Veri Silme Prensibi (kritik
+        // belgelerde silme yerine İPTAL durumu, bkz. JobPolicy).
+        Route::apiResource('jobs', JobController::class)->only(['index', 'store', 'show', 'update']);
 
         Route::prefix('jobs/{job}')->name('jobs.')->group(function (): void {
             Route::apiResource('notes', JobNoteController::class)->only(['index', 'store', 'destroy']);

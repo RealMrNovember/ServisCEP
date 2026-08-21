@@ -64,7 +64,14 @@ Backend, iki katmanlı olarak ilerliyor ve **her ikisi de kalıcı, birbirini ta
 | **B6** | ServiceRequest + Job API | `/api/v1/service-requests` + `/api/v1/jobs` CRUD, talep→iş dönüşümü (`POST .../convert`, bkz. docs/02) | ✅ Tamamlandı ve doğrulandı (43/43 test yeşil, izolasyon + dönüşüm testleri dahil) |
 | **B7** | Servis formu + medya API | JobNote/JobPhoto/JobSignature upload, dosya erişim kontrolü (bkz. docs/09 §3) | ✅ Tamamlandı ve doğrulandı (56/56 test yeşil + production smoke test) — dosyalar `local` disk'te (`storage/app/private`, public değil), üçlü erişim: yetkili API çağrısı + süreli imzalı URL + izin kontrolü. Production'da gerçek bir hata bulundu/düzeltildi: `trustProxies` eksikliği (Cloudflare arkasında şema yanlış çözülüyordu) imzalı URL'lerin her zaman 403 dönmesine yol açıyordu |
 | **B8** | Ticari belge + finans API | Quote/Proforma (kalemli, KDV/iskonto hesaplı), Payment (otomatik ALACAK), İş tamamlama (otomatik BORÇ), CustomerLedgerEntry (liste + manuel düzeltme), IncomeEntry/ExpenseEntry | ✅ Tamamlandı ve doğrulandı (80/80 test yeşil + production smoke test) — bkz. [docs/15](docs/15-cari-hesap.md). PDF ekstre üretimi (`ledger/statement`) kapsam dışı bırakıldı — Phase 13 (PDF Engine) altyapısı henüz yok |
-| **B9** | Senkronizasyon motoru | Sync queue, conflict handling (Phase 16-17) | Sırada |
+| **B9** | Güvenlik sertleştirme + Audit Log | docs/09 § 2 Güvenlik Kontrol Listesi'nde açıkça istenen ama B1-B8'de eksik bırakılan maddeler: API rate limiting, Audit Log, "silme yerine İPTAL" ilkesi | ✅ Tamamlandı ve doğrulandı (85/85 test yeşil + production smoke test) — bkz. detaylar aşağıda |
+| **B10** | Senkronizasyon motoru | Sync queue, conflict handling (Phase 16-17) — büyük bir mimari karar noktası, ayrı bir tasarım görüşmesi gerektirir | Sırada |
+
+### B9 Detayları
+
+- **API rate limiting** — `/auth/register` + `/auth/login`: IP başına dakikada 10 istek. Kimliği doğrulanmış tüm API: kullanıcı başına dakikada 120 istek.
+- **Audit Log** (`audit_logs` tablosu, immutable) — kritik işlemler kayıt altına alınıyor: müşteri oluştur/güncelle/sil, teklif/proforma oluştur, tahsilat, iş tamamlama/iptal, cari hesap manuel düzeltmesi. `GET /api/v1/audit-logs` yalnızca OWNER erişimine açık.
+- **"Silme yerine İPTAL" düzeltmesi** — `Job` için hard-delete endpoint'i (B6'da yanlışlıkla eklenmişti) kaldırıldı; docs/09 § Veri Silme Prensibi'ne uygun olarak durum `IPTAL` yapılarak "silinir".
 
 ## MVP — Faz Sırası (Phase 1–20)
 

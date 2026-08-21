@@ -10,18 +10,20 @@ use App\Http\Requests\Job\UpdateJobRequest;
 use App\Http\Resources\JobResource;
 use App\Models\CustomerLedgerEntry;
 use App\Models\Job;
+use App\Services\AuditLogService;
 use App\Services\CustomerLedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class JobController extends Controller
 {
-    public function __construct(private readonly CustomerLedgerService $customerLedgerService)
-    {
+    public function __construct(
+        private readonly CustomerLedgerService $customerLedgerService,
+        private readonly AuditLogService $auditLogService,
+    ) {
     }
 
     public function index(Request $request): AnonymousResourceCollection
@@ -64,6 +66,8 @@ class JobController extends Controller
     {
         Gate::authorize('update', $job);
 
+        $previousStatus = $job->status;
+
         DB::transaction(function () use ($request, $job) {
             $job->update($request->validated());
 
@@ -85,15 +89,20 @@ class JobController extends Controller
             }
         });
 
+        // Bkz. docs/09 § 5 Audit Log — audit gerektiren kritik işlem
+        // örneği tam olarak bu ("Servis tamamlandı").
+        if ($previousStatus !== 'TAMAMLANDI' && $job->status === 'TAMAMLANDI') {
+            $this->auditLogService->record(
+                $request->user(), 'job.completed', 'job', $job->id,
+                "İş tamamlandı: {$job->title}", ['actual_price_minor' => $job->actual_price_minor]
+            );
+        } elseif ($previousStatus !== 'IPTAL' && $job->status === 'IPTAL') {
+            $this->auditLogService->record(
+                $request->user(), 'job.cancelled', 'job', $job->id,
+                "İş iptal edildi: {$job->title}"
+            );
+        }
+
         return new JobResource($job);
-    }
-
-    public function destroy(Job $job): Response
-    {
-        Gate::authorize('delete', $job);
-
-        $job->delete();
-
-        return response()->noContent();
     }
 }

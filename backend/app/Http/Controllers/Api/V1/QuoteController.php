@@ -10,6 +10,7 @@ use App\Http\Requests\Quote\StoreQuoteRequest;
 use App\Http\Requests\Quote\UpdateQuoteRequest;
 use App\Http\Resources\QuoteResource;
 use App\Models\Quote;
+use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,6 +20,10 @@ use Illuminate\Support\Facades\Gate;
 class QuoteController extends Controller
 {
     use CalculatesDocumentTotal;
+
+    public function __construct(private readonly AuditLogService $auditLogService)
+    {
+    }
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -54,6 +59,11 @@ class QuoteController extends Controller
             // CustomerController::store() ile aynı hata kalıbı).
             return $quote->refresh();
         });
+
+        $this->auditLogService->record(
+            $request->user(), 'quote.created', 'quote', $quote->id,
+            "Teklif oluşturuldu: {$quote->code}", ['total_minor' => $quote->total_minor]
+        );
 
         return (new QuoteResource($quote->load('items')))->response()->setStatusCode(201);
     }

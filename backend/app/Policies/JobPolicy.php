@@ -29,8 +29,7 @@ class JobPolicy
         return $user->company_id === $job->company_id;
     }
 
-    public function delete(User $user, Job $job): bool
-    {
-        return $user->company_id === $job->company_id;
-    }
+    // Bilinçli olarak delete() yok — bkz. docs/09 § Veri Silme Prensibi:
+    // kritik belgelerde (teklif, proforma, fatura, İŞ dahil) silme yerine
+    // İPTAL durumu tercih edilir. Bkz. JobController::update().
 }

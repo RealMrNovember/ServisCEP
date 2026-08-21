@@ -9,6 +9,7 @@ use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
+use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\Gate;
 
 class CustomerController extends Controller
 {
+    public function __construct(private readonly AuditLogService $auditLogService)
+    {
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Customer::class);
@@ -48,6 +53,11 @@ class CustomerController extends Controller
         // yoktur, refresh() ile DB'den geri okunmalı.
         $customer->refresh();
 
+        $this->auditLogService->record(
+            $request->user(), 'customer.created', 'customer', $customer->id,
+            "Müşteri oluşturuldu: {$customer->display_name}"
+        );
+
         return (new CustomerResource($customer))->response()->setStatusCode(201);
     }
 
@@ -64,14 +74,24 @@ class CustomerController extends Controller
 
         $customer->update($request->validated());
 
+        $this->auditLogService->record(
+            $request->user(), 'customer.updated', 'customer', $customer->id,
+            "Müşteri güncellendi: {$customer->display_name}"
+        );
+
         return new CustomerResource($customer);
     }
 
-    public function destroy(Customer $customer): Response
+    public function destroy(Request $request, Customer $customer): Response
     {
         Gate::authorize('delete', $customer);
 
         $customer->delete();
+
+        $this->auditLogService->record(
+            $request->user(), 'customer.deleted', 'customer', $customer->id,
+            "Müşteri silindi: {$customer->display_name}"
+        );
 
         return response()->noContent();
     }
