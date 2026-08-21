@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Job\StoreJobRequest;
+use App\Http\Requests\Job\UpdateJobRequest;
+use App\Http\Resources\JobResource;
+use App\Models\Job;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
+
+class JobController extends Controller
+{
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        Gate::authorize('viewAny', Job::class);
+
+        $jobs = Job::query()
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
+            ->when($request->filled('customer_id'), fn ($query) => $query->where('customer_id', $request->input('customer_id')))
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = '%'.$request->input('q').'%';
+                $query->where(function ($query) use ($term) {
+                    $query->where('title', 'like', $term)->orWhere('description', 'like', $term);
+                });
+            })
+            ->latest('created_at')
+            ->paginate((int) $request->input('per_page', 20));
+
+        return JobResource::collection($jobs);
+    }
+
+    public function store(StoreJobRequest $request): JsonResponse
+    {
+        Gate::authorize('create', Job::class);
+
+        $job = Job::create($request->validated());
+        $job->refresh();
+
+        return (new JobResource($job))->response()->setStatusCode(201);
+    }
+
+    public function show(Job $job): JobResource
+    {
+        Gate::authorize('view', $job);
+
+        return new JobResource($job);
+    }
+
+    public function update(UpdateJobRequest $request, Job $job): JobResource
+    {
+        Gate::authorize('update', $job);
+
+        $job->update($request->validated());
+
+        return new JobResource($job);
+    }
+
+    public function destroy(Job $job): Response
+    {
+        Gate::authorize('delete', $job);
+
+        $job->delete();
+
+        return response()->noContent();
+    }
+}
