@@ -3,11 +3,17 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CustomerLedgerController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\ExpenseEntryController;
+use App\Http\Controllers\Api\V1\IncomeEntryController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\JobNoteController;
 use App\Http\Controllers\Api\V1\JobPhotoController;
 use App\Http\Controllers\Api\V1\JobSignatureController;
+use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\ProformaController;
+use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +37,20 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
         Route::apiResource('customers', CustomerController::class);
+
+        Route::prefix('customers/{customer}')->name('customers.')->group(function (): void {
+            Route::get('ledger', [CustomerLedgerController::class, 'index'])->name('ledger.index');
+            Route::post('ledger/adjustments', [CustomerLedgerController::class, 'storeAdjustment'])->name('ledger.adjustments.store');
+
+            Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+            Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+        });
+
+        Route::apiResource('quotes', QuoteController::class)->only(['index', 'store', 'show', 'update']);
+        Route::apiResource('proformas', ProformaController::class)->only(['index', 'store', 'show', 'update']);
+
+        Route::apiResource('income-entries', IncomeEntryController::class)->only(['index', 'store']);
+        Route::apiResource('expense-entries', ExpenseEntryController::class)->only(['index', 'store']);
 
         Route::apiResource('service-requests', ServiceRequestController::class)
             ->only(['index', 'store', 'show', 'update']);

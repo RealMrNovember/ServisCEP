@@ -8,15 +8,22 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Job\StoreJobRequest;
 use App\Http\Requests\Job\UpdateJobRequest;
 use App\Http\Resources\JobResource;
+use App\Models\CustomerLedgerEntry;
 use App\Models\Job;
+use App\Services\CustomerLedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class JobController extends Controller
 {
+    public function __construct(private readonly CustomerLedgerService $customerLedgerService)
+    {
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Job::class);
@@ -57,7 +64,26 @@ class JobController extends Controller
     {
         Gate::authorize('update', $job);
 
-        $job->update($request->validated());
+        DB::transaction(function () use ($request, $job) {
+            $job->update($request->validated());
+
+            // İş tamamlandı + gerçek fiyat girildiğinde otomatik BORÇ kaydı
+            // — bkz. docs/15 § Otomatik Kayıt Oluşturma. Borç kaynağı
+            // tekildir (bir iş için en fazla bir kayıt), bu yüzden zaten
+            // var olan bir kayıt varsa tekrar oluşturulmaz — hem "tamamla
+            // + aynı anda fiyat gir" hem "tamamla, fiyatı sonra ekle"
+            // senaryolarını doğru ve tek seferlik kapsar.
+            if ($job->status === 'TAMAMLANDI' && $job->actual_price_minor !== null) {
+                $alreadyRecorded = CustomerLedgerEntry::query()
+                    ->where('reference_type', 'job')
+                    ->where('reference_id', $job->id)
+                    ->exists();
+
+                if (! $alreadyRecorded) {
+                    $this->customerLedgerService->recordJobCompletion($job);
+                }
+            }
+        });
 
         return new JobResource($job);
     }

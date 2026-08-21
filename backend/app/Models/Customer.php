@@ -55,4 +55,19 @@ class Customer extends Model
     {
         return $this->hasMany(CustomerLedgerEntry::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
+    public function proformas(): HasMany
+    {
+        return $this->hasMany(Proforma::class);
+    }
 }

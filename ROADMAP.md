@@ -63,7 +63,7 @@ Backend, iki katmanlı olarak ilerliyor ve **her ikisi de kalıcı, birbirini ta
 | **B5** | Authorization katmanı (genişletme) | `CustomerPolicy` kalıbı kuruldu, `ServiceRequestPolicy`/`JobPolicy` ile tekrarlandı | ✅ Kalıp tüm mevcut kaynaklarda uygulanıyor |
 | **B6** | ServiceRequest + Job API | `/api/v1/service-requests` + `/api/v1/jobs` CRUD, talep→iş dönüşümü (`POST .../convert`, bkz. docs/02) | ✅ Tamamlandı ve doğrulandı (43/43 test yeşil, izolasyon + dönüşüm testleri dahil) |
 | **B7** | Servis formu + medya API | JobNote/JobPhoto/JobSignature upload, dosya erişim kontrolü (bkz. docs/09 §3) | ✅ Tamamlandı ve doğrulandı (56/56 test yeşil + production smoke test) — dosyalar `local` disk'te (`storage/app/private`, public değil), üçlü erişim: yetkili API çağrısı + süreli imzalı URL + izin kontrolü. Production'da gerçek bir hata bulundu/düzeltildi: `trustProxies` eksikliği (Cloudflare arkasında şema yanlış çözülüyordu) imzalı URL'lerin her zaman 403 dönmesine yol açıyordu |
-| **B8** | Ticari belge + finans API | Quote/Proforma/Payment/Income/Expense/CustomerLedgerEntry | Sırada |
+| **B8** | Ticari belge + finans API | Quote/Proforma (kalemli, KDV/iskonto hesaplı), Payment (otomatik ALACAK), İş tamamlama (otomatik BORÇ), CustomerLedgerEntry (liste + manuel düzeltme), IncomeEntry/ExpenseEntry | ✅ Tamamlandı ve doğrulandı (80/80 test yeşil + production smoke test) — bkz. [docs/15](docs/15-cari-hesap.md). PDF ekstre üretimi (`ledger/statement`) kapsam dışı bırakıldı — Phase 13 (PDF Engine) altyapısı henüz yok |
 | **B9** | Senkronizasyon motoru | Sync queue, conflict handling (Phase 16-17) | Sırada |
 
 ## MVP — Faz Sırası (Phase 1–20)

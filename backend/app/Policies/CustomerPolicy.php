@@ -41,4 +41,13 @@ class CustomerPolicy
     {
         return $user->company_id === $customer->company_id;
     }
+
+    /**
+     * Cari hesap manuel düzeltmesi hassas bir işlemdir — yalnızca OWNER
+     * (ileride ACCOUNTING) yapabilir (bkz. docs/15 § API).
+     */
+    public function recordLedgerAdjustment(User $user, Customer $customer): bool
+    {
+        return $user->company_id === $customer->company_id && $user->role === 'OWNER';
+    }
 }
