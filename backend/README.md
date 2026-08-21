@@ -12,10 +12,10 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-`.env` içinde veritabanı bağlantısını doldurun (PostgreSQL — bkz. [deploy/README.md](../deploy/README.md#ortam)). Yerel geliştirmede sunucudaki veritabanına SSH tüneli ile bağlanılabilir:
+`.env` içinde veritabanı bağlantısını doldurun (PostgreSQL — bkz. [deploy/README.md](../deploy/README.md#ortam)). Yerel geliştirmede sunucudaki veritabanına SSH tüneli ile bağlanılabilir (SSH portu 6466'ya taşındı — bkz. `~/.ssh/config`'teki `cicibyte` host'u):
 
 ```bash
-ssh -N -L 5434:127.0.0.1:5434 root@31.40.199.47
+ssh -N -L 5434:127.0.0.1:5434 cicibyte
 ```
 
 Sonra:
