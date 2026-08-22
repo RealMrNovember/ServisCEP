@@ -54,6 +54,8 @@ Backend, iki katmanlı olarak ilerliyor ve **her ikisi de kalıcı, birbirini ta
 1. **Filament tabanlı web/admin paneli** — şirket (tenant) paneli (`/panel`) ve admin paneli, Companies/Customers/Jobs/Quotes/Proformas/Products/Warranties/Personnel/Plans/PaymentRequests/Settings kaynakları, abonelik sistemi (14 günlük deneme + admin onaylı ödeme talebi), Google OAuth web akışı. Bu katman zaten oldukça olgun; docRoot ve production HTTPS ayarları yapılmış durumda.
 2. **Mobil için JSON REST API** (`/api/v1/*`, Sanctum token) — 2026-08-21'de eklenmeye başlandı. Web panelinin kullandığı **aynı veri modelini** (Company/Customer/Job/...) tüketir, ayrı bir veri kopyası değildir.
 
+> **Production runtime (2026-08-22):** PHP çalışma zamanı, sunucudaki diğer projelerle tutarlı olacak şekilde Docker'a taşındı (`serviscep-php`, `/www/dk_project/serviscep/`) — nginx host'ta aaPanel yönetiminde kalıyor, yalnızca PHP execution container'a geçti. Postgres bare-metal kalmaya devam ediyor; container erişimi `host.docker.internal` + dar kapsamlı `pg_hba.conf`/UFW kurallarıyla sağlandı. `deploy/apply.sh` ve sunucu crontab'ı artık `docker exec serviscep-php ...` kullanıyor. Detaylar: [backend/README.md § Production Runtime](backend/README.md#production-runtime-docker).
+
 | # | Adım | Kapsam | Durum |
 |---|---|---|---|
 | **B1** | Test altyapısı | `phpunit.xml` (sqlite in-memory), Docker üzerinden çalıştırma (bkz. [backend/README.md](backend/README.md)) | ✅ Tamamlandı ve doğrulandı |
