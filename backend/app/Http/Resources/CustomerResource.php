@@ -33,6 +33,7 @@ class CustomerResource extends JsonResource
             'tax_info' => $this->tax_info,
             'notes' => $this->notes,
             'tags' => $this->tags,
+            'version' => $this->version,
             'created_at' => $this->created_at,
         ];
     }

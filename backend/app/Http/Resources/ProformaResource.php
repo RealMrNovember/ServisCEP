@@ -25,6 +25,7 @@ class ProformaResource extends JsonResource
             'notes' => $this->notes,
             'total_minor' => $this->total_minor,
             'items' => ProformaItemResource::collection($this->whenLoaded('items')),
+            'version' => $this->version,
             'created_at' => $this->created_at,
         ];
     }

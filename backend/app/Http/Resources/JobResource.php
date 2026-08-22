@@ -34,6 +34,7 @@ class JobResource extends JsonResource
             'estimated_price_minor' => $this->estimated_price_minor,
             'actual_price_minor' => $this->actual_price_minor,
             'notes' => $this->notes,
+            'version' => $this->version,
             'created_at' => $this->created_at,
         ];
     }

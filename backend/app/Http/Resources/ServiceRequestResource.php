@@ -26,6 +26,7 @@ class ServiceRequestResource extends JsonResource
             'address' => $this->address,
             'status' => $this->status,
             'converted_job_id' => $this->converted_job_id,
+            'version' => $this->version,
             'created_at' => $this->created_at,
         ];
     }
