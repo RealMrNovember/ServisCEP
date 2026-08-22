@@ -34,6 +34,10 @@ class AppPanelProvider extends PanelProvider
             ->registration(RegisterCompany::class)
             ->passwordReset()
             ->profile(EditProfile::class, isSimple: false)
+            // Yeni e-posta önce doğrulanır, hemen değişmez (bkz. ROADMAP.md
+            // § Hesap Yönetimi). Route'lar/controller'lar Filament tarafından
+            // otomatik kaydedilir, User modelinde MustVerifyEmail gerekmez.
+            ->emailChangeVerification()
             ->viteTheme('resources/css/filament/app/theme.css')
             ->colors([
                 'primary' => Color::Emerald,
