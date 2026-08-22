@@ -20,18 +20,25 @@ cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png
 cp -f deploy/public-placeholder/logo.png logo.png
 
 # ── Backend (Laravel + Filament + mobil API) — canlıya alındı (2026-08-21) ──
+# PHP çalışma zamanı 2026-08-22'den itibaren Docker'da (serviscep-php,
+# bkz. /www/dk_project/serviscep) — composer/artisan artık host'un php'si
+# yerine AYNI image üzerinden, container içinde çalışır. Site dizini
+# container'a aynı yoldan bind-mount edildiği için "docker exec" burada
+# host'taki host içinde çalışıyormuş gibi davranır.
 if [ -f backend/artisan ]; then
   echo "==> Composer bağımlılıkları"
-  (cd backend && composer install --no-dev --optimize-autoloader)
+  docker exec serviscep-php composer install --no-dev --optimize-autoloader
 
   echo "==> Migration"
-  (cd backend && php artisan migrate --force)
+  docker exec serviscep-php php artisan migrate --force
 
   echo "==> Config/route/view cache"
-  (cd backend && php artisan config:cache && php artisan route:cache && php artisan view:cache)
+  docker exec serviscep-php php artisan config:cache
+  docker exec serviscep-php php artisan route:cache
+  docker exec serviscep-php php artisan view:cache
 
   echo "==> Storage symlink"
-  (cd backend && php artisan storage:link || true)
+  docker exec serviscep-php php artisan storage:link || true
 fi
 
 echo "==> İzinler ayarlanıyor (yalnızca repo dosyaları — aaPanel'in yönettiği"
