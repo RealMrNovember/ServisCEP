@@ -1,6 +1,15 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Ag erisimi: Google Sign-In, guncelleme kontrolu, gelecekteki API -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- image_picker paketi bu izinleri manifest merge sirasinda otomatik
+         ekliyor, ama uygulama SADECE ImageSource.camera kullaniyor (bkz.
+         job_detail_screen.dart) — galeriye/videoya hic erisilmiyor. Play
+         Console'un "Fotograf ve Video Izinleri" politika beyani gerektirmemesi
+         icin (kullanilmayan bir izin icin gerekce yazmak yerine) izinler
+         kaynagindan kaldiriliyor. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
     <!-- Barkod tarama (mobile_scanner) ve iş/servis fotoğrafları için -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
