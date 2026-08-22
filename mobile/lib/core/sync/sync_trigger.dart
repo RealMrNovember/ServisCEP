@@ -9,15 +9,28 @@ import 'sync_service.dart';
 
 const _periodicSyncInterval = Duration(minutes: 3);
 
-/// Bağlantı geldiğinde / uygulama öne geldiğinde / periyodik olarak
-/// `SyncService.runOnce()`'u tetikler. Oturum yoksa (henüz giriş
-/// yapılmamışsa) hiçbir şey yapmaz.
+/// Bağlantı geldiğinde / uygulama öne geldiğinde / periyodik olarak /
+/// oturum yeni AÇILDIĞINDA `SyncService.runOnce()`'u tetikler. Oturum
+/// yoksa (henüz giriş yapılmamışsa) hiçbir şey yapmaz.
+///
+/// NOT: `start()` çağrıldığı an `sessionControllerProvider` genelde hâlâ
+/// `loading` durumundadır (`SessionController`'ın constructor'daki
+/// `_restore()`'u henüz bitmemiştir) — bu yüzden BAŞLANGIÇTAKİ tek seferlik
+/// `_trigger()` çağrısı neredeyse her zaman no-op'tur. Asıl güvenilir
+/// tetikleyici, oturumun `null`/`loading`'den GERÇEK bir oturuma geçtiği
+/// anı yakalayan `ref.listen` — hem "restoreSession tamamlandı" hem
+/// "kullanıcı az önce giriş/kayıt oldu" senaryosunu kapsar. Bu olmadan,
+/// bir kullanıcı giriş yaptıktan sonra ilk senkron ancak 3 dakikalık
+/// periyodik zamanlayıcıyı veya bir bağlantı/resume olayını beklerdi —
+/// gerçek kullanıcı testinde "giriş başarılı ama hiçbir veri gelmedi"
+/// olarak ortaya çıktı.
 class SyncTrigger with WidgetsBindingObserver {
   SyncTrigger(this._ref);
 
   final Ref _ref;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   Timer? _periodicTimer;
+  String? _lastSyncedUserId;
 
   void start() {
     WidgetsBinding.instance.addObserver(this);
@@ -25,6 +38,10 @@ class SyncTrigger with WidgetsBindingObserver {
       if (!results.contains(ConnectivityResult.none)) _trigger();
     });
     _periodicTimer = Timer.periodic(_periodicSyncInterval, (_) => _trigger());
+    _ref.listen(sessionControllerProvider, (previous, next) {
+      final session = next.valueOrNull;
+      if (session != null && session.userId != _lastSyncedUserId) _trigger();
+    });
     _trigger();
   }
 
@@ -36,6 +53,7 @@ class SyncTrigger with WidgetsBindingObserver {
   void _trigger() {
     final session = _ref.read(sessionControllerProvider).valueOrNull;
     if (session == null) return;
+    _lastSyncedUserId = session.userId;
     unawaited(_ref.read(syncServiceProvider).runOnce(session.companyId));
   }
 

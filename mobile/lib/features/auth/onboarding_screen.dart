@@ -221,8 +221,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     obscureText: true,
                     decoration: const InputDecoration(labelText: 'Parola'),
                     validator: (v) {
-                      if (v == null || v.length < 6)
+                      if (v == null || v.length < 6) {
                         return 'En az 6 karakter olmalı';
+                      }
                       return null;
                     },
                   ),
@@ -234,8 +235,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       labelText: 'Parola (tekrar)',
                     ),
                     validator: (v) {
-                      if (v != _passwordController.text)
+                      if (v != _passwordController.text) {
                         return 'Parolalar eşleşmiyor';
+                      }
                       return null;
                     },
                   ),
