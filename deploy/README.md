@@ -6,9 +6,10 @@ ServisCEP, `serviscep.cicibyte.com` adresinde barındırılır. Sunucu aaPanel i
 
 | Bileşen | Değer |
 |---|---|
-| Web sunucusu | nginx (aaPanel yönetimli) |
-| PHP | 8.3 (aaPanel PHP-FPM havuzu) |
-| Veritabanı | PostgreSQL 14, `127.0.0.1:5434` (yalnızca localhost, `serviscep` veritabanı) |
+| Web sunucusu | nginx (aaPanel yönetimli, `fastcgi_pass 127.0.0.1:9102`) |
+| PHP | 8.4-fpm-alpine, **Docker container'ında** (`serviscep-php`, bkz. [backend/README.md § Production Runtime](../backend/README.md#production-runtime-docker)) |
+| Veritabanı | PostgreSQL 14, bare-metal, port `5434` (`serviscep` veritabanı) — container'a `host.docker.internal` + dar kapsamlı `pg_hba.conf`/UFW kuralıyla erişiliyor |
+| Mail | Postfix/Dovecot (sunucuda mevcut, aaPanel Mail Server eklentisi) — `serviscep@cicibyte.com` hesabı, SMTP `mail.cicibyte.com:587` (STARTTLS, sertifika bu hostname için — `host.docker.internal` ile TLS cert uyuşmazlığı verir, kullanılmamalı) |
 | SSL | Let's Encrypt (aaPanel üzerinden otomatik yenilenir) |
 
 > **Not:** PostgreSQL, sunucudaki başka bir projenin Docker container'ı standart 5432 portunu kullandığı için otomatik olarak `5434` portuna yerleşmiştir. Bu, sunucudaki diğer projelerle hiçbir çakışma olmadığı anlamına gelir.
