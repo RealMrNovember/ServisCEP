@@ -10,6 +10,7 @@ import '../../shared/brand_footer.dart';
 import '../../shared/update_banner.dart';
 import '../auth/data/session_controller.dart';
 import '../jobs/data/jobs_repository.dart';
+import '../subscription/widgets/subscription_banner.dart';
 
 /// Ana Sayfa / Dashboard.
 ///
@@ -57,6 +58,7 @@ class DashboardScreen extends ConsumerWidget {
             const SliverToBoxAdapter(
               child: Padding(padding: EdgeInsets.only(top: 8), child: UpdateBanner()),
             ),
+            const SliverToBoxAdapter(child: SubscriptionBanner()),
             SliverToBoxAdapter(
               child: jobsAsync.when(
                 loading: () => const SizedBox.shrink(),
