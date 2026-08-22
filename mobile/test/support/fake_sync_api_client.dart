@@ -83,6 +83,21 @@ class FakeSyncApiClient implements SyncApiClient {
   }
 
   @override
+  Future<AuthTokenResult> loginWithGoogle(String idToken) {
+    throw UnimplementedError('Bu test seti auth akışını kapsamıyor.');
+  }
+
+  @override
+  Future<AuthTokenResult> registerWithGoogle({
+    required String idToken,
+    required String companyName,
+    String? businessTypes,
+    String? phone,
+  }) {
+    throw UnimplementedError('Bu test seti auth akışını kapsamıyor.');
+  }
+
+  @override
   Future<AuthTokenResult> login({
     required String email,
     required String password,

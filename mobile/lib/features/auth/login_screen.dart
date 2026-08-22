@@ -39,12 +39,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref
           .read(sessionControllerProvider.notifier)
-          .login(email: _emailController.text.trim(), password: _passwordController.text);
+          .login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
       if (mounted) context.go('/dashboard');
     } on AuthException catch (e) {
       setState(() => _errorText = e.message);
     } catch (_) {
-      setState(() => _errorText = 'Giriş sırasında bir sorun oluştu, tekrar dene.');
+      setState(
+        () => _errorText = 'Giriş sırasında bir sorun oluştu, tekrar dene.',
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -62,11 +67,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       try {
         await ref
             .read(sessionControllerProvider.notifier)
-            .loginWithVerifiedGoogleEmail(result.email);
+            .continueWithGoogle(result.idToken, email: result.email);
         if (mounted) context.go('/dashboard');
       } on AuthException {
-        // Bu e-postayla hesap yok — kayıt akışına, Google bilgileri
-        // ön-dolu şekilde yönlendir (bkz. docs/09).
+        // Bu Google hesabıyla eşleşen bir hesap yok — kayıt akışına,
+        // Google bilgileri ön-dolu şekilde yönlendir (bkz. docs/09).
         if (mounted) context.go('/onboarding', extra: result);
       }
     } catch (e) {
@@ -104,27 +109,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           color: AppColors.accent.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Icon(Icons.bolt_rounded, color: AppColors.accent, size: 32),
+                        child: Icon(
+                          Icons.bolt_rounded,
+                          color: AppColors.accent,
+                          size: 32,
+                        ),
                       ),
                     ),
                     Text(
                       'Tekrar hoş geldin',
                       textAlign: TextAlign.center,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Devam etmek için giriş yap',
                       textAlign: TextAlign.center,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 28),
                     OutlinedButton.icon(
-                      onPressed: _isGoogleSubmitting ? null : _continueWithGoogle,
+                      onPressed: _isGoogleSubmitting
+                          ? null
+                          : _continueWithGoogle,
                       icon: _isGoogleSubmitting
                           ? const SizedBox(
                               height: 16,
@@ -142,7 +152,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
                             'veya e-posta ile',
-                            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         Expanded(child: Divider(color: scheme.outlineVariant)),
@@ -153,15 +166,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(labelText: 'E-posta'),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'E-posta gerekli' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'E-posta gerekli'
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(labelText: 'Parola'),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Parola gerekli' : null,
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Parola gerekli' : null,
                       onFieldSubmitted: (_) => _submit(),
                     ),
                     if (_errorText != null) ...[
@@ -229,7 +244,13 @@ class _GoogleGPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.butt;
-      canvas.drawArc(rect, startDeg * 3.14159265 / 180, sweepDeg * 3.14159265 / 180, false, paint);
+      canvas.drawArc(
+        rect,
+        startDeg * 3.14159265 / 180,
+        sweepDeg * 3.14159265 / 180,
+        false,
+        paint,
+      );
     }
 
     arc(-45, 90, const Color(0xFF4285F4));

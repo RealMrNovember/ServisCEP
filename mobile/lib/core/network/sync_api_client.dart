@@ -80,6 +80,18 @@ abstract interface class SyncApiClient {
     required String password,
   });
 
+  /// Hesap zaten var olmalı — yoksa backend 422 döner (bkz. LoginScreen'in
+  /// bunu yakalayıp onboarding'e yönlendirmesi).
+  Future<AuthTokenResult> loginWithGoogle(String idToken);
+
+  /// Onboarding'in Google akışı — hesap ZATEN varsa backend 422 döner.
+  Future<AuthTokenResult> registerWithGoogle({
+    required String idToken,
+    required String companyName,
+    String? businessTypes,
+    String? phone,
+  });
+
   Future<SyncEntityResult> createCustomer(Map<String, dynamic> payload);
   Future<SyncEntityResult> updateCustomer(
     String id,
@@ -138,6 +150,42 @@ class DioSyncApiClient implements SyncApiClient {
       final response = await _dio.post(
         '/auth/login',
         data: {'email': email, 'password': password},
+      );
+      return AuthTokenResult.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<AuthTokenResult> loginWithGoogle(String idToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/google/login',
+        data: {'id_token': idToken},
+      );
+      return AuthTokenResult.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<AuthTokenResult> registerWithGoogle({
+    required String idToken,
+    required String companyName,
+    String? businessTypes,
+    String? phone,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/auth/google/register',
+        data: {
+          'id_token': idToken,
+          'company_name': companyName,
+          'business_types': businessTypes,
+          'phone': phone,
+        },
       );
       return AuthTokenResult.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {

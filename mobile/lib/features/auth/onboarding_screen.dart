@@ -21,13 +21,22 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-const _businessTypeOptions = ['Elektrik', 'Kamera / Güvenlik', 'Bilgisayar', 'Diğer'];
+const _businessTypeOptions = [
+  'Elektrik',
+  'Kamera / Güvenlik',
+  'Bilgisayar',
+  'Diğer',
+];
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _companyNameController = TextEditingController();
-  late final _ownerNameController = TextEditingController(text: widget.googlePrefill?.displayName ?? '');
-  late final _emailController = TextEditingController(text: widget.googlePrefill?.email ?? '');
+  late final _ownerNameController = TextEditingController(
+    text: widget.googlePrefill?.displayName ?? '',
+  );
+  late final _emailController = TextEditingController(
+    text: widget.googlePrefill?.email ?? '',
+  );
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
@@ -64,10 +73,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await ref
             .read(sessionControllerProvider.notifier)
             .registerWithGoogle(
+              idToken: widget.googlePrefill!.idToken,
               companyName: _companyNameController.text.trim(),
               businessTypes: _selectedBusinessTypes.toList(),
-              ownerFullName: _ownerNameController.text.trim(),
               email: _emailController.text.trim(),
+              phone: _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
             );
       } else {
         await ref
@@ -77,7 +89,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               businessTypes: _selectedBusinessTypes.toList(),
               ownerFullName: _ownerNameController.text.trim(),
               email: _emailController.text.trim(),
-              phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+              phone: _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
               password: _passwordController.text,
             );
       }
@@ -85,7 +99,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } on AuthException catch (e) {
       setState(() => _errorText = e.message);
     } catch (_) {
-      setState(() => _errorText = 'Kayıt sırasında bir sorun oluştu, tekrar dene.');
+      setState(
+        () => _errorText = 'Kayıt sırasında bir sorun oluştu, tekrar dene.',
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -106,18 +122,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               children: [
                 Text(
                   'ServisCEP\'e hoş geldin',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   _isGoogleFlow
                       ? 'Google hesabınla bağlandın — son adım: işletme bilgilerin.'
                       : 'İşletmeni birkaç adımda kur, hemen kullanmaya başla.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -150,8 +166,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 TextFormField(
                   controller: _companyNameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Firma / işletme adı'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Firma adı gerekli' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Firma / işletme adı',
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Firma adı gerekli'
+                      : null,
                 ),
 
                 const SizedBox(height: 32),
@@ -161,7 +181,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   controller: _ownerNameController,
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(labelText: 'Ad Soyad'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Ad soyad gerekli' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Ad soyad gerekli'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -171,7 +193,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   decoration: InputDecoration(
                     labelText: 'E-posta',
                     suffixIcon: _isGoogleFlow
-                        ? const Icon(Icons.verified, size: 18, color: Colors.green)
+                        ? const Icon(
+                            Icons.verified,
+                            size: 18,
+                            color: Colors.green,
+                          )
                         : null,
                   ),
                   validator: (v) {
@@ -185,7 +211,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(labelText: 'Telefon (opsiyonel)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Telefon (opsiyonel)',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -193,7 +221,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     obscureText: true,
                     decoration: const InputDecoration(labelText: 'Parola'),
                     validator: (v) {
-                      if (v == null || v.length < 6) return 'En az 6 karakter olmalı';
+                      if (v == null || v.length < 6)
+                        return 'En az 6 karakter olmalı';
                       return null;
                     },
                   ),
@@ -201,9 +230,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   TextFormField(
                     controller: _passwordConfirmController,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Parola (tekrar)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Parola (tekrar)',
+                    ),
                     validator: (v) {
-                      if (v != _passwordController.text) return 'Parolalar eşleşmiyor';
+                      if (v != _passwordController.text)
+                        return 'Parolalar eşleşmiyor';
                       return null;
                     },
                   ),
@@ -249,7 +281,9 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
     );
   }
 }
