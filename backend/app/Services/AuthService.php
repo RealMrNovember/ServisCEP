@@ -8,7 +8,10 @@ use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
 
 class AuthService
 {
@@ -75,5 +78,141 @@ class AuthService
     public function logout(User $user): void
     {
         $user->currentAccessToken()?->delete();
+    }
+
+    /**
+     * Google ID token'ını doğrular — aynı OAuth client (GOOGLE_CLIENT_ID),
+     * hem web'in yönlendirme akışında hem mobilin native SDK'sında
+     * kullanılır (bkz. mobile/lib/features/auth/data/google_auth_service.dart
+     * serverClientId). Socialite'in `userFromToken` metodu imzayı Google'ın
+     * canlı JWKS'ine karşı doğrular, `iss`/`aud` kontrolü yapar — ek bir
+     * kütüphane (google/apiclient) gerekmez.
+     *
+     * @throws ValidationException Token geçersiz/süresi dolmuşsa.
+     */
+    private function verifyGoogleToken(string $idToken): SocialiteUser
+    {
+        try {
+            return Socialite::driver('google')->userFromToken($idToken);
+        } catch (\Throwable $e) {
+            throw ValidationException::withMessages([
+                'id_token' => ['Google kimlik doğrulaması başarısız.'],
+            ]);
+        }
+    }
+
+    /**
+     * Web'deki GoogleAuthController::callback() ile AYNI eşleştirme
+     * kuralı — google_id veya email ile bulunur, bulunursa google_id
+     * eksikse geri doldurulur. İki katman (web session, mobil Sanctum)
+     * bu tek kuralı paylaşır ki bir e-postanın davranışı platforma göre
+     * farklılaşmasın.
+     */
+    public function findOrCreateGoogleUser(string $googleId, string $email, ?string $name): User
+    {
+        $user = User::where('google_id', $googleId)->orWhere('email', $email)->first();
+
+        if ($user) {
+            if (! $user->google_id) {
+                $user->forceFill(['google_id' => $googleId])->save();
+            }
+
+            return $user;
+        }
+
+        return DB::transaction(function () use ($googleId, $email, $name) {
+            $company = Company::startTrial($name ?: $email);
+
+            return User::create([
+                'company_id' => $company->id,
+                'full_name' => $name ?: $email,
+                'email' => $email,
+                'password' => Str::password(32),
+                'google_id' => $googleId,
+                'role' => 'OWNER',
+            ]);
+        });
+    }
+
+    /**
+     * Mobil "Google ile devam et" → hesap ZATEN var olmalı. Yoksa
+     * kayıt ol akışına (registerWithGoogle) yönlendirilmesi gerektiğini
+     * belirten net bir hata döner — sessizce yeni hesap oluşturmaz,
+     * aksi halde kullanıcı hangi şirkete bağlandığını fark etmeden
+     * farklı bir hesaba düşebilirdi.
+     *
+     * @return array{user: User, token: string}
+     *
+     * @throws ValidationException
+     */
+    public function loginWithGoogle(string $idToken): array
+    {
+        $googleUser = $this->verifyGoogleToken($idToken);
+
+        $user = User::where('google_id', $googleUser->getId())
+            ->orWhere('email', $googleUser->getEmail())
+            ->first();
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'id_token' => ['Bu Google hesabıyla eşleşen bir hesap yok. Önce kayıt olmalısın.'],
+            ]);
+        }
+
+        if (! $user->google_id) {
+            $user->forceFill(['google_id' => $googleUser->getId()])->save();
+        }
+
+        $token = $user->createToken('mobile')->plainTextToken;
+
+        return ['user' => $user->load('company'), 'token' => $token];
+    }
+
+    /**
+     * Mobil onboarding'in Google akışı — kullanıcı işletme türü/şirket
+     * adını girip gönderdiğinde çağrılır. Hesap zaten varsa (ör. iki kez
+     * "kayıt ol" denenmesi) sessizce üzerine yazmak yerine net bir hata
+     * döner.
+     *
+     * @param  array{id_token: string, company_name: string, business_types: ?string, phone: ?string}  $data
+     * @return array{user: User, token: string}
+     *
+     * @throws ValidationException
+     */
+    public function registerWithGoogle(array $data): array
+    {
+        $googleUser = $this->verifyGoogleToken($data['id_token']);
+
+        $existing = User::where('google_id', $googleUser->getId())
+            ->orWhere('email', $googleUser->getEmail())
+            ->first();
+
+        if ($existing) {
+            throw ValidationException::withMessages([
+                'id_token' => ['Bu Google hesabıyla zaten bir hesap var. Giriş yapmayı dene.'],
+            ]);
+        }
+
+        $user = DB::transaction(function () use ($googleUser, $data) {
+            $company = Company::startTrial($data['company_name']);
+
+            if (filled($data['business_types'] ?? null)) {
+                $company->update(['business_types' => $data['business_types']]);
+            }
+
+            return User::create([
+                'company_id' => $company->id,
+                'full_name' => $googleUser->getName() ?: $googleUser->getEmail(),
+                'email' => $googleUser->getEmail(),
+                'phone' => $data['phone'] ?? null,
+                'password' => Str::password(32),
+                'google_id' => $googleUser->getId(),
+                'role' => 'OWNER',
+            ]);
+        });
+
+        $token = $user->createToken('mobile')->plainTextToken;
+
+        return ['user' => $user->load('company'), 'token' => $token];
     }
 }

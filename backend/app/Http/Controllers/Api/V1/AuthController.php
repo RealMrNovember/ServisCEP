@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\GoogleLoginRequest;
+use App\Http\Requests\Auth\GoogleRegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
@@ -31,6 +33,20 @@ class AuthController extends Controller
         $result = $this->authService->login($request->validated());
 
         return $this->tokenResponse($result['user'], $result['token']);
+    }
+
+    public function googleLogin(GoogleLoginRequest $request): JsonResponse
+    {
+        $result = $this->authService->loginWithGoogle($request->validated()['id_token']);
+
+        return $this->tokenResponse($result['user'], $result['token']);
+    }
+
+    public function googleRegister(GoogleRegisterRequest $request): JsonResponse
+    {
+        $result = $this->authService->registerWithGoogle($request->validated());
+
+        return $this->tokenResponse($result['user'], $result['token'], 201);
     }
 
     public function logout(Request $request): JsonResponse

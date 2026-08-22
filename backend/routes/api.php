@@ -25,6 +25,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::middleware('throttle:10,1')->group(function (): void {
         Route::post('/auth/register', [AuthController::class, 'register'])->name('auth.register');
         Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
+        Route::post('/auth/google/login', [AuthController::class, 'googleLogin'])->name('auth.google.login');
+        Route::post('/auth/google/register', [AuthController::class, 'googleRegister'])->name('auth.google.register');
     });
 
     // İmzalı, süreli dosya erişimi — kasıtlı olarak auth:sanctum dışında;
