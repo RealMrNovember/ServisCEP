@@ -1,10 +1,14 @@
 # ServisCEP — otomatik sürüm hattı.
 #
 # Tetikleme: `v*` biçiminde bir tag push'lanınca (ör. v0.2.9). Akış:
-#   1. pubspec.yaml'daki sürümle (version: X.Y.Z+N) imzalı yapılar üretilir
-#   2. "play" flavor AAB → Google Play kapalı test (alpha) track'ine yüklenir
-#   3. "github" flavor APK → GitHub Release'e eklenir (uygulama içi OTA
-#      güncelleme bu APK'yı çeker — bkz. docs/06 § OTA)
+#   1. pubspec.yaml'daki sürümle (version: X.Y.Z+N) imzalı "play" flavor
+#      AAB'si üretilir, Google Play'e yüklenir.
+#
+# NOT (2026-08-22): GitHub Releases/APK (OTA) kanalı kasıtlı olarak
+# kapatıldı — kullanıcı kararı: "Play birincil ve tek dağıtım kanalı
+# olsun." "github" flavor'ı (Gradle'da hâlâ tanımlı, docs/06 § OTA) artık
+# CI'da build EDİLMİYOR. Güncellemeler yalnızca Google Play üzerinden
+# (Play In-App Update API, "play" flavor zaten bunu kullanıyor) dağıtılır.
 #
 # Gerekli repository secret'ları (Settings → Secrets and variables → Actions):
 #   PLAY_SERVICE_ACCOUNT_JSON  — Play Console'a bağlı service account anahtarı
@@ -30,8 +34,6 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # GitHub Release oluşturmak için
     defaults:
       run:
         working-directory: mobile
@@ -82,28 +84,17 @@ jobs:
       - name: Play AAB derle
         run: flutter build appbundle --release --flavor play
 
-      - name: GitHub APK derle (OTA kanalı)
-        run: flutter build apk --release --flavor github
-
       - name: Google Play'e yükle
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.cicibyte.serviscep
           releaseFiles: mobile/build/app/outputs/bundle/playRelease/app-play-release.aab
-          # NOT: Uygulama Play Console'da hâlâ taslak (draft) — mağaza kurulum
-          # görevleri (listing, içerik derecelendirmesi, veri güvenliği)
-          # tamamlanana kadar kapalı test (alpha) track'ine "completed" sürüm
-          # yüklenemiyor ("Only releases with status draft may be created on
-          # draft app"). Dahili test taslak uygulamada da çalıştığı için
-          # şimdilik internal'a yüklüyoruz; kurulum bitip uygulama yayına
-          # geçince burası alpha'ya çevrilecek (14 gün / 12 testçi sayacı
-          # kapalı testte işler).
+          # NOT (2026-08-22): v0.2.11 kapalı test (alpha) sürümü Google
+          # incelemesine gönderildi (ilk kapalı test sürümü Console'dan
+          # elle yüklenmek zorundaydı — "draft app" kısıtlaması). İnceleme
+          # sonuçlanana kadar buradaki otomatik yüklemeler internal'a
+          # devam ediyor; inceleme geçince track burada da "alpha" yapılıp
+          # sonraki sürümler doğrudan kapalı teste akacak.
           track: internal
           status: completed
-
-      - name: GitHub Release oluştur (OTA APK ile)
-        uses: softprops/action-gh-release@v2
-        with:
-          files: mobile/build/app/outputs/flutter-apk/app-github-release.apk
-          generate_release_notes: true
