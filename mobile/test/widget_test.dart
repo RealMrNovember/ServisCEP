@@ -10,11 +10,11 @@ import 'package:serviscep/features/auth/login_screen.dart';
 /// bağımsız ekranlar test edilir. Uçtan uca doğrulama gerçek cihaz/emülatörde
 /// `flutter run` veya `flutter build apk` ile yapılır.
 void main() {
-  testWidgets('Giriş ekranı temel alanları gösterir', (WidgetTester tester) async {
+  testWidgets('Giriş ekranı temel alanları gösterir', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: LoginScreen()),
-      ),
+      const ProviderScope(child: MaterialApp(home: LoginScreen())),
     );
     await tester.pumpAndSettle();
 

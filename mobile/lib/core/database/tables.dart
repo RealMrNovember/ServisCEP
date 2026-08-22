@@ -18,6 +18,7 @@ import 'package:drift/drift.dart';
 class Companies extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
+
   /// Virgülle ayrılmış işletme türleri (Elektrik, Kamera, Bilgisayar, ...)
   TextColumn get businessTypes => text().withDefault(const Constant(''))();
   TextColumn get iban => text().nullable()();
@@ -35,6 +36,7 @@ class Users extends Table {
   TextColumn get email => text().unique()();
   TextColumn get phone => text().nullable()();
   TextColumn get passwordHash => text()();
+
   /// OWNER / ADMIN / TECHNICIAN / ACCOUNTING / VIEWER — MVP'de yalnızca OWNER.
   TextColumn get role => text().withDefault(const Constant('OWNER'))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -47,12 +49,14 @@ class Customers extends Table {
   TextColumn get id => text()();
   TextColumn get companyId => text().references(Companies, #id)();
   TextColumn get code => text()();
+
   /// Yetkili adı soyadı ve firma adı ayrı alanlardır — ikisinden en az biri
   /// dolu olmalıdır (bkz. customer_form_screen.dart doğrulaması), aynı anda
   /// ikisini birden girmek zorunlu değildir.
   TextColumn get contactName => text().nullable()();
   TextColumn get companyName => text().nullable()();
   TextColumn get iban => text().nullable()();
+
   /// BIREYSEL / FIRMA / APARTMAN / SITE / KAMU / DIGER
   TextColumn get type => text().withDefault(const Constant('BIREYSEL'))();
   TextColumn get phone => text().nullable()();
@@ -63,7 +67,13 @@ class Customers extends Table {
   TextColumn get taxInfo => text().nullable()();
   TextColumn get notes => text().nullable()();
   TextColumn get tags => text().nullable()();
+
+  /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
   TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
+
+  /// Sunucudaki `version` sayacının yerel kopyası — optimistic concurrency
+  /// için `base_version` olarak gönderilir (bkz. backend `HasVersion`).
+  IntColumn get version => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
@@ -88,9 +98,11 @@ class ServiceRequests extends Table {
   TextColumn get code => text()();
   TextColumn get customerId => text().references(Customers, #id)();
   TextColumn get description => text()();
+
   /// YUKSEK / NORMAL / DUSUK
   TextColumn get priority => text().withDefault(const Constant('NORMAL'))();
   TextColumn get address => text().nullable()();
+
   /// BEKLIYOR / ISLEME_ALINDI / REDDEDILDI / ISE_DONUSTU
   TextColumn get status => text().withDefault(const Constant('BEKLIYOR'))();
   TextColumn get convertedJobId => text().nullable()();
@@ -113,15 +125,23 @@ class Jobs extends Table {
   DateTimeColumn get appointmentDate => dateTime().nullable()();
   TextColumn get startTime => text().nullable()();
   TextColumn get endTime => text().nullable()();
+
   /// YUKSEK / NORMAL / DUSUK
   TextColumn get priority => text().withDefault(const Constant('NORMAL'))();
+
   /// TALEP / PLANLANDI / DEVAM_EDIYOR / BEKLEMEDE / TAMAMLANDI / IPTAL
   TextColumn get status => text().withDefault(const Constant('TALEP'))();
   TextColumn get technicianUserId => text().nullable()();
   IntColumn get estimatedPriceMinor => integer().nullable()();
   IntColumn get actualPriceMinor => integer().nullable()();
   TextColumn get notes => text().nullable()();
+
+  /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
   TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
+
+  /// Sunucudaki `version` sayacının yerel kopyası — optimistic concurrency
+  /// için `base_version` olarak gönderilir (bkz. backend `HasVersion`).
+  IntColumn get version => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
@@ -142,6 +162,7 @@ class JobNotes extends Table {
 class JobPhotos extends Table {
   TextColumn get id => text()();
   TextColumn get jobId => text().references(Jobs, #id)();
+
   /// ONCESI / ARIZA / MONTAJ / SONRASI / MALZEME / DIGER
   TextColumn get category => text().withDefault(const Constant('DIGER'))();
   TextColumn get filePath => text()();
@@ -167,6 +188,7 @@ class Quotes extends Table {
   TextColumn get companyId => text().references(Companies, #id)();
   TextColumn get code => text()();
   TextColumn get customerId => text().references(Customers, #id)();
+
   /// TASLAK / GONDERILDI / BEKLEMEDE / KABUL_EDILDI / REDDEDILDI / SURESI_DOLDU
   TextColumn get status => text().withDefault(const Constant('TASLAK'))();
   TextColumn get notes => text().nullable()();
@@ -269,6 +291,7 @@ class ExpenseEntries extends Table {
 class Products extends Table {
   TextColumn get id => text()();
   TextColumn get companyId => text().references(Companies, #id)();
+
   /// Taranan barkod (EAN-13/UPC-A vb.) — her ürünün olmak zorunda değil.
   TextColumn get barcode => text().nullable()();
   TextColumn get sku => text().nullable()();
@@ -277,10 +300,12 @@ class Products extends Table {
   TextColumn get model => text().nullable()();
   TextColumn get category => text().nullable()();
   TextColumn get unit => text().withDefault(const Constant('adet'))();
-  IntColumn get purchasePriceMinor => integer().withDefault(const Constant(0))();
+  IntColumn get purchasePriceMinor =>
+      integer().withDefault(const Constant(0))();
   IntColumn get salePriceMinor => integer().withDefault(const Constant(0))();
   IntColumn get currentStock => integer().withDefault(const Constant(0))();
   IntColumn get minStock => integer().withDefault(const Constant(0))();
+
   /// MANUAL / GLOBAL_LOOKUP — ürün nasıl oluşturuldu (izlenebilirlik).
   TextColumn get source => text().withDefault(const Constant('MANUAL'))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -295,13 +320,48 @@ class StockMovements extends Table {
   TextColumn get id => text()();
   TextColumn get companyId => text().references(Companies, #id)();
   TextColumn get productId => text().references(Products, #id)();
+
   /// IN (giriş) / OUT (çıkış)
   TextColumn get type => text()();
   IntColumn get quantity => integer()();
+
   /// job / manual_adjustment / purchase
   TextColumn get referenceType => text()();
   TextColumn get referenceId => text().nullable()();
   TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Senkronizasyon kuyruğu (outbox) — bkz. ROADMAP.md § B10 mobil senkron
+/// motoru. Bir Customer/Job yerelde yazıldığında AYNI transaction içinde
+/// buraya bir satır düşer; `SyncService` bu satırları sırayla backend'e
+/// gönderir. Bir yazma asla kuyruk satırı olmadan yerelde kalmaz — bu,
+/// "telefon offline yazdı ama hiç senkron kuyruğuna girmedi" riskini yapısal
+/// olarak ortadan kaldırır.
+class SyncOperations extends Table {
+  TextColumn get id => text()();
+
+  /// customer / job
+  TextColumn get entityType => text()();
+  TextColumn get entityId => text()();
+
+  /// CREATE / UPDATE / DELETE
+  TextColumn get operation => text()();
+
+  /// Gönderilecek alanların JSON gövdesi.
+  TextColumn get payload => text()();
+
+  /// UPDATE için — çakışma tespiti amacıyla yazma anındaki yerel version.
+  IntColumn get baseVersion => integer().nullable()();
+
+  /// PENDING / CONFLICT / FAILED — başarılı denemeler satırı SİLER, tabloda
+  /// tutulmaz.
+  TextColumn get status => text().withDefault(const Constant('PENDING'))();
+  IntColumn get attemptCount => integer().withDefault(const Constant(0))();
+  TextColumn get lastError => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -314,9 +374,11 @@ class CustomerLedgerEntries extends Table {
   TextColumn get companyId => text().references(Companies, #id)();
   TextColumn get customerId => text().references(Customers, #id)();
   DateTimeColumn get entryDate => dateTime().withDefault(currentDateAndTime)();
+
   /// DEBIT (borç) / CREDIT (alacak)
   TextColumn get type => text()();
   IntColumn get amountMinor => integer()();
+
   /// job / payment / manual_adjustment / opening_balance
   TextColumn get referenceType => text()();
   TextColumn get referenceId => text().nullable()();

@@ -30,17 +30,22 @@ class CustomerLedgerRepository {
   }
 }
 
-final customerLedgerRepositoryProvider = Provider<CustomerLedgerRepository>((ref) {
+final customerLedgerRepositoryProvider = Provider<CustomerLedgerRepository>((
+  ref,
+) {
   return CustomerLedgerRepository(ref.watch(databaseProvider));
 });
 
-final customerBalanceProvider = StreamProvider.family<int, String>((ref, customerId) {
-  return ref.watch(customerLedgerRepositoryProvider).watchBalance(customerId);
-});
-
-final customerLedgerEntriesProvider = StreamProvider.family<List<CustomerLedgerEntry>, String>((
+final customerBalanceProvider = StreamProvider.family<int, String>((
   ref,
   customerId,
 ) {
-  return ref.watch(customerLedgerRepositoryProvider).watchEntries(customerId);
+  return ref.watch(customerLedgerRepositoryProvider).watchBalance(customerId);
 });
+
+final customerLedgerEntriesProvider =
+    StreamProvider.family<List<CustomerLedgerEntry>, String>((ref, customerId) {
+      return ref
+          .watch(customerLedgerRepositoryProvider)
+          .watchEntries(customerId);
+    });

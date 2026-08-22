@@ -47,19 +47,25 @@ class JobMediaRepository {
     final destPath = p.join(dir.path, '$id$ext');
     await File(sourcePath).copy(destPath);
 
-    await _db.into(_db.jobPhotos).insert(
-      JobPhotosCompanion.insert(
-        id: id,
-        jobId: jobId,
-        category: Value(category),
-        filePath: destPath,
-      ),
-    );
-    return (_db.select(_db.jobPhotos)..where((ph) => ph.id.equals(id))).getSingle();
+    await _db
+        .into(_db.jobPhotos)
+        .insert(
+          JobPhotosCompanion.insert(
+            id: id,
+            jobId: jobId,
+            category: Value(category),
+            filePath: destPath,
+          ),
+        );
+    return (_db.select(
+      _db.jobPhotos,
+    )..where((ph) => ph.id.equals(id))).getSingle();
   }
 
   Stream<List<JobSignature>> watchSignatures(String jobId) {
-    return (_db.select(_db.jobSignatures)..where((s) => s.jobId.equals(jobId))).watch();
+    return (_db.select(
+      _db.jobSignatures,
+    )..where((s) => s.jobId.equals(jobId))).watch();
   }
 
   Future<JobSignature> addSignature({
@@ -72,10 +78,19 @@ class JobMediaRepository {
     final destPath = p.join(dir.path, '$id.png');
     await File(destPath).writeAsBytes(pngBytes);
 
-    await _db.into(_db.jobSignatures).insert(
-      JobSignaturesCompanion.insert(id: id, jobId: jobId, signerName: signerName, filePath: destPath),
-    );
-    return (_db.select(_db.jobSignatures)..where((s) => s.id.equals(id))).getSingle();
+    await _db
+        .into(_db.jobSignatures)
+        .insert(
+          JobSignaturesCompanion.insert(
+            id: id,
+            jobId: jobId,
+            signerName: signerName,
+            filePath: destPath,
+          ),
+        );
+    return (_db.select(
+      _db.jobSignatures,
+    )..where((s) => s.id.equals(id))).getSingle();
   }
 
   Stream<List<JobNote>> watchNotes(String jobId) {
@@ -86,9 +101,11 @@ class JobMediaRepository {
   }
 
   Future<void> addNote({required String jobId, required String note}) async {
-    await _db.into(_db.jobNotes).insert(
-      JobNotesCompanion.insert(id: _uuid.v4(), jobId: jobId, note: note),
-    );
+    await _db
+        .into(_db.jobNotes)
+        .insert(
+          JobNotesCompanion.insert(id: _uuid.v4(), jobId: jobId, note: note),
+        );
   }
 }
 
@@ -96,14 +113,22 @@ final jobMediaRepositoryProvider = Provider<JobMediaRepository>((ref) {
   return JobMediaRepository(ref.watch(databaseProvider));
 });
 
-final jobPhotosProvider = StreamProvider.family<List<JobPhoto>, String>((ref, jobId) {
+final jobPhotosProvider = StreamProvider.family<List<JobPhoto>, String>((
+  ref,
+  jobId,
+) {
   return ref.watch(jobMediaRepositoryProvider).watchPhotos(jobId);
 });
 
-final jobSignaturesProvider = StreamProvider.family<List<JobSignature>, String>((ref, jobId) {
-  return ref.watch(jobMediaRepositoryProvider).watchSignatures(jobId);
-});
+final jobSignaturesProvider = StreamProvider.family<List<JobSignature>, String>(
+  (ref, jobId) {
+    return ref.watch(jobMediaRepositoryProvider).watchSignatures(jobId);
+  },
+);
 
-final jobNotesProvider = StreamProvider.family<List<JobNote>, String>((ref, jobId) {
+final jobNotesProvider = StreamProvider.family<List<JobNote>, String>((
+  ref,
+  jobId,
+) {
   return ref.watch(jobMediaRepositoryProvider).watchNotes(jobId);
 });

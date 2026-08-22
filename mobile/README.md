@@ -11,6 +11,19 @@ flutter pub get
 flutter run
 ```
 
+## Flutter SDK Kurulu Değilse (Docker ile)
+
+Yerel makinede Flutter SDK yoksa, `ghcr.io/cirruslabs/flutter:stable` image'ı ile aynı işler yapılabilir. Pub-cache'in her çalıştırmada sıfırlanmaması için kalıcı bir named volume kullanılır:
+
+```powershell
+docker volume create serviscep_pub_cache
+docker run --rm -v "C:\CiciByte\ServisCEP\mobile:/app" -v serviscep_pub_cache:/root/.pub-cache -w /app ghcr.io/cirruslabs/flutter:stable sh -c "flutter pub get && dart run build_runner build --delete-conflicting-outputs"
+docker run --rm -v "C:\CiciByte\ServisCEP\mobile:/app" -v serviscep_pub_cache:/root/.pub-cache -w /app ghcr.io/cirruslabs/flutter:stable flutter analyze
+docker run --rm -v "C:\CiciByte\ServisCEP\mobile:/app" -v serviscep_pub_cache:/root/.pub-cache -w /app ghcr.io/cirruslabs/flutter:stable flutter test
+```
+
+(Not: Docker Desktop bu ortamda yalnızca **PowerShell**'den erişilebiliyor — bkz. [../backend/README.md](../backend/README.md).) `environment.sdk` kısıtlaması bu image'ın bundle ettiği Dart sürümüne göre (`^3.12.0`) ayarlıdır — pubspec.lock'ta daha yeni bir Dart görülmesi normaldir, geriye dönük uyumluluk bozulmaz.
+
 ## Proje Yapısı
 
 ```

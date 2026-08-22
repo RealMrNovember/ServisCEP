@@ -19,7 +19,12 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.2.8+10
 
 environment:
-  sdk: ^3.12.2
+  # NOT: 3.12.2 olarak ayarlıydı ama şu an erişilebilen en güncel Flutter
+  # Docker image'ı (ghcr.io/cirruslabs/flutter:stable, Flutter 3.44.0) Dart
+  # 3.12.0 ile geliyor — ikisi arasında sadece patch farkı var, API/dil
+  # değişikliği yok. Gerçek geliştirme makinesinde daha yeni bir Dart varsa
+  # sorun olmaz (kısıtlama zaten "veya üstü" anlamına gelir).
+  sdk: ^3.12.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions

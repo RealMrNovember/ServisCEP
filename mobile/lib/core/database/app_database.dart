@@ -26,13 +26,19 @@ part 'app_database.g.dart';
     CustomerLedgerEntries,
     Products,
     StockMovements,
+    SyncOperations,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// Testler için — gerçek (ama bellek içi) bir `NativeDatabase` verilir,
+  /// `drift_flutter`'ın platform kanalı gerektiren `driftDatabase()`'ine
+  /// gidilmez.
+  AppDatabase.forTesting(super.executor);
+
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -50,9 +56,20 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(customers, customers.contactName);
         await m.addColumn(customers, customers.companyName);
         await m.addColumn(customers, customers.iban);
-        await customStatement("UPDATE customers SET company_name = name WHERE type = 'FIRMA'");
-        await customStatement("UPDATE customers SET contact_name = name WHERE type != 'FIRMA'");
+        await customStatement(
+          "UPDATE customers SET company_name = name WHERE type = 'FIRMA'",
+        );
+        await customStatement(
+          "UPDATE customers SET contact_name = name WHERE type != 'FIRMA'",
+        );
         await m.dropColumn(customers, 'name');
+      }
+      if (from < 4) {
+        // Senkron motoru (bkz. ROADMAP.md § B10) — backend'in version tabanlı
+        // optimistic concurrency'sinin yerel karşılığı + outbox kuyruğu.
+        await m.addColumn(customers, customers.version);
+        await m.addColumn(jobs, jobs.version);
+        await m.createTable(syncOperations);
       }
     },
   );
