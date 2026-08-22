@@ -236,6 +236,47 @@
                 Yukarıdan bir paket seçtiğinizde bu form otomatik doldurulur; isterseniz elle de değiştirebilirsiniz.
             </x-slot>
 
+            {{-- Ödeme yapılmadan bildirim gönderilmesin — paket seçimi buraya
+                 kaydırdığı için IBAN bölümü gözden kaçabiliyor, bu yüzden
+                 havale bilgisi burada da gösteriliyor. --}}
+            <div class="mb-6 rounded-xl border border-warning-300 bg-warning-50 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
+                <div class="flex items-start gap-x-3">
+                    <x-filament::icon icon="heroicon-o-exclamation-triangle" class="mt-0.5 h-5 w-5 shrink-0 text-warning-600 dark:text-warning-400" />
+                    <div class="text-sm">
+                        <p class="font-semibold text-warning-800 dark:text-warning-300">
+                            Bu form, ödemenizi yaptıktan sonra doldurulmalıdır.
+                        </p>
+                        <p class="mt-1 text-warning-700 dark:text-warning-400">
+                            Henüz ödeme yapmadıysanız önce aşağıdaki hesaba havale/EFT gönderin, ardından bu formla ödeme bildiriminde bulunun.
+                        </p>
+                        @if ($bank['iban'])
+                            <div
+                                x-data="{ copied: false }"
+                                class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-white/70 px-3 py-2 dark:bg-gray-900/40"
+                            >
+                                <span class="font-mono text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $bank['iban'] }}</span>
+                                <button
+                                    type="button"
+                                    x-on:click="navigator.clipboard.writeText('{{ $bank['iban'] }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                                    class="text-gray-400 hover:text-primary-500"
+                                    title="IBAN'ı kopyala"
+                                >
+                                    <span x-show="!copied">
+                                        <x-filament::icon icon="heroicon-o-clipboard-document" class="h-4 w-4" />
+                                    </span>
+                                    <span x-show="copied" x-cloak>
+                                        <x-filament::icon icon="heroicon-o-check" class="h-4 w-4 text-success-500" />
+                                    </span>
+                                </button>
+                                @if ($bank['account_holder'])
+                                    <span class="text-xs text-gray-600 dark:text-gray-400">{{ $bank['account_holder'] }}@if ($bank['bank_name']) — {{ $bank['bank_name'] }}@endif</span>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             <form wire:submit="submit">
                 {{ $this->form }}
 

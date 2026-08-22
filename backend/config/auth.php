@@ -112,6 +112,16 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // Admin paneli şifre sıfırlama — bkz. AdminPanelProvider
+        // ->passwordReset(). Token tablosu users ile paylaşılır (e-posta
+        // sütunu üzerinden ayrışır, çakışma riski yok).
+        'admin_users' => [
+            'provider' => 'admin_users',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*

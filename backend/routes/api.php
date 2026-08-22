@@ -13,9 +13,12 @@ use App\Http\Controllers\Api\V1\JobNoteController;
 use App\Http\Controllers\Api\V1\JobPhotoController;
 use App\Http\Controllers\Api\V1\JobSignatureController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\ProformaController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\V1\SubscriptionPaymentRequestController;
 use App\Http\Controllers\Api\V1\SyncConflictController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +48,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        // Abonelik — web'deki Filament App "Abonelik" sayfasının mobil
+        // karşılığı: durum + paketler + havale bildirimi (admin onaylı akış).
+        Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
+        Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
+        Route::get('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'index'])
+            ->name('subscription.payment-requests.index');
+        Route::post('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'store'])
+            ->name('subscription.payment-requests.store');
 
         Route::apiResource('sync-conflicts', SyncConflictController::class)->only(['index']);
         Route::post('sync-conflicts/{syncConflict}/resolve', [SyncConflictController::class, 'resolve'])

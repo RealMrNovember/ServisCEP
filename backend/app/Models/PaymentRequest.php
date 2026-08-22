@@ -2,15 +2,41 @@
 
 namespace App\Models;
 
+use App\Notifications\NewPaymentRequestReceived;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class PaymentRequest extends Model
 {
     use HasUuids;
+
+    protected static function booted(): void
+    {
+        // Hem web (Filament App panel) hem mobil API'den oluşturulan her
+        // yeni talep adminlere e-postayla bildirilir — onay akışı tamamen
+        // manuel olduğu için talebin beklediğinin fark edilmesi buna bağlı.
+        // Mail hatası talebin kendisini asla düşürmemeli (talep DB'de,
+        // panelde her durumda görünür).
+        static::created(function (PaymentRequest $paymentRequest): void {
+            if ($paymentRequest->status !== 'PENDING') {
+                return;
+            }
+
+            try {
+                Notification::send(AdminUser::all(), new NewPaymentRequestReceived($paymentRequest));
+            } catch (\Throwable $e) {
+                Log::error('Ödeme talebi admin bildirimi gönderilemedi', [
+                    'payment_request_id' => $paymentRequest->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        });
+    }
 
     public $timestamps = false;
 

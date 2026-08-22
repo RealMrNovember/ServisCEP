@@ -30,6 +30,11 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('ServisCEP Admin')
             ->authGuard('admin')
             ->login()
+            // Adminler şifrelerini e-postayla kendileri sıfırlayabilsin —
+            // seed anında bir kez gösterilen şifreye bağımlılığı kaldırır
+            // (SMTP canlıda yapılandırıldı, 2026-08-22).
+            ->passwordReset()
+            ->authPasswordBroker('admin_users')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->colors([
                 'primary' => Color::Blue,

@@ -34,4 +34,34 @@ class Plan extends Model
     {
         return $this->hasMany(Company::class);
     }
+
+    /**
+     * Plan açıklaması "{hedef kitle}. {özellik, özellik, ...}." biçiminde
+     * saklanır — hem web abonelik sayfası hem mobil API aynı ayrıştırmayı
+     * kullanır (tek kaynak burası).
+     *
+     * @return array{audience: string, features: array<int, string>}
+     */
+    public function splitDescription(): array
+    {
+        $sentences = array_values(array_filter(array_map('trim', explode('.', (string) $this->description))));
+
+        $audience = $sentences[0] ?? '';
+        $features = isset($sentences[1])
+            ? array_values(array_filter(array_map('trim', explode(',', $sentences[1]))))
+            : [];
+
+        return ['audience' => $audience, 'features' => $features];
+    }
+
+    public function yearlySavingsPercent(): int
+    {
+        $monthlyTotal = $this->price_minor * 12;
+
+        if ($monthlyTotal <= 0 || (int) $this->price_yearly_minor <= 0) {
+            return 0;
+        }
+
+        return (int) round((1 - ($this->price_yearly_minor / $monthlyTotal)) * 100);
+    }
 }
