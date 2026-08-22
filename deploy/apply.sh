@@ -27,7 +27,13 @@ cp -f deploy/public-placeholder/logo.png logo.png
 # host'taki host içinde çalışıyormuş gibi davranır.
 if [ -f backend/artisan ]; then
   echo "==> Composer bağımlılıkları"
-  docker exec serviscep-php composer install --no-dev --optimize-autoloader
+  # root olarak çalıştırılır: vendor/ önceki (container-öncesi) deploy'lardan
+  # kalma root sahipliğinde olabilir, container'ın normal kullanıcısı
+  # (www-data, uid 33) bunun üzerine yazamaz. FPM süreci hâlâ www-data
+  # olarak çalışmaya devam eder (compose'daki user: "33:33" değişmedi) —
+  # yalnızca bu tek seferlik composer adımı root'a yükseltilir.
+  docker exec -u root serviscep-php composer install --no-dev --optimize-autoloader
+  docker exec -u root serviscep-php chown -R www-data:www-data vendor
 
   echo "==> Migration"
   docker exec serviscep-php php artisan migrate --force
