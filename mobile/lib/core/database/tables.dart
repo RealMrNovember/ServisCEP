@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-/// ServisCEP yerel veritabanı şeması (Drift).
+/// TeknikCEP yerel veritabanı şeması (Drift).
 ///
 /// Bkz. docs/07 § Veritabanı Ana Modeli — bu tablolar, backend PostgreSQL
 /// şemasının yerel/offline karşılığıdır. Alan adları backend ile bilinçli

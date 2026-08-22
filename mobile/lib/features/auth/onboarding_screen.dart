@@ -121,7 +121,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ServisCEP\'e hoş geldin',
+                  'TeknikCEP\'e hoş geldin',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

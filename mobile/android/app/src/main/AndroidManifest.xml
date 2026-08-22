@@ -24,7 +24,7 @@
          kullanılır) ve Play Console'un ayrı bir izin beyanı istememesi için
          Play flavor'ının manifestinde bu izin kasıtlı olarak bulunmaz. -->
     <application
-        android:label="ServisCEP"
+        android:label="TeknikCEP"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

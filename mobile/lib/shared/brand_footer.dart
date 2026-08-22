@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// Standart marka/geliştirici atfı — uygulama genelinde footer alanlarında
 /// (Dashboard, Daha Fazla/Hakkında ekranı vb.) kullanılır.
 ///
-/// Bu, Claude/Anthropic atfı DEĞİLDİR — ServisCEP'i geliştiren şirketin
+/// Bu, Claude/Anthropic atfı DEĞİLDİR — TeknikCEP'i geliştiren şirketin
 /// kendi atfıdır, kullanıcı talebiyle eklenmiştir.
 class BrandFooter extends StatelessWidget {
   const BrandFooter({super.key});
@@ -29,7 +29,7 @@ class BrandFooter extends StatelessWidget {
                   color: scheme.onSurfaceVariant,
                 ),
                 children: [
-                  const TextSpan(text: 'ServisCEP · '),
+                  const TextSpan(text: 'TeknikCEP · '),
                   TextSpan(
                     text: 'Cicibyte Teknoloji',
                     style: TextStyle(

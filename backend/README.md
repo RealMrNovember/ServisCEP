@@ -1,4 +1,4 @@
-# ServisCEP — Backend (Laravel + Filament + Mobil API)
+# TeknikCEP — Backend (Laravel + Filament + Mobil API)
 
 İki katman aynı Laravel uygulamasında birlikte yaşar: **Filament tabanlı web/admin paneli** (şirket paneli `/panel`, admin paneli `/admin`) ve **mobil için JSON REST API** (`/api/v1/*`, Sanctum token). İkisi de aynı veri modelini (Company/Customer/Job/...) kullanır — bkz. [../docs/13](../docs/13-web-arayuzu-ve-showroom.md).
 

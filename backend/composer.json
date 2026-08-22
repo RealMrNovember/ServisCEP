@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "cicibyte/serviscep-backend",
     "type": "project",
-    "description": "ServisCEP - saha teknik servis isletmeleri icin REST API backend",
+    "description": "TeknikCEP - saha teknik servis isletmeleri icin REST API backend",
     "keywords": [
         "laravel",
         "serviscep",

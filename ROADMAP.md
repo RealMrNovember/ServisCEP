@@ -1,4 +1,4 @@
-# ServisCEP — Yol Haritası
+# TeknikCEP — Yol Haritası (eski adıyla ServisCEP)
 
 > Kaynak: orijinal spesifikasyon §57–§60, §92–§93. Ayrıntılı kapsam dışı liste için bkz. [docs/12-mvp-kapsami.md](docs/12-mvp-kapsami.md).
 

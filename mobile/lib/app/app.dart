@@ -6,8 +6,8 @@ import '../core/sync/sync_trigger.dart';
 import 'router.dart';
 import 'theme.dart';
 
-class ServisCepApp extends ConsumerWidget {
-  const ServisCepApp({super.key});
+class TeknikCepApp extends ConsumerWidget {
+  const TeknikCepApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -16,7 +16,7 @@ class ServisCepApp extends ConsumerWidget {
     ref.watch(syncTriggerProvider);
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'ServisCEP',
+      title: 'TeknikCEP',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

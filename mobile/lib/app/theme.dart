@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// ServisCEP marka renkleri.
+/// TeknikCEP marka renkleri.
 /// Kaynak: docs/14-marka-kimligi.md — bu dosyayla senkron tutulmalıdır.
 abstract final class AppColors {
   static const accent = Color(0xFF3B82F6);

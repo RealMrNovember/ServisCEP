@@ -9,5 +9,5 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR');
   await NotificationService.init();
-  runApp(const ProviderScope(child: ServisCepApp()));
+  runApp(const ProviderScope(child: TeknikCepApp()));
 }

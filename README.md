@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="assets/branding/icon-192.png" width="96" height="96" alt="ServisCEP logosu">
+<img src="assets/branding/icon-192.png" width="96" height="96" alt="TeknikCEP logosu">
 
-# ServisCEP
+# TeknikCEP
 
 **Saha teknik servis işletmeleri için mobil-first, offline-first işletme yönetim platformu.**
 
@@ -26,7 +26,7 @@ zincirini tek bir mobil uygulamada birleştirir.
 
 ## Proje Hakkında
 
-ServisCEP, elektrik, güvenlik sistemleri (kamera/alarm), bilgisayar/network gibi alanlarda faaliyet gösteren **saha teknik servis işletmelerinin** günlük operasyonunu yönetmek için tasarlanmış bir mobil uygulamadır.
+TeknikCEP, elektrik, güvenlik sistemleri (kamera/alarm), bilgisayar/network gibi alanlarda faaliyet gösteren **saha teknik servis işletmelerinin** günlük operasyonunu yönetmek için tasarlanmış bir mobil uygulamadır.
 
 Amaç, "her şeyi yapan dev bir ERP" değil; **sahada çalışan teknik işletmenin telefonunu, işletmenin merkezine dönüştürmektir.** Kullanıcı uygulamayı açtığında ilk göreceği şey her zaman şudur: *"Bugün ne yapacağım?"*
 

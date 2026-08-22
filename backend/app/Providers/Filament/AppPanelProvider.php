@@ -28,7 +28,7 @@ class AppPanelProvider extends PanelProvider
         return $panel
             ->id('app')
             ->path('panel')
-            ->brandName('ServisCEP')
+            ->brandName('TeknikCEP')
             ->authGuard('web')
             ->login()
             ->registration(RegisterCompany::class)
