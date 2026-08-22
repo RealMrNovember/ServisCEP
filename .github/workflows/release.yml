@@ -90,11 +90,9 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.cicibyte.serviscep
           releaseFiles: mobile/build/app/outputs/bundle/playRelease/app-play-release.aab
-          # NOT (2026-08-22): v0.2.11 kapalı test (alpha) sürümü Google
-          # incelemesine gönderildi (ilk kapalı test sürümü Console'dan
-          # elle yüklenmek zorundaydı — "draft app" kısıtlaması). İnceleme
-          # sonuçlanana kadar buradaki otomatik yüklemeler internal'a
-          # devam ediyor; inceleme geçince track burada da "alpha" yapılıp
-          # sonraki sürümler doğrudan kapalı teste akacak.
-          track: internal
+          # NOT (2026-08-23): v0.2.11 kapalı test (alpha) sürümü Play
+          # Developer API ile doğrulandı — "draft app" kısıtlaması geçti,
+          # alpha track "completed" durumda gerçek bir sürüm barındırıyor.
+          # Otomatik yüklemeler artık doğrudan kapalı teste (alpha) akıyor.
+          track: alpha
           status: completed
