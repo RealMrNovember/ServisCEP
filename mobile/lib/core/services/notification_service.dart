@@ -16,9 +16,40 @@ abstract final class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
 
-  static const _channelId = 'job_reminders';
-  static const _channelName = 'İş Hatırlatmaları';
-  static const _reminderLead = Duration(minutes: 30);
+  static const channelId = 'job_reminders';
+  static const channelName = 'İş Hatırlatmaları';
+  static const _channelId = channelId;
+  static const _channelName = channelName;
+
+  /// Randevudan kaç dakika önce hatırlatılacağı. 0 = hatırlatma kapalı.
+  /// Kullanıcı "Bildirimler" ayar ekranından değiştirir; varsayılan 30 dk.
+  static const defaultReminderLeadMinutes = 30;
+  static int reminderLeadMinutes = defaultReminderLeadMinutes;
+
+  /// Sunucudan gelen (FCM) bir bildirimi, yerel hatırlatmalarla AYNI
+  /// kanaldan gösterir — kullanıcı için tek bir "İş Hatırlatmaları"
+  /// kanalı olur, ayarlarda ikinci bir kalem çıkmaz.
+  static Future<void> showNow({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    await init();
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          channelId,
+          channelName,
+          channelDescription: 'Planlanan iş randevuları için hatırlatmalar',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
+    );
+  }
 
   static Future<void> init() async {
     if (_initialized) return;
@@ -44,8 +75,11 @@ abstract final class NotificationService {
   static Future<void> scheduleJobReminder(Job job) async {
     final appointment = job.appointmentDate;
     if (appointment == null) return;
+    if (reminderLeadMinutes <= 0) return; // kullanıcı kapatmış
 
-    final fireAt = appointment.subtract(_reminderLead);
+    final fireAt = appointment.subtract(
+      Duration(minutes: reminderLeadMinutes),
+    );
     if (fireAt.isBefore(DateTime.now())) return;
 
     await init();

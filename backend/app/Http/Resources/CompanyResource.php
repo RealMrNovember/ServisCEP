@@ -21,6 +21,7 @@ class CompanyResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'business_types' => $this->business_types,
+            'iban' => $this->iban,
             'is_active' => $this->is_active,
             'subscription_expires_at' => $this->subscription_expires_at,
         ];

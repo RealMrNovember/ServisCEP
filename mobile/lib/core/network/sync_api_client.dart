@@ -159,6 +159,9 @@ abstract interface class SyncApiClient {
     required String filePath,
   });
 
+  /// Şirket ayarları güncellemesi (bkz. CompanyController).
+  Future<void> updateCompany(Map<String, dynamic> payload);
+
   /// Bekleyen senkron çakışmaları (OWNER-only, bkz. SyncConflictController).
   Future<List<Map<String, dynamic>>> listPendingConflicts();
 
@@ -392,6 +395,15 @@ class DioSyncApiClient implements SyncApiClient {
     'id': id,
     'signer_name': signerName,
   }, filePath);
+
+  @override
+  Future<void> updateCompany(Map<String, dynamic> payload) async {
+    try {
+      await _dio.put('/company', data: payload);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
 
   @override
   Future<List<Map<String, dynamic>>> listPendingConflicts() async {

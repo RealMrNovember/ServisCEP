@@ -93,6 +93,25 @@ class PaymentRequest extends Model
      */
     public function approve(string $duration, AdminUser $admin, ?string $note = null, ?string $approvedPlanId = null): void
     {
+        $this->approveWithinTransaction($duration, $admin, $note, $approvedPlanId);
+
+        // Bildirim transaction'ın DIŞINDA, commit sonrası gönderilir:
+        // gönderim hatası onayı geri almamalı (bkz. FcmService).
+        $company = $this->company()->with('plan')->first();
+        app(\App\Services\FcmService::class)->sendToCompany(
+            $company,
+            'Aboneliğin aktif edildi',
+            sprintf(
+                '%s paketi %s tarihine kadar geçerli.',
+                $company->plan?->name ?? 'Paketin',
+                $company->subscription_expires_at?->translatedFormat('d F Y') ?? '-'
+            ),
+            ['type' => 'subscription_approved'],
+        );
+    }
+
+    private function approveWithinTransaction(string $duration, AdminUser $admin, ?string $note, ?string $approvedPlanId): void
+    {
         DB::transaction(function () use ($duration, $admin, $note, $approvedPlanId) {
             $company = $this->company()->lockForUpdate()->first();
             $base = $company->subscription_expires_at?->isFuture()

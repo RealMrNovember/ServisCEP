@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/data/session_controller.dart';
 import '../../features/subscription/data/subscription_repository.dart';
+import '../services/push_service.dart';
 import 'sync_service.dart';
 
 const _periodicSyncInterval = Duration(minutes: 3);
@@ -41,7 +42,16 @@ class SyncTrigger with WidgetsBindingObserver {
     _periodicTimer = Timer.periodic(_periodicSyncInterval, (_) => _trigger());
     _ref.listen(sessionControllerProvider, (previous, next) {
       final session = next.valueOrNull;
-      if (session != null && session.userId != _lastSyncedUserId) _trigger();
+      if (session != null && session.userId != _lastSyncedUserId) {
+        _trigger();
+        // Push kaydı da oturuma bağlı: token backend'e ancak kimlik
+        // doğrulandıktan sonra yazılabilir (bkz. PushService).
+        unawaited(_ref.read(pushServiceProvider).start());
+      }
+      if (session == null && previous?.valueOrNull != null) {
+        // Çıkış yapıldı — bu cihaz eski hesabın bildirimlerini almamalı.
+        unawaited(_ref.read(pushServiceProvider).unregister());
+      }
     });
     _trigger();
   }

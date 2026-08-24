@@ -34,6 +34,7 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<Object> convertResponses = [];
 
   final List<(String, String)> uploadTaxCertificateCalls = [];
+  final List<Map<String, dynamic>> updateCompanyCalls = [];
   final List<(String, String)> resolveConflictCalls = [];
   List<Map<String, dynamic>> pendingConflicts = [];
 
@@ -84,6 +85,11 @@ class FakeSyncApiClient implements SyncApiClient {
   @override
   Future<void> uploadTaxCertificate(String customerId, String filePath) async {
     uploadTaxCertificateCalls.add((customerId, filePath));
+  }
+
+  @override
+  Future<void> updateCompany(Map<String, dynamic> payload) async {
+    updateCompanyCalls.add(payload);
   }
 
   @override

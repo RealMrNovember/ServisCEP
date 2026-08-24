@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerLedgerController;
+use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerTaxCertificateController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\ExpenseEntryController;
 use App\Http\Controllers\Api\V1\IncomeEntryController;
 use App\Http\Controllers\Api\V1\JobController;
@@ -55,6 +57,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         // Abonelik — web'deki Filament App "Abonelik" sayfasının mobil
         // karşılığı: durum + paketler + havale bildirimi (admin onaylı akış).
+        // Push bildirimi cihaz kaydı — abonelik süresi dolsa da çalışır
+        // (kullanıcı yenileme bildirimini alabilmeli).
+        Route::post('/devices', [DeviceTokenController::class, 'store'])->name('devices.store');
+        Route::delete('/devices', [DeviceTokenController::class, 'destroy'])->name('devices.destroy');
+
         Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
         Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
         Route::get('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'index'])
@@ -65,6 +72,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::middleware('subscription.active')->group(function (): void {
 
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        // Şirket ayarları — bkz. CompanyController (şirket oturumdan gelir).
+        Route::get('/company', [CompanyController::class, 'show'])->name('company.show');
+        Route::put('/company', [CompanyController::class, 'update'])->name('company.update');
 
         Route::apiResource('sync-conflicts', SyncConflictController::class)->only(['index']);
         Route::post('sync-conflicts/{syncConflict}/resolve', [SyncConflictController::class, 'resolve'])

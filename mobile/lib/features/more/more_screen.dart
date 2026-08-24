@@ -7,6 +7,9 @@ import '../../shared/brand_footer.dart';
 import '../auth/data/session_controller.dart';
 import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
+import '../settings/company_settings_screen.dart';
+import '../settings/job_types_screen.dart';
+import '../settings/notification_settings_screen.dart';
 import '../stock/products_list_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../sync/data/sync_conflict_repository.dart';
@@ -119,29 +122,41 @@ class MoreScreen extends ConsumerWidget {
               );
             },
           ),
-          const ListTile(
-            leading: Icon(Icons.business_outlined),
-            title: Text('Şirket ayarları'),
-            trailing: Icon(Icons.chevron_right),
-            enabled: false,
+          ListTile(
+            leading: const Icon(Icons.business_outlined),
+            title: const Text('Şirket ayarları'),
+            subtitle: const Text('Ünvan, işletme türü, IBAN'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CompanySettingsScreen()),
+            ),
           ),
           const ListTile(
             leading: Icon(Icons.people_alt_outlined),
             title: Text('Kullanıcılar ve yetkiler'),
+            subtitle: Text('Yakında — personel ve rol yönetimi'),
             trailing: Icon(Icons.chevron_right),
             enabled: false,
           ),
-          const ListTile(
-            leading: Icon(Icons.category_outlined),
-            title: Text('İş türleri'),
-            trailing: Icon(Icons.chevron_right),
-            enabled: false,
+          ListTile(
+            leading: const Icon(Icons.category_outlined),
+            title: const Text('İş türleri'),
+            subtitle: const Text('Kendi türlerini ekle'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const JobTypesScreen())),
           ),
-          const ListTile(
-            leading: Icon(Icons.notifications_outlined),
-            title: Text('Bildirimler'),
-            trailing: Icon(Icons.chevron_right),
-            enabled: false,
+          ListTile(
+            leading: const Icon(Icons.notifications_outlined),
+            title: const Text('Bildirimler'),
+            subtitle: const Text('Hatırlatma süresi ve bildirimler'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const NotificationSettingsScreen(),
+              ),
+            ),
           ),
           const Divider(height: 24),
           ListTile(

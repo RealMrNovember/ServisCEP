@@ -45,4 +45,12 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    // Firebase Cloud Messaging (push bildirimleri) — bkz. FcmService.
+    // Anahtar dosyası repoda DEĞİLDİR; yalnızca sunucuda 600 izinle durur.
+    // Tanımlı değilse push sessizce devre dışı kalır (yerel/CI ortamları).
+    'fcm' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+        'project_id' => env('FIREBASE_PROJECT_ID', 'serviscep'),
+    ],
+
 ];

@@ -6,6 +6,7 @@ import '../../core/constants/job_constants.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/customer_display.dart';
 import '../auth/data/session_controller.dart';
+import '../settings/data/job_types_repository.dart';
 import '../customers/data/customers_repository.dart';
 import 'data/jobs_repository.dart';
 
@@ -132,7 +133,7 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
                   if (textEditingValue.text.isEmpty) {
                     return const Iterable<String>.empty();
                   }
-                  final allTypes = jobTypeCatalog.values.expand((v) => v);
+                  final allTypes = ref.watch(allJobTypeNamesProvider);
                   return allTypes.where(
                     (t) => t.toLowerCase().contains(textEditingValue.text.toLowerCase()),
                   );

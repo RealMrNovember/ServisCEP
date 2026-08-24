@@ -143,6 +143,8 @@ class SyncService {
                 .write(
                   const CustomersCompanion(hasTaxCertificate: Value(true)),
                 );
+          case ('company', 'UPDATE'):
+            await _api.updateCompany(payload);
           case ('job_note', 'CREATE'):
             await _api.createJobNote(payload['job_id'] as String, {
               'id': payload['id'],
