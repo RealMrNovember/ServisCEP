@@ -17,6 +17,14 @@ Kurallar:
 
 ---
 
+## v0.6.0
+
+Yenilikler:
+• Personel ekleyin: çalışanlarınıza kendi hesaplarını açın ve yetkilerini belirleyin.
+• Teknisyen rolü işletmenizin gelir, gider ve cari bilgilerini göremez.
+• Cari hesap artık ofisle tam eşitleniyor; telefondaki ve paneldeki bakiye her zaman aynı.
+• Aynı tahsilatın bakiyeye iki kez yansıyabildiği bir hata giderildi.
+
 ## v0.5.0
 
 Yenilikler:
