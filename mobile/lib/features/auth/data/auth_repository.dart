@@ -21,12 +21,22 @@ class AuthSession {
     required this.companyId,
     required this.fullName,
     required this.companyName,
+    this.role = 'OWNER',
   });
 
   final String userId;
   final String companyId;
   final String fullName;
   final String companyName;
+
+  /// OWNER / ADMIN / TECHNICIAN / ACCOUNTING / VIEWER — bkz. backend
+  /// RolePermissions. Arayüzde yetkisiz bölümleri gizlemek için kullanılır;
+  /// asıl yaptırım her zaman SUNUCUDADIR (istemci gizlemesi güvenlik
+  /// değil, kullanıcı deneyimidir).
+  final String role;
+
+  bool get isOwner => role == 'OWNER';
+  bool get canSeeFinance => role == 'OWNER' || role == 'ADMIN' || role == 'ACCOUNTING';
 }
 
 class AuthException implements Exception {
@@ -167,7 +177,7 @@ class AuthRepository {
             email: email,
             phone: Value(phone),
             passwordHash: passwordHash,
-            role: const Value('OWNER'),
+            role: Value(result.role),
           ),
         );
 
@@ -179,6 +189,7 @@ class AuthRepository {
       companyId: result.companyId,
       fullName: result.fullName,
       companyName: result.companyName,
+      role: result.role,
     );
   }
 
@@ -238,7 +249,7 @@ class AuthRepository {
             email: email,
             phone: Value(phone),
             passwordHash: '$salt\$$hash',
-            role: const Value('OWNER'),
+            role: Value(result.role),
           ),
         );
 
@@ -250,6 +261,7 @@ class AuthRepository {
       companyId: result.companyId,
       fullName: result.fullName,
       companyName: result.companyName,
+      role: result.role,
     );
   }
 
@@ -310,6 +322,7 @@ class AuthRepository {
       companyId: user.companyId,
       fullName: user.fullName,
       companyName: company.name,
+      role: user.role,
     );
   }
 
@@ -342,6 +355,7 @@ class AuthRepository {
       companyId: company.id,
       fullName: user.fullName,
       companyName: company.name,
+      role: user.role,
     );
   }
 

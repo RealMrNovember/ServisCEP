@@ -12,6 +12,7 @@ class AuthTokenResult {
     required this.companyId,
     required this.fullName,
     required this.companyName,
+    required this.role,
   });
 
   factory AuthTokenResult.fromJson(Map<String, dynamic> json) {
@@ -23,6 +24,9 @@ class AuthTokenResult {
       companyId: company['id'] as String,
       fullName: data['full_name'] as String,
       companyName: company['name'] as String,
+      // Sunucu rolü döndürmezse en kısıtlayıcı değil, varsayılan OWNER
+      // alınır: tek kullanıcılı kayıtlarda (register) sahip zaten odur.
+      role: data['role'] as String? ?? 'OWNER',
     );
   }
 
@@ -31,6 +35,7 @@ class AuthTokenResult {
   final String companyId;
   final String fullName;
   final String companyName;
+  final String role;
 }
 
 /// Backend'in bir kaydın son hâlini + `version`'ını döndüren yanıtları için
@@ -161,6 +166,16 @@ abstract interface class SyncApiClient {
 
   /// Şirket ayarları güncellemesi (bkz. CompanyController).
   Future<void> updateCompany(Map<String, dynamic> payload);
+
+  /// Cari hesap hareketleri — sunucu tek doğruluk kaynağıdır, bu yüzden
+  /// yalnızca PULL edilir (bkz. LedgerEntryController).
+  Future<List<RemoteRecord>> listLedgerEntries();
+
+  /// Personel yönetimi (yalnızca işletme sahibi).
+  Future<List<Map<String, dynamic>>> listPersonnel();
+  Future<Map<String, dynamic>> createPersonnel(Map<String, dynamic> payload);
+  Future<void> updatePersonnel(String id, Map<String, dynamic> payload);
+  Future<void> deletePersonnel(String id);
 
   /// Bekleyen senkron çakışmaları (OWNER-only, bkz. SyncConflictController).
   Future<List<Map<String, dynamic>>> listPendingConflicts();
@@ -400,6 +415,53 @@ class DioSyncApiClient implements SyncApiClient {
   Future<void> updateCompany(Map<String, dynamic> payload) async {
     try {
       await _dio.put('/company', data: payload);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<List<RemoteRecord>> listLedgerEntries() =>
+      _listAllPages('/ledger-entries');
+
+  @override
+  Future<List<Map<String, dynamic>>> listPersonnel() async {
+    try {
+      final response = await _dio.get('/personnel');
+      final data =
+          (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
+      return data.cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> createPersonnel(
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await _dio.post('/personnel', data: payload);
+      return (response.data as Map<String, dynamic>)['data']
+          as Map<String, dynamic>;
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> updatePersonnel(String id, Map<String, dynamic> payload) async {
+    try {
+      await _dio.put('/personnel/$id', data: payload);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> deletePersonnel(String id) async {
+    try {
+      await _dio.delete('/personnel/$id');
     } on DioException catch (e) {
       _client.throwApiException(e);
     }

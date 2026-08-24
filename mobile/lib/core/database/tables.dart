@@ -408,6 +408,16 @@ class CustomerLedgerEntries extends Table {
   TextColumn get referenceType => text()();
   TextColumn get referenceId => text().nullable()();
   TextColumn get description => text()();
+
+  /// PENDING: telefonun İYİMSER olarak oluşturduğu yerel kayıt — kullanıcı
+  /// işi tamamlar tamamlamaz bakiyeyi görebilsin diye anında yazılır.
+  /// SYNCED: sunucudan çekilmiş, doğruluk kaynağı olan kayıt.
+  ///
+  /// Cari hesabın tek doğruluk kaynağı SUNUCUDUR (bkz. SyncService.
+  /// _pullLedgerEntries): pull sırasında aynı olayı temsil eden iyimser
+  /// yerel kayıt, sunucudakiyle DEĞİŞTİRİLİR. Böylece iki taraf bağımsız
+  /// hesaplarken bakiyelerin sessizce ayrışması riski ortadan kalkar.
+  TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

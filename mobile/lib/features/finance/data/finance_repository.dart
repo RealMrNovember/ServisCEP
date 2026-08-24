@@ -180,7 +180,11 @@ class FinanceRepository {
           type: 'CREDIT',
           amountMinor: amountMinor,
           referenceType: 'payment',
-          referenceId: Value(jobId),
+          // Referans TAHSİLATIN kendisidir (işin değil). Önceden buraya
+          // jobId yazılıyordu; sunucu ise payment.id yazıyor. Bu uyumsuzluk
+          // yüzünden senkronda aynı tahsilatın yerel ve sunucu kaydı
+          // eşleştirilemez, bakiye çift sayılırdı.
+          referenceId: Value(id),
           description: note?.isNotEmpty == true ? note! : 'Tahsilat',
         ),
       );

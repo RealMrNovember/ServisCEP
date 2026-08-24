@@ -33,6 +33,16 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
         ];
     }
 
+    /**
+     * Rol bazlı yetki kontrolü — tek kaynak RolePermissions matrisidir.
+     * Politikalar ve controller'lar rol adını ("OWNER" gibi) doğrudan
+     * karşılaştırmak yerine bunu kullanmalıdır (bkz. docs/09 § 1).
+     */
+    public function hasPermission(string $ability): bool
+    {
+        return \App\Support\RolePermissions::allows($this->role, $ability);
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);

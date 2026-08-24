@@ -6,40 +6,43 @@ namespace App\Policies;
 
 use App\Models\Customer;
 use App\Models\User;
+use App\Support\RolePermissions;
 
 /**
- * MVP'de tek rol (OWNER) olduğu için bu politika şimdilik yalnızca
- * `company_id` eşleşmesini doğrular — asıl izolasyon zaten
- * `BelongsToCompany` global scope'u tarafından sorgu seviyesinde
- * uygulanır (bkz. Concerns/BelongsToCompany.php). Politika, V2'de rol
- * bazlı yetkilendirme (bkz. docs/09) genişleyince buraya eklenecek
- * kontroller için hazır bir yer ve ek bir savunma katmanı sağlar.
+ * İki katmanlı savunma: şirket izolasyonu (`company_id`) + rol yetkisi.
+ *
+ * Şirket izolasyonu zaten `BelongsToCompany` global scope'u tarafından
+ * sorgu seviyesinde uygulanır; buradaki kontrol ikinci katmandır.
+ * Rol yetkileri tek kaynaktan gelir: RolePermissions (bkz. docs/09 § 1).
  */
 class CustomerPolicy
 {
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->hasPermission(RolePermissions::CUSTOMERS_VIEW);
     }
 
     public function view(User $user, Customer $customer): bool
     {
-        return $user->company_id === $customer->company_id;
+        return $user->company_id === $customer->company_id
+            && $user->hasPermission(RolePermissions::CUSTOMERS_VIEW);
     }
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->hasPermission(RolePermissions::CUSTOMERS_MANAGE);
     }
 
     public function update(User $user, Customer $customer): bool
     {
-        return $user->company_id === $customer->company_id;
+        return $user->company_id === $customer->company_id
+            && $user->hasPermission(RolePermissions::CUSTOMERS_MANAGE);
     }
 
     public function delete(User $user, Customer $customer): bool
     {
-        return $user->company_id === $customer->company_id;
+        return $user->company_id === $customer->company_id
+            && $user->hasPermission(RolePermissions::CUSTOMERS_DELETE);
     }
 
     /**
@@ -48,6 +51,7 @@ class CustomerPolicy
      */
     public function recordLedgerAdjustment(User $user, Customer $customer): bool
     {
-        return $user->company_id === $customer->company_id && $user->role === 'OWNER';
+        return $user->company_id === $customer->company_id
+            && $user->hasPermission(RolePermissions::LEDGER_ADJUST);
     }
 }

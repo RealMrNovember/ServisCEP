@@ -6,16 +6,18 @@ namespace App\Policies;
 
 use App\Models\SyncConflict;
 use App\Models\User;
+use App\Support\RolePermissions;
 
 class SyncConflictPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->role === 'OWNER';
+        return $user->hasPermission(RolePermissions::CONFLICTS_RESOLVE);
     }
 
     public function resolve(User $user, SyncConflict $syncConflict): bool
     {
-        return $user->role === 'OWNER' && $user->company_id === $syncConflict->company_id;
+        return $user->hasPermission(RolePermissions::CONFLICTS_RESOLVE)
+            && $user->company_id === $syncConflict->company_id;
     }
 }

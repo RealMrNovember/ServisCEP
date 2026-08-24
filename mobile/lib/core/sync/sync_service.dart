@@ -27,8 +27,10 @@ import '../providers/core_providers.dart';
 ///   değil, gönderim anında diskten multipart okunur; dosya silinmişse satır
 ///   FAILED olur (sessizce atlanmaz). Panelde eklenen medya mobile İNMEZ
 ///   (medya telefonda üretilir, panel görüntüleme yeridir).
-/// - Kapsam dışı (değişmedi): CustomerLedgerEntries (iki taraf bağımsız
-///   hesaplar), silinen kayıtların tombstone senkronu.
+/// - Pull-only: CustomerLedgerEntries — cari hesabın tek doğruluk kaynağı
+///   SUNUCUDUR. Telefon iyimser yerel kayıt tutar, pull sırasında sunucunun
+///   kaydıyla değiştirilir (bkz. _pullLedgerEntries). Böylece iki tarafın
+///   bağımsız hesaplayıp bakiyelerin sessizce ayrışması riski kalkar.
 class SyncService {
   SyncService(this._db, this._api, this._tokenStore);
 
@@ -46,6 +48,7 @@ class SyncService {
       await _pullServiceRequests(companyId);
       await _pullQuotes(companyId);
       await _pullProformas(companyId);
+      await _pullLedgerEntries(companyId);
     } on ApiException {
       // Ağ hatası, süresi dolmuş abonelik (402) veya geçici sunucu hatası —
       // pull bir sonraki tetiklemede yeniden dener; `runOnce` unawaited
@@ -502,6 +505,61 @@ class SyncService {
         );
       });
     }
+  }
+
+  /// Cari hesap hareketleri — sunucu TEK doğruluk kaynağıdır.
+  ///
+  /// Telefon, iş tamamlama/tahsilat anında yerelde "iyimser" bir kayıt
+  /// oluşturur (kullanıcı bakiyeyi anında görsün diye). Sunucu da aynı
+  /// olay için kendi kaydını üretir. Bu iki kayıt AYNI olayı temsil eder;
+  /// pull sırasında yerel iyimser kayıt silinip sunucununki yazılır —
+  /// aksi halde aynı borç/alacak iki kez sayılırdı.
+  ///
+  /// Eşleştirme (referenceType, referenceId) üzerinden yapılır; bu yüzden
+  /// mobil tarafın referansı sunucuyla aynı olmak ZORUNDA (tahsilatta
+  /// payment id, iş tamamlamada job id — bkz. FinanceRepository).
+  Future<void> _pullLedgerEntries(String companyId) async {
+    final remoteRecords = await _api.listLedgerEntries();
+
+    await _db.transaction(() async {
+      for (final remote in remoteRecords) {
+        final r = remote.raw;
+        final referenceType = r['reference_type'] as String;
+        final referenceId = r['reference_id'] as String?;
+
+        // Aynı olayın iyimser yerel kaydını temizle (sunucudan gelen
+        // kaydın kendisi hariç — id'ler farklı olabilir).
+        if (referenceId != null) {
+          await (_db.delete(_db.customerLedgerEntries)..where(
+                (e) =>
+                    e.referenceType.equals(referenceType) &
+                    e.referenceId.equals(referenceId) &
+                    e.syncStatus.equals('PENDING') &
+                    e.id.equals(remote.id).not(),
+              ))
+              .go();
+        }
+
+        await _db
+            .into(_db.customerLedgerEntries)
+            .insertOnConflictUpdate(
+              CustomerLedgerEntriesCompanion(
+                id: Value(remote.id),
+                companyId: Value(companyId),
+                customerId: Value(r['customer_id'] as String),
+                entryDate: Value(
+                  DateTime.parse(r['entry_date'] as String).toLocal(),
+                ),
+                type: Value(r['type'] as String),
+                amountMinor: Value((r['amount_minor'] as num).toInt()),
+                referenceType: Value(referenceType),
+                referenceId: Value(referenceId),
+                description: Value(r['description'] as String),
+                syncStatus: const Value('SYNCED'),
+              ),
+            );
+      }
+    });
   }
 
   /// Belge kalemlerini sunucudakiyle bire bir değiştirir — kalemler belge

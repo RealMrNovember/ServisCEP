@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Company\UpdateCompanyRequest;
 use App\Http\Resources\CompanyResource;
 use App\Services\AuditLogService;
+use App\Support\RolePermissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,9 +32,13 @@ class CompanyController extends Controller
     {
         $user = $request->user();
 
-        // Yalnızca OWNER şirket ayarlarını değiştirebilir — diğer roller
-        // (ileride personel eklendiğinde) yalnızca görüntüler.
-        abort_unless($user->role === 'OWNER', 403, 'Bu işlem için yetkin yok.');
+        // Yalnızca işletme sahibi şirket ayarlarını değiştirebilir;
+        // diğer roller görüntüler (bkz. RolePermissions matrisi).
+        abort_unless(
+            $user->hasPermission(RolePermissions::COMPANY_MANAGE),
+            403,
+            'Bu işlem için yetkin yok.'
+        );
 
         $company = $user->company;
         $company->update($request->validated());

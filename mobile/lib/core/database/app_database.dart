@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,6 +85,15 @@ class AppDatabase extends _$AppDatabase {
         // tax_certificate_path alanının mobil karşılığı.
         await m.addColumn(customers, customers.taxCertificatePath);
         await m.addColumn(customers, customers.hasTaxCertificate);
+      }
+      if (from < 7) {
+        // Cari hesap artık sunucuyla senkronlanıyor; mevcut yerel
+        // kayıtlar iyimser (PENDING) sayılır ve ilk pull'da sunucudaki
+        // karşılıklarıyla değiştirilir.
+        await m.addColumn(
+          customerLedgerEntries,
+          customerLedgerEntries.syncStatus,
+        );
       }
     },
   );

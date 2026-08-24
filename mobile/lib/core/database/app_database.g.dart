@@ -9493,6 +9493,18 @@ class $CustomerLedgerEntriesTable extends CustomerLedgerEntries
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('PENDING'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -9516,6 +9528,7 @@ class $CustomerLedgerEntriesTable extends CustomerLedgerEntries
     referenceType,
     referenceId,
     description,
+    syncStatus,
     createdAt,
   ];
   @override
@@ -9607,6 +9620,12 @@ class $CustomerLedgerEntriesTable extends CustomerLedgerEntries
     } else if (isInserting) {
       context.missing(_descriptionMeta);
     }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -9658,6 +9677,10 @@ class $CustomerLedgerEntriesTable extends CustomerLedgerEntries
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -9686,6 +9709,16 @@ class CustomerLedgerEntry extends DataClass
   final String referenceType;
   final String? referenceId;
   final String description;
+
+  /// PENDING: telefonun İYİMSER olarak oluşturduğu yerel kayıt — kullanıcı
+  /// işi tamamlar tamamlamaz bakiyeyi görebilsin diye anında yazılır.
+  /// SYNCED: sunucudan çekilmiş, doğruluk kaynağı olan kayıt.
+  ///
+  /// Cari hesabın tek doğruluk kaynağı SUNUCUDUR (bkz. SyncService.
+  /// _pullLedgerEntries): pull sırasında aynı olayı temsil eden iyimser
+  /// yerel kayıt, sunucudakiyle DEĞİŞTİRİLİR. Böylece iki taraf bağımsız
+  /// hesaplarken bakiyelerin sessizce ayrışması riski ortadan kalkar.
+  final String syncStatus;
   final DateTime createdAt;
   const CustomerLedgerEntry({
     required this.id,
@@ -9697,6 +9730,7 @@ class CustomerLedgerEntry extends DataClass
     required this.referenceType,
     this.referenceId,
     required this.description,
+    required this.syncStatus,
     required this.createdAt,
   });
   @override
@@ -9713,6 +9747,7 @@ class CustomerLedgerEntry extends DataClass
       map['reference_id'] = Variable<String>(referenceId);
     }
     map['description'] = Variable<String>(description);
+    map['sync_status'] = Variable<String>(syncStatus);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -9730,6 +9765,7 @@ class CustomerLedgerEntry extends DataClass
           ? const Value.absent()
           : Value(referenceId),
       description: Value(description),
+      syncStatus: Value(syncStatus),
       createdAt: Value(createdAt),
     );
   }
@@ -9749,6 +9785,7 @@ class CustomerLedgerEntry extends DataClass
       referenceType: serializer.fromJson<String>(json['referenceType']),
       referenceId: serializer.fromJson<String?>(json['referenceId']),
       description: serializer.fromJson<String>(json['description']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -9765,6 +9802,7 @@ class CustomerLedgerEntry extends DataClass
       'referenceType': serializer.toJson<String>(referenceType),
       'referenceId': serializer.toJson<String?>(referenceId),
       'description': serializer.toJson<String>(description),
+      'syncStatus': serializer.toJson<String>(syncStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -9779,6 +9817,7 @@ class CustomerLedgerEntry extends DataClass
     String? referenceType,
     Value<String?> referenceId = const Value.absent(),
     String? description,
+    String? syncStatus,
     DateTime? createdAt,
   }) => CustomerLedgerEntry(
     id: id ?? this.id,
@@ -9790,6 +9829,7 @@ class CustomerLedgerEntry extends DataClass
     referenceType: referenceType ?? this.referenceType,
     referenceId: referenceId.present ? referenceId.value : this.referenceId,
     description: description ?? this.description,
+    syncStatus: syncStatus ?? this.syncStatus,
     createdAt: createdAt ?? this.createdAt,
   );
   CustomerLedgerEntry copyWithCompanion(CustomerLedgerEntriesCompanion data) {
@@ -9813,6 +9853,9 @@ class CustomerLedgerEntry extends DataClass
       description: data.description.present
           ? data.description.value
           : this.description,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -9829,6 +9872,7 @@ class CustomerLedgerEntry extends DataClass
           ..write('referenceType: $referenceType, ')
           ..write('referenceId: $referenceId, ')
           ..write('description: $description, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -9845,6 +9889,7 @@ class CustomerLedgerEntry extends DataClass
     referenceType,
     referenceId,
     description,
+    syncStatus,
     createdAt,
   );
   @override
@@ -9860,6 +9905,7 @@ class CustomerLedgerEntry extends DataClass
           other.referenceType == this.referenceType &&
           other.referenceId == this.referenceId &&
           other.description == this.description &&
+          other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt);
 }
 
@@ -9874,6 +9920,7 @@ class CustomerLedgerEntriesCompanion
   final Value<String> referenceType;
   final Value<String?> referenceId;
   final Value<String> description;
+  final Value<String> syncStatus;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const CustomerLedgerEntriesCompanion({
@@ -9886,6 +9933,7 @@ class CustomerLedgerEntriesCompanion
     this.referenceType = const Value.absent(),
     this.referenceId = const Value.absent(),
     this.description = const Value.absent(),
+    this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -9899,6 +9947,7 @@ class CustomerLedgerEntriesCompanion
     required String referenceType,
     this.referenceId = const Value.absent(),
     required String description,
+    this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -9918,6 +9967,7 @@ class CustomerLedgerEntriesCompanion
     Expression<String>? referenceType,
     Expression<String>? referenceId,
     Expression<String>? description,
+    Expression<String>? syncStatus,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -9931,6 +9981,7 @@ class CustomerLedgerEntriesCompanion
       if (referenceType != null) 'reference_type': referenceType,
       if (referenceId != null) 'reference_id': referenceId,
       if (description != null) 'description': description,
+      if (syncStatus != null) 'sync_status': syncStatus,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -9946,6 +9997,7 @@ class CustomerLedgerEntriesCompanion
     Value<String>? referenceType,
     Value<String?>? referenceId,
     Value<String>? description,
+    Value<String>? syncStatus,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -9959,6 +10011,7 @@ class CustomerLedgerEntriesCompanion
       referenceType: referenceType ?? this.referenceType,
       referenceId: referenceId ?? this.referenceId,
       description: description ?? this.description,
+      syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -9994,6 +10047,9 @@ class CustomerLedgerEntriesCompanion
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -10015,6 +10071,7 @@ class CustomerLedgerEntriesCompanion
           ..write('referenceType: $referenceType, ')
           ..write('referenceId: $referenceId, ')
           ..write('description: $description, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -21322,6 +21379,7 @@ typedef $$CustomerLedgerEntriesTableCreateCompanionBuilder =
       required String referenceType,
       Value<String?> referenceId,
       required String description,
+      Value<String> syncStatus,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -21336,6 +21394,7 @@ typedef $$CustomerLedgerEntriesTableUpdateCompanionBuilder =
       Value<String> referenceType,
       Value<String?> referenceId,
       Value<String> description,
+      Value<String> syncStatus,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -21429,6 +21488,11 @@ class $$CustomerLedgerEntriesTableFilterComposer
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21528,6 +21592,11 @@ class $$CustomerLedgerEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -21615,6 +21684,11 @@ class $$CustomerLedgerEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
     builder: (column) => column,
   );
 
@@ -21716,6 +21790,7 @@ class $$CustomerLedgerEntriesTableTableManager
                 Value<String> referenceType = const Value.absent(),
                 Value<String?> referenceId = const Value.absent(),
                 Value<String> description = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CustomerLedgerEntriesCompanion(
@@ -21728,6 +21803,7 @@ class $$CustomerLedgerEntriesTableTableManager
                 referenceType: referenceType,
                 referenceId: referenceId,
                 description: description,
+                syncStatus: syncStatus,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -21742,6 +21818,7 @@ class $$CustomerLedgerEntriesTableTableManager
                 required String referenceType,
                 Value<String?> referenceId = const Value.absent(),
                 required String description,
+                Value<String> syncStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CustomerLedgerEntriesCompanion.insert(
@@ -21754,6 +21831,7 @@ class $$CustomerLedgerEntriesTableTableManager
                 referenceType: referenceType,
                 referenceId: referenceId,
                 description: description,
+                syncStatus: syncStatus,
                 createdAt: createdAt,
                 rowid: rowid,
               ),

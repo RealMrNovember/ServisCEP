@@ -35,6 +35,11 @@ class FakeSyncApiClient implements SyncApiClient {
 
   final List<(String, String)> uploadTaxCertificateCalls = [];
   final List<Map<String, dynamic>> updateCompanyCalls = [];
+  final List<Map<String, dynamic>> createPersonnelCalls = [];
+  final List<(String, Map<String, dynamic>)> updatePersonnelCalls = [];
+  final List<String> deletePersonnelCalls = [];
+  List<Map<String, dynamic>> personnel = [];
+  List<RemoteRecord> ledgerToPull = [];
   final List<(String, String)> resolveConflictCalls = [];
   List<Map<String, dynamic>> pendingConflicts = [];
 
@@ -90,6 +95,30 @@ class FakeSyncApiClient implements SyncApiClient {
   @override
   Future<void> updateCompany(Map<String, dynamic> payload) async {
     updateCompanyCalls.add(payload);
+  }
+
+  @override
+  Future<List<RemoteRecord>> listLedgerEntries() async => ledgerToPull;
+
+  @override
+  Future<List<Map<String, dynamic>>> listPersonnel() async => personnel;
+
+  @override
+  Future<Map<String, dynamic>> createPersonnel(
+    Map<String, dynamic> payload,
+  ) async {
+    createPersonnelCalls.add(payload);
+    return {...payload, 'id': 'new-user'};
+  }
+
+  @override
+  Future<void> updatePersonnel(String id, Map<String, dynamic> payload) async {
+    updatePersonnelCalls.add((id, payload));
+  }
+
+  @override
+  Future<void> deletePersonnel(String id) async {
+    deletePersonnelCalls.add(id);
   }
 
   @override

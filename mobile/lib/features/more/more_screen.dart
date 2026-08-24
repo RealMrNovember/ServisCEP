@@ -10,6 +10,7 @@ import '../finance/finance_screen.dart';
 import '../settings/company_settings_screen.dart';
 import '../settings/job_types_screen.dart';
 import '../settings/notification_settings_screen.dart';
+import '../settings/personnel_screen.dart';
 import '../stock/products_list_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../sync/data/sync_conflict_repository.dart';
@@ -50,6 +51,9 @@ class MoreScreen extends ConsumerWidget {
               context,
             ).push(MaterialPageRoute(builder: (_) => const CalendarScreen())),
           ),
+          // Teknisyen ve görüntüleyici işletmenin finansal verilerini
+          // göremez (bkz. backend RolePermissions).
+          if (session?.canSeeFinance ?? false)
           ListTile(
             leading: const Icon(Icons.account_balance_wallet_outlined),
             title: const Text('Finans'),
@@ -122,6 +126,7 @@ class MoreScreen extends ConsumerWidget {
               );
             },
           ),
+          if (session?.isOwner ?? false)
           ListTile(
             leading: const Icon(Icons.business_outlined),
             title: const Text('Şirket ayarları'),
@@ -131,13 +136,18 @@ class MoreScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const CompanySettingsScreen()),
             ),
           ),
-          const ListTile(
-            leading: Icon(Icons.people_alt_outlined),
-            title: Text('Kullanıcılar ve yetkiler'),
-            subtitle: Text('Yakında — personel ve rol yönetimi'),
-            trailing: Icon(Icons.chevron_right),
-            enabled: false,
-          ),
+          // Yalnızca işletme sahibine görünür; sunucu da ayrıca doğrular
+          // (istemci gizlemesi güvenlik değil, deneyimdir).
+          if (session?.isOwner ?? false)
+            ListTile(
+              leading: const Icon(Icons.people_alt_outlined),
+              title: const Text('Kullanıcılar ve yetkiler'),
+              subtitle: const Text('Personel ekle, rollerini belirle'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PersonnelScreen()),
+              ),
+            ),
           ListTile(
             leading: const Icon(Icons.category_outlined),
             title: const Text('İş türleri'),

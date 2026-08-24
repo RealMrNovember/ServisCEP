@@ -12,10 +12,12 @@ use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\ExpenseEntryController;
 use App\Http\Controllers\Api\V1\IncomeEntryController;
 use App\Http\Controllers\Api\V1\JobController;
+use App\Http\Controllers\Api\V1\LedgerEntryController;
 use App\Http\Controllers\Api\V1\JobNoteController;
 use App\Http\Controllers\Api\V1\JobPhotoController;
 use App\Http\Controllers\Api\V1\JobSignatureController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\PersonnelController;
 use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\ProformaController;
 use App\Http\Controllers\Api\V1\QuoteController;
@@ -76,6 +78,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // Şirket ayarları — bkz. CompanyController (şirket oturumdan gelir).
         Route::get('/company', [CompanyController::class, 'show'])->name('company.show');
         Route::put('/company', [CompanyController::class, 'update'])->name('company.update');
+
+        // Personel yönetimi (yalnızca işletme sahibi) — bkz. docs/09 § 1.
+        Route::get('/personnel', [PersonnelController::class, 'index'])->name('personnel.index');
+        Route::post('/personnel', [PersonnelController::class, 'store'])->name('personnel.store');
+        Route::put('/personnel/{personnel}', [PersonnelController::class, 'update'])->name('personnel.update');
+        Route::delete('/personnel/{personnel}', [PersonnelController::class, 'destroy'])->name('personnel.destroy');
+
+        // Cari hesap hareketleri — mobil senkronun pull ucu (şirket geneli).
+        Route::get('/ledger-entries', [LedgerEntryController::class, 'index'])->name('ledger-entries.index');
 
         Route::apiResource('sync-conflicts', SyncConflictController::class)->only(['index']);
         Route::post('sync-conflicts/{syncConflict}/resolve', [SyncConflictController::class, 'resolve'])
