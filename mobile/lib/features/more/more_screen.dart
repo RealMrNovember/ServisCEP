@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/app_version_label.dart';
 import '../../shared/brand_footer.dart';
 import '../auth/data/session_controller.dart';
 import '../calendar/calendar_screen.dart';
@@ -152,6 +153,7 @@ class MoreScreen extends ConsumerWidget {
             },
           ),
           const BrandFooter(),
+          const AppVersionLabel(),
         ],
       ),
     );
