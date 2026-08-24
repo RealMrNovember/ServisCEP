@@ -18,6 +18,9 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<(String, Map<String, dynamic>)> createPaymentCalls = [];
   final List<Map<String, dynamic>> createIncomeCalls = [];
   final List<Map<String, dynamic>> createExpenseCalls = [];
+  final List<(String, Map<String, dynamic>)> createJobNoteCalls = [];
+  final List<(String, String, String, String)> createJobPhotoCalls = [];
+  final List<(String, String, String, String)> createJobSignatureCalls = [];
 
   /// Sıradaki `createCustomer`/`updateCustomer`/... çağrısında ne
   /// döneceği/fırlatılacağı — yoksa varsayılan olarak version:1 ile
@@ -171,6 +174,37 @@ class FakeSyncApiClient implements SyncApiClient {
   ) async {
     createExpenseCalls.add(payload);
     return SyncEntityResult(id: payload['id'] as String, version: 1);
+  }
+
+  @override
+  Future<SyncEntityResult> createJobNote(
+    String jobId,
+    Map<String, dynamic> payload,
+  ) async {
+    createJobNoteCalls.add((jobId, payload));
+    return SyncEntityResult(id: payload['id'] as String, version: 1);
+  }
+
+  @override
+  Future<SyncEntityResult> createJobPhoto(
+    String jobId, {
+    required String id,
+    required String category,
+    required String filePath,
+  }) async {
+    createJobPhotoCalls.add((jobId, id, category, filePath));
+    return SyncEntityResult(id: id, version: 1);
+  }
+
+  @override
+  Future<SyncEntityResult> createJobSignature(
+    String jobId, {
+    required String id,
+    required String signerName,
+    required String filePath,
+  }) async {
+    createJobSignatureCalls.add((jobId, id, signerName, filePath));
+    return SyncEntityResult(id: id, version: 1);
   }
 
   @override

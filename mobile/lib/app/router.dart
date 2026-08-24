@@ -17,6 +17,8 @@ import '../features/jobs/job_detail_screen.dart';
 import '../features/jobs/job_form_screen.dart';
 import '../features/jobs/jobs_list_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/welcome/welcome_controller.dart';
+import '../features/welcome/welcome_screen.dart';
 import 'main_shell.dart';
 
 /// Uygulama navigasyonu — bkz. docs/06 § Mobil Navigasyon.
@@ -31,9 +33,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: _SessionRefreshListenable(ref),
     redirect: (context, state) {
       final sessionAsync = ref.read(sessionControllerProvider);
+      final welcomeAsync = ref.read(welcomeSeenProvider);
       final loc = state.matchedLocation;
 
-      if (sessionAsync.isLoading) {
+      if (sessionAsync.isLoading || welcomeAsync.isLoading) {
         return loc == '/' ? null : '/';
       }
 
@@ -41,15 +44,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthRoute = loc == '/login' || loc == '/onboarding';
 
       if (session == null) {
+        // İlk açılış: giriş ekranından önce karşılama akışı (bkz.
+        // features/welcome) — yalnızca bir kez gösterilir.
+        final welcomeSeen = welcomeAsync.valueOrNull ?? true;
+        if (!welcomeSeen) {
+          return loc == '/welcome' ? null : '/welcome';
+        }
+        if (loc == '/welcome') return '/login';
         return isAuthRoute ? null : '/login';
       }
-      if (isAuthRoute || loc == '/') {
+      if (isAuthRoute || loc == '/' || loc == '/welcome') {
         return '/dashboard';
       }
       return null;
     },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+      GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/onboarding',
@@ -126,5 +140,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 class _SessionRefreshListenable extends ChangeNotifier {
   _SessionRefreshListenable(Ref ref) {
     ref.listen(sessionControllerProvider, (_, _) => notifyListeners());
+    // Karşılama akışı tamamlanınca da redirect yeniden değerlendirilmeli
+    // (welcome -> login geçişi).
+    ref.listen(welcomeSeenProvider, (_, _) => notifyListeners());
   }
 }

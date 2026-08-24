@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -47,16 +48,28 @@ class JobMediaRepository {
     final destPath = p.join(dir.path, '$id$ext');
     await File(sourcePath).copy(destPath);
 
-    await _db
-        .into(_db.jobPhotos)
-        .insert(
-          JobPhotosCompanion.insert(
-            id: id,
-            jobId: jobId,
-            category: Value(category),
-            filePath: destPath,
-          ),
-        );
+    await _db.transaction(() async {
+      await _db
+          .into(_db.jobPhotos)
+          .insert(
+            JobPhotosCompanion.insert(
+              id: id,
+              jobId: jobId,
+              category: Value(category),
+              filePath: destPath,
+            ),
+          );
+      await _enqueue(
+        entityType: 'job_photo',
+        entityId: id,
+        payload: {
+          'id': id,
+          'job_id': jobId,
+          'category': category,
+          'file_path': destPath,
+        },
+      );
+    });
     return (_db.select(
       _db.jobPhotos,
     )..where((ph) => ph.id.equals(id))).getSingle();
@@ -78,16 +91,28 @@ class JobMediaRepository {
     final destPath = p.join(dir.path, '$id.png');
     await File(destPath).writeAsBytes(pngBytes);
 
-    await _db
-        .into(_db.jobSignatures)
-        .insert(
-          JobSignaturesCompanion.insert(
-            id: id,
-            jobId: jobId,
-            signerName: signerName,
-            filePath: destPath,
-          ),
-        );
+    await _db.transaction(() async {
+      await _db
+          .into(_db.jobSignatures)
+          .insert(
+            JobSignaturesCompanion.insert(
+              id: id,
+              jobId: jobId,
+              signerName: signerName,
+              filePath: destPath,
+            ),
+          );
+      await _enqueue(
+        entityType: 'job_signature',
+        entityId: id,
+        payload: {
+          'id': id,
+          'job_id': jobId,
+          'signer_name': signerName,
+          'file_path': destPath,
+        },
+      );
+    });
     return (_db.select(
       _db.jobSignatures,
     )..where((s) => s.id.equals(id))).getSingle();
@@ -101,11 +126,33 @@ class JobMediaRepository {
   }
 
   Future<void> addNote({required String jobId, required String note}) async {
-    await _db
-        .into(_db.jobNotes)
-        .insert(
-          JobNotesCompanion.insert(id: _uuid.v4(), jobId: jobId, note: note),
-        );
+    final id = _uuid.v4();
+    await _db.transaction(() async {
+      await _db
+          .into(_db.jobNotes)
+          .insert(JobNotesCompanion.insert(id: id, jobId: jobId, note: note));
+      await _enqueue(
+        entityType: 'job_note',
+        entityId: id,
+        payload: {'id': id, 'job_id': jobId, 'note': note},
+      );
+    });
+  }
+
+  Future<void> _enqueue({
+    required String entityType,
+    required String entityId,
+    required Map<String, dynamic> payload,
+  }) {
+    return _db.into(_db.syncOperations).insert(
+      SyncOperationsCompanion.insert(
+        id: _uuid.v4(),
+        entityType: entityType,
+        entityId: entityId,
+        operation: 'CREATE',
+        payload: jsonEncode(payload),
+      ),
+    );
   }
 }
 

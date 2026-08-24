@@ -129,6 +129,27 @@ abstract interface class SyncApiClient {
   );
   Future<SyncEntityResult> createIncomeEntry(Map<String, dynamic> payload);
   Future<SyncEntityResult> createExpenseEntry(Map<String, dynamic> payload);
+
+  Future<SyncEntityResult> createJobNote(
+    String jobId,
+    Map<String, dynamic> payload,
+  );
+
+  /// Fotoğraf yerel dosyadan multipart olarak yüklenir — payload'da binary
+  /// taşınmaz, dosya gönderim anında diskten okunur (bkz. sync_service).
+  Future<SyncEntityResult> createJobPhoto(
+    String jobId, {
+    required String id,
+    required String category,
+    required String filePath,
+  });
+
+  Future<SyncEntityResult> createJobSignature(
+    String jobId, {
+    required String id,
+    required String signerName,
+    required String filePath,
+  });
 }
 
 class DioSyncApiClient implements SyncApiClient {
@@ -313,6 +334,51 @@ class DioSyncApiClient implements SyncApiClient {
   @override
   Future<SyncEntityResult> createExpenseEntry(Map<String, dynamic> payload) =>
       _create('/expense-entries', payload);
+
+  @override
+  Future<SyncEntityResult> createJobNote(
+    String jobId,
+    Map<String, dynamic> payload,
+  ) => _create('/jobs/$jobId/notes', payload);
+
+  @override
+  Future<SyncEntityResult> createJobPhoto(
+    String jobId, {
+    required String id,
+    required String category,
+    required String filePath,
+  }) => _upload('/jobs/$jobId/photos', {
+    'id': id,
+    'category': category,
+  }, filePath);
+
+  @override
+  Future<SyncEntityResult> createJobSignature(
+    String jobId, {
+    required String id,
+    required String signerName,
+    required String filePath,
+  }) => _upload('/jobs/$jobId/signatures', {
+    'id': id,
+    'signer_name': signerName,
+  }, filePath);
+
+  Future<SyncEntityResult> _upload(
+    String path,
+    Map<String, dynamic> fields,
+    String filePath,
+  ) async {
+    try {
+      final form = FormData.fromMap({
+        ...fields,
+        'file': await MultipartFile.fromFile(filePath),
+      });
+      final response = await _dio.post(path, data: form);
+      return SyncEntityResult.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
 
   Future<SyncEntityResult> _create(
     String path,

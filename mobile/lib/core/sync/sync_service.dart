@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,14 +18,17 @@ import '../providers/core_providers.dart';
 /// "telefon offline yazdı, ofis de yazdı" senaryosunda yerel taslağın
 /// üzerine sessizce yazılmaması bu motorun asıl amacı.
 ///
-/// Kapsam (dikey dilim 2, 2026-08-24 genişletmesi):
+/// Kapsam (dikey dilim 2 + medya, 2026-08-24):
 /// - Push + pull: Customer, Job, ServiceRequest, Quote, Proforma
 /// - Push-only: Payment, IncomeEntry, ExpenseEntry (create-only kayıtlar —
 ///   sunucuda düzenlenmezler, çakışma riski yok; pull edilmemeleri bilinçli,
 ///   web panelde girilen finans kayıtları mobilde görünmez)
-/// - Kapsam dışı (değişmedi): JobNote/Photo/Signature (medya upload'ı ayrı
-///   iterasyon), CustomerLedgerEntries (iki taraf bağımsız hesaplar),
-///   silinen kayıtların tombstone senkronu.
+/// - Push-only (medya): JobNote, JobPhoto, JobSignature — dosyalar payload'da
+///   değil, gönderim anında diskten multipart okunur; dosya silinmişse satır
+///   FAILED olur (sessizce atlanmaz). Panelde eklenen medya mobile İNMEZ
+///   (medya telefonda üretilir, panel görüntüleme yeridir).
+/// - Kapsam dışı (değişmedi): CustomerLedgerEntries (iki taraf bağımsız
+///   hesaplar), silinen kayıtların tombstone senkronu.
 class SyncService {
   SyncService(this._db, this._api, this._tokenStore);
 
@@ -122,6 +126,39 @@ class SyncService {
             await _api.createIncomeEntry(payload);
           case ('expense_entry', 'CREATE'):
             await _api.createExpenseEntry(payload);
+          case ('job_note', 'CREATE'):
+            await _api.createJobNote(payload['job_id'] as String, {
+              'id': payload['id'],
+              'note': payload['note'],
+            });
+          case ('job_photo', 'CREATE'):
+            if (!File(payload['file_path'] as String).existsSync()) {
+              await _markFailed(
+                op,
+                ApiException(422, 'Fotoğraf dosyası artık cihazda yok.'),
+              );
+              continue;
+            }
+            await _api.createJobPhoto(
+              payload['job_id'] as String,
+              id: payload['id'] as String,
+              category: payload['category'] as String,
+              filePath: payload['file_path'] as String,
+            );
+          case ('job_signature', 'CREATE'):
+            if (!File(payload['file_path'] as String).existsSync()) {
+              await _markFailed(
+                op,
+                ApiException(422, 'İmza dosyası artık cihazda yok.'),
+              );
+              continue;
+            }
+            await _api.createJobSignature(
+              payload['job_id'] as String,
+              id: payload['id'] as String,
+              signerName: payload['signer_name'] as String,
+              filePath: payload['file_path'] as String,
+            );
           default:
             throw StateError(
               'Bilinmeyen sync operasyonu: ${op.entityType}/${op.operation}',

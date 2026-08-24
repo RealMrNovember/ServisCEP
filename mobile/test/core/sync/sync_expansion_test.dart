@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:serviscep/core/network/api_client.dart';
 import 'package:serviscep/core/network/sync_api_client.dart';
 import 'package:serviscep/core/sync/sync_service.dart';
 import 'package:serviscep/features/finance/data/finance_repository.dart';
+import 'package:serviscep/features/jobs/data/job_media_repository.dart';
 import 'package:serviscep/features/quotes/data/quotes_repository.dart';
 import 'package:serviscep/features/service_requests/data/service_requests_repository.dart';
 
@@ -272,6 +274,65 @@ void main() {
     expect(ops, hasLength(1));
     expect(ops.single.status, 'PENDING');
     expect(ops.single.attemptCount, 0);
+  });
+
+  test('iş notu outbox üzerinden job path\'ine push edilir', () async {
+    final mediaRepo = JobMediaRepository(db);
+    await db.into(db.jobs).insert(
+      JobsCompanion.insert(
+        id: 'job-1',
+        companyId: _companyId,
+        code: 'SRV-1',
+        customerId: _customerId,
+        title: 'Test iş',
+      ),
+    );
+    await mediaRepo.addNote(jobId: 'job-1', note: 'Panele gidecek not');
+
+    await buildService().runOnce(_companyId);
+
+    expect(api.createJobNoteCalls, hasLength(1));
+    final (jobId, payload) = api.createJobNoteCalls.single;
+    expect(jobId, 'job-1');
+    expect(payload['note'], 'Panele gidecek not');
+    expect(await db.select(db.syncOperations).get(), isEmpty);
+  });
+
+  test('fotoğraf push\'u dosyayı multipart yükler; dosya silinmişse satır '
+      'FAILED olur', () async {
+    final tempFile = File(
+      '${Directory.systemTemp.path}/sync_test_photo.jpg',
+    )..writeAsBytesSync([1, 2, 3]);
+    addTearDown(() => tempFile.deleteSync());
+
+    Future<void> enqueuePhoto(String id, String path) {
+      return db.into(db.syncOperations).insert(
+        SyncOperationsCompanion.insert(
+          id: 'op-$id',
+          entityType: 'job_photo',
+          entityId: id,
+          operation: 'CREATE',
+          payload: jsonEncode({
+            'id': id,
+            'job_id': 'job-1',
+            'category': 'ARIZA',
+            'file_path': path,
+          }),
+        ),
+      );
+    }
+
+    await enqueuePhoto('ph-ok', tempFile.path);
+    await enqueuePhoto('ph-missing', '/olmayan/dosya.jpg');
+
+    await buildService().runOnce(_companyId);
+
+    expect(api.createJobPhotoCalls, hasLength(1));
+    expect(api.createJobPhotoCalls.single.$4, tempFile.path);
+    final remaining = await db.select(db.syncOperations).get();
+    expect(remaining, hasLength(1));
+    expect(remaining.single.entityId, 'ph-missing');
+    expect(remaining.single.status, 'FAILED');
   });
 
   test('talep pull, PENDING outbox girdisi olmayan kaydı uygular', () async {
