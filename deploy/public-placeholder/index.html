@@ -368,9 +368,14 @@
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Ücretsiz Başlayın
         </a>
-        <a class="btn-secondary" href="https://play.google.com/store/apps/details?id=com.cicibyte.serviscep">Android için indir</a>
+        <!-- GEÇİCİ (kapalı test dönemi): uygulama Play'de yalnızca testçilere
+             açık olduğu için buton doğrudan mağazaya değil, test grubuna
+             yönlendiriyor. Test bitip uygulama herkese açıldığında bu iki
+             butonun href'i şuna geri alınmalı:
+             https://play.google.com/store/apps/details?id=com.cicibyte.serviscep -->
+        <a class="btn-secondary" href="https://groups.google.com/g/serviscep-test-gurubu/">Kapalı teste katıl</a>
       </div>
-      <p class="hero-note"><strong>Google Play'de test aşamasında.</strong> Şimdilik Android uygulamasını buradan da indirebilirsiniz — kurulum için "bilinmeyen kaynaklardan yükleme" izni gerekebilir.</p>
+      <p class="hero-note"><strong>Uygulama şu anda kapalı test aşamasında.</strong> Erişim için önce test grubuna katılın; ardından <a href="https://play.google.com/apps/testing/com.cicibyte.serviscep">testçi olma bağlantısını</a> açıp onaylayın. Grubun onayı ve Google tarafındaki yayılma birkaç saat sürebilir, sonrasında uygulamayı Play Store'dan normal şekilde kurabilirsiniz.</p>
 
       <div class="quick-badges">
         <span class="quick-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zM8 12l2.5 2.5L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Offline çalışır</span>
@@ -500,12 +505,13 @@
 <section>
   <div class="wrap">
     <div class="cta">
-      <h2>Bugün indirin, birkaç dakikada kurulum yapın.</h2>
-      <p>Hesap oluşturmak ücretsiz ve anında tamamlanır — onay beklemez.</p>
+      <h2>Erken erişime katılın, ilk kullananlardan olun.</h2>
+      <p>Web panelinde hesap oluşturmak ücretsiz ve anında tamamlanır — onay beklemez. Mobil uygulama şimdilik kapalı testte.</p>
       <div class="hero-actions">
-        <a class="btn-primary" href="https://play.google.com/store/apps/details?id=com.cicibyte.serviscep">
+        <!-- GEÇİCİ (kapalı test dönemi) — bkz. hero bölümündeki not. -->
+        <a class="btn-primary" href="https://groups.google.com/g/serviscep-test-gurubu/">
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Android için indir
+          Kapalı teste katıl
         </a>
       </div>
     </div>
