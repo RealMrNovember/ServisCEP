@@ -7,15 +7,18 @@ import '../../shared/brand_footer.dart';
 import '../auth/data/session_controller.dart';
 import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
-import '../settings/company_settings_screen.dart';
-import '../settings/job_types_screen.dart';
-import '../settings/notification_settings_screen.dart';
-import '../settings/personnel_screen.dart';
+import '../settings/settings_screen.dart';
 import '../stock/products_list_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../sync/data/sync_conflict_repository.dart';
 import '../sync/sync_conflicts_screen.dart';
 
+/// "Daha Fazla" — modüller + ayarlara tek giriş.
+///
+/// Ayar kalemleri (şirket, personel, iş türleri, bildirimler, senkron,
+/// güncelleme) burada tek tek listelenmiyor; hepsi [SettingsScreen]
+/// altında toplandı. Menü modüllerle ayarları karıştırdıkça uzuyor ve
+/// aranan şey kayboluyordu.
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
@@ -34,14 +37,23 @@ class MoreScreen extends ConsumerWidget {
               leading: CircleAvatar(
                 backgroundColor: scheme.primary.withValues(alpha: 0.12),
                 child: Text(
-                  session.fullName.isNotEmpty ? session.fullName[0].toUpperCase() : '?',
-                  style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700),
+                  session.fullName.isNotEmpty
+                      ? session.fullName[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              title: Text(session.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
+              title: Text(
+                session.fullName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(session.companyName),
             ),
           const Divider(height: 24),
+
           ListTile(
             leading: const Icon(Icons.calendar_month_outlined),
             title: const Text('Takvim'),
@@ -54,23 +66,23 @@ class MoreScreen extends ConsumerWidget {
           // Teknisyen ve görüntüleyici işletmenin finansal verilerini
           // göremez (bkz. backend RolePermissions).
           if (session?.canSeeFinance ?? false)
-          ListTile(
-            leading: const Icon(Icons.account_balance_wallet_outlined),
-            title: const Text('Finans'),
-            subtitle: const Text('Gelir, gider, aylık özet'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
-          ),
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text('Finans'),
+              subtitle: const Text('Gelir, gider, aylık özet'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
+            ),
           ListTile(
             leading: const Icon(Icons.inventory_2_outlined),
             title: const Text('Stok Yönetimi'),
             subtitle: const Text('Ürünler, barkod, stok durumu'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const ProductsListScreen())),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProductsListScreen()),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
@@ -81,6 +93,7 @@ class MoreScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
             ),
           ),
+
           // Çakışma varken görünür — yoksa menüyü kalabalıklaştırmaz.
           Consumer(
             builder: (context, ref, _) {
@@ -88,10 +101,7 @@ class MoreScreen extends ConsumerWidget {
                   ref.watch(localConflictCountProvider).valueOrNull ?? 0;
               if (count == 0) return const SizedBox.shrink();
               return ListTile(
-                leading: Icon(
-                  Icons.sync_problem_outlined,
-                  color: scheme.error,
-                ),
+                leading: Icon(Icons.sync_problem_outlined, color: scheme.error),
                 title: const Text('Senkron çakışmaları'),
                 subtitle: const Text('Hangi halin kalacağını seç'),
                 trailing: Row(
@@ -126,49 +136,17 @@ class MoreScreen extends ConsumerWidget {
               );
             },
           ),
-          if (session?.isOwner ?? false)
+
+          const Divider(height: 24),
           ListTile(
-            leading: const Icon(Icons.business_outlined),
-            title: const Text('Şirket ayarları'),
-            subtitle: const Text('Ünvan, işletme türü, IBAN'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CompanySettingsScreen()),
-            ),
-          ),
-          // Yalnızca işletme sahibine görünür; sunucu da ayrıca doğrular
-          // (istemci gizlemesi güvenlik değil, deneyimdir).
-          if (session?.isOwner ?? false)
-            ListTile(
-              leading: const Icon(Icons.people_alt_outlined),
-              title: const Text('Kullanıcılar ve yetkiler'),
-              subtitle: const Text('Personel ekle, rollerini belirle'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PersonnelScreen()),
-              ),
-            ),
-          ListTile(
-            leading: const Icon(Icons.category_outlined),
-            title: const Text('İş türleri'),
-            subtitle: const Text('Kendi türlerini ekle'),
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Ayarlar'),
+            subtitle: const Text('Profil, işletme, bildirim, senkron'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(
               context,
-            ).push(MaterialPageRoute(builder: (_) => const JobTypesScreen())),
+            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
           ),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Bildirimler'),
-            subtitle: const Text('Hatırlatma süresi ve bildirimler'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const NotificationSettingsScreen(),
-              ),
-            ),
-          ),
-          const Divider(height: 24),
           ListTile(
             leading: Icon(Icons.logout_rounded, color: scheme.error),
             title: Text('Çıkış yap', style: TextStyle(color: scheme.error)),

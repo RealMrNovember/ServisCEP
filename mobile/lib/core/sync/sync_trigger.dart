@@ -8,6 +8,7 @@ import '../../features/auth/data/session_controller.dart';
 import '../../features/subscription/data/subscription_repository.dart';
 import '../services/push_service.dart';
 import 'sync_service.dart';
+import 'sync_status.dart';
 
 const _periodicSyncInterval = Duration(minutes: 3);
 
@@ -73,7 +74,13 @@ class SyncTrigger with WidgetsBindingObserver {
     // (backend 402 dönmeye başladığında) dashboard'daki banner uygulama
     // yeniden başlatılmadan "sona erdi" kademesine geçebilsin.
     _ref.invalidate(subscriptionStatusProvider);
-    unawaited(_ref.read(syncServiceProvider).runOnce(session.companyId));
+    unawaited(
+      _ref.read(syncServiceProvider).runOnce(session.companyId).then((_) {
+        // Yalnızca hatasız tamamlanan tur "son senkron" sayılır;
+        // kullanıcı ekranda gördüğü zamana güvenebilmeli.
+        _ref.read(lastSyncProvider.notifier).markSynced();
+      }),
+    );
   }
 
   void dispose() {

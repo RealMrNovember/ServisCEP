@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\JobSignatureController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PersonnelController;
 use App\Http\Controllers\Api\V1\PlanController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProformaController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
@@ -56,6 +57,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // aboneliğini yenileyebilmelidir (bkz. EnsureSubscriptionIsActive).
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
+        // Kendi profili — abonelik süresi dolsa da erişilebilir olmalı
+        // (kullanıcı en azından parolasını değiştirebilmeli).
+        Route::put('/auth/profile', [ProfileController::class, 'update'])->name('auth.profile.update');
+        Route::put('/auth/password', [ProfileController::class, 'updatePassword'])->name('auth.password.update');
 
         // Abonelik — web'deki Filament App "Abonelik" sayfasının mobil
         // karşılığı: durum + paketler + havale bildirimi (admin onaylı akış).

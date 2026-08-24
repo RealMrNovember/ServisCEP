@@ -1,0 +1,66 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../database/app_database.dart';
+import '../providers/core_providers.dart';
+
+const _lastSyncKey = 'last_sync_at';
+
+/// Son BAŞARILI senkronun zamanı.
+///
+/// Kalıcı saklanır: kullanıcı uygulamayı kapatıp açtığında "en son ne
+/// zaman eşitlendim?" bilgisi sıfırlanmamalı — bu bilgi, verisinin
+/// sunucuya ulaşıp ulaşmadığını anlamasının tek yolu.
+class LastSyncController extends StateNotifier<AsyncValue<DateTime?>> {
+  LastSyncController(this._ref) : super(const AsyncValue.loading()) {
+    _load();
+  }
+
+  final Ref _ref;
+
+  Future<void> _load() async {
+    final raw = await _ref.read(secureStorageProvider).read(key: _lastSyncKey);
+    if (!mounted) return;
+    state = AsyncValue.data(raw == null ? null : DateTime.tryParse(raw));
+  }
+
+  Future<void> markSynced() async {
+    final now = DateTime.now();
+    state = AsyncValue.data(now);
+    await _ref
+        .read(secureStorageProvider)
+        .write(key: _lastSyncKey, value: now.toIso8601String());
+  }
+}
+
+final lastSyncProvider =
+    StateNotifierProvider<LastSyncController, AsyncValue<DateTime?>>((ref) {
+      return LastSyncController(ref);
+    });
+
+/// Sunucuya gönderilmeyi bekleyen yazma sayısı — 0 ise her şey eşitlenmiş
+/// demektir.
+final pendingSyncCountProvider = StreamProvider<int>((ref) {
+  final db = ref.watch(databaseProvider);
+  final query = db.selectOnly(db.syncOperations)
+    ..addColumns([db.syncOperations.id])
+    ..where(db.syncOperations.status.equals('PENDING'));
+  return query.watch().map((rows) => rows.length);
+});
+
+/// Gönderilemeyen (kalıcı hata almış) yazma sayısı.
+final failedSyncCountProvider = StreamProvider<int>((ref) {
+  final db = ref.watch(databaseProvider);
+  final query = db.selectOnly(db.syncOperations)
+    ..addColumns([db.syncOperations.id])
+    ..where(db.syncOperations.status.equals('FAILED'));
+  return query.watch().map((rows) => rows.length);
+});
+
+/// Cihazın şu anki bağlantı durumu.
+final isOnlineProvider = StreamProvider<bool>((ref) {
+  return Connectivity().onConnectivityChanged.map(
+    (results) => !results.contains(ConnectivityResult.none),
+  );
+});

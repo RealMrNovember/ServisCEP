@@ -21,6 +21,23 @@ class PlayUpdateService {
     return info.installerStore == 'com.android.vending';
   }
 
+  /// Kullanıcının elle yaptığı kontrol için net bir sonuç döndürür.
+  ///
+  /// `checkAndStartFlexibleUpdate` void'dir ve geri çağrısı ancak indirme
+  /// BİTİNCE tetiklenir; "güncel misin?" sorusuna anında cevap vermez.
+  /// Hata durumunda `bilinmiyor` döner — sessizce "günceldesin" demek
+  /// kullanıcıyı yanıltırdı.
+  Future<UpdateCheckResult> checkForUpdate() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      return info.updateAvailability == UpdateAvailability.updateAvailable
+          ? UpdateCheckResult.available
+          : UpdateCheckResult.upToDate;
+    } catch (_) {
+      return UpdateCheckResult.unavailable;
+    }
+  }
+
   Future<void> checkAndStartFlexibleUpdate({required VoidCallback onReadyToInstall}) async {
     try {
       final info = await InAppUpdate.checkForUpdate();
@@ -44,10 +61,26 @@ class PlayUpdateService {
 
 const playUpdateService = PlayUpdateService();
 
+/// Elle güncelleme kontrolünün sonucu.
+enum UpdateCheckResult {
+  /// Yeni sürüm var.
+  available,
+
+  /// Zaten güncel.
+  upToDate,
+
+  /// Kontrol edilemedi (Play kurulumu değil, ağ yok vb.).
+  unavailable,
+}
+
 class PlayUpdateReadyNotifier extends StateNotifier<bool> {
   PlayUpdateReadyNotifier() : super(false) {
-    playUpdateService.checkAndStartFlexibleUpdate(onReadyToInstall: () => state = true);
+    playUpdateService.checkAndStartFlexibleUpdate(onReadyToInstall: markReady);
   }
+
+  /// Elle yapılan kontrol de aynı şeridi tetikleyebilsin diye dışa açık
+  /// (bkz. Ayarlar → Güncellemeleri kontrol et).
+  void markReady() => state = true;
 }
 
 /// true olduğunda Play güncellemesi indirilmiş ve kurulum için hazırdır.

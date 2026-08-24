@@ -167,6 +167,15 @@ abstract interface class SyncApiClient {
   /// Şirket ayarları güncellemesi (bkz. CompanyController).
   Future<void> updateCompany(Map<String, dynamic> payload);
 
+  /// Kendi profili — ad/telefon.
+  Future<void> updateProfile(Map<String, dynamic> payload);
+
+  /// Parola değiştirme; mevcut parola doğrulanır (bkz. ProfileController).
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
+
   /// Cari hesap hareketleri — sunucu tek doğruluk kaynağıdır, bu yüzden
   /// yalnızca PULL edilir (bkz. LedgerEntryController).
   Future<List<RemoteRecord>> listLedgerEntries();
@@ -415,6 +424,31 @@ class DioSyncApiClient implements SyncApiClient {
   Future<void> updateCompany(Map<String, dynamic> payload) async {
     try {
       await _dio.put('/company', data: payload);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> updateProfile(Map<String, dynamic> payload) async {
+    try {
+      await _dio.put('/auth/profile', data: payload);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _dio.put('/auth/password', data: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': newPassword,
+      });
     } on DioException catch (e) {
       _client.throwApiException(e);
     }
