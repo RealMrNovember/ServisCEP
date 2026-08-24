@@ -21,8 +21,15 @@
 #   1. mobile/pubspec.yaml → version alanını yükselt (ör. 0.2.9+11 —
 #      +N kısmı versionCode'dur, HER sürümde artmalı, Play aynı
 #      versionCode'u ikinci kez kabul etmez)
-#   2. Commit + push
-#   3. git tag v0.2.9 && git push origin v0.2.9
+#   2. CHANGELOG.md'ye "## vX.Y.Z" bölümü ekle — kullanıcıya görünecek
+#      notlar. ZORUNLUDUR: bölüm yoksa CI sürümü yayınlamaz.
+#      Yerelde denemek için:
+#        python3 .github/scripts/prepare_release_notes.py vX.Y.Z
+#   3. Commit + push
+#   4. git tag vX.Y.Z && git push origin vX.Y.Z
+#
+# NOT: Play her sürümü İNCELEMEDEN geçirir; tag'den sonra kullanıcıya
+# ulaşması dakikalar değil, birkaç saat sürebilir.
 
 name: Sürüm Yayınla
 
@@ -78,6 +85,15 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
+      # Kullanıcıya görünen sürüm notu ZORUNLUDUR: tek kaynak CHANGELOG.md.
+      # Bölüm yoksa/boşsa, bozuksa veya 500 karakteri aşıyorsa betik hata
+      # verir ve sürüm burada durur — notsuz sürüm Play'e çıkamaz
+      # (kullanıcı kararı, 2026-08-24).
+      - name: Sürüm notunu CHANGELOG'dan hazırla
+        working-directory: .
+        run: python3 .github/scripts/prepare_release_notes.py "${GITHUB_REF_NAME}"
+
+
       - name: Bağımlılıklar
         run: flutter pub get
 
@@ -90,6 +106,8 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.cicibyte.serviscep
           releaseFiles: mobile/build/app/outputs/bundle/playRelease/app-play-release.aab
+          # "Yenilikler" metni — CHANGELOG.md'den üretilir (yukarıdaki adım).
+          whatsNewDirectory: mobile/whatsnew
           # NOT (2026-08-23): v0.2.11 kapalı test (alpha) sürümü Play
           # Developer API ile doğrulandı — "draft app" kısıtlaması geçti,
           # alpha track "completed" durumda gerçek bir sürüm barındırıyor.
