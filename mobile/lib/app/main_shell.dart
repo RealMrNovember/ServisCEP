@@ -26,6 +26,31 @@ class MainShell extends ConsumerWidget {
     (icon: Icons.more_horiz_rounded, label: 'Daha Fazla'),
   ];
 
+  /// Alt çubuktaki sekme davranışı.
+  ///
+  /// Aktif sekmeye TEKRAR basıldığında kullanıcı o sekmenin köküne
+  /// dönmeyi bekler. `goBranch(initialLocation: true)` yalnızca GoRouter'ın
+  /// bildiği rotaları sıfırlar; "Daha Fazla" altındaki ekranlar
+  /// (Abonelik, Personel, Şirket ayarları, İş türleri, Bildirimler,
+  /// Takvim, Finans, Stok) ise `Navigator.push` ile açılıyor ve bu yığın
+  /// GoRouter'ın durumunda görünmüyor. Bu yüzden önce sekmenin KENDİ
+  /// navigator'ında açık bir ekran var mı diye bakılır; varsa köke
+  /// dönülür — aksi halde tekrar basmak hiçbir şey yapmıyordu.
+  void _onSelect(int index) {
+    final isReselect = index == navigationShell.currentIndex;
+
+    if (isReselect) {
+      final navigator =
+          navigationShell.route.branches[index].navigatorKey.currentState;
+      if (navigator != null && navigator.canPop()) {
+        navigator.popUntil((route) => route.isFirst);
+        return;
+      }
+    }
+
+    navigationShell.goBranch(index, initialLocation: isReselect);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playUpdateReady = ref.watch(playUpdateReadyProvider);
@@ -40,8 +65,7 @@ class MainShell extends ConsumerWidget {
       bottomNavigationBar: _FloatingNavBar(
         currentIndex: navigationShell.currentIndex,
         destinations: _destinations,
-        onSelect: (index) =>
-            navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
+        onSelect: (index) => _onSelect(index),
       ),
     );
   }

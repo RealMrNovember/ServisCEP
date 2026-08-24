@@ -93,51 +93,30 @@ class PaymentRequest extends Model
      */
     public function approve(string $duration, AdminUser $admin, ?string $note = null, ?string $approvedPlanId = null): void
     {
-        $this->approveWithinTransaction($duration, $admin, $note, $approvedPlanId);
+        $service = app(\App\Services\SubscriptionService::class);
+        $planId = $approvedPlanId ?: $this->plan_id;
 
-        // Bildirim transaction'ın DIŞINDA, commit sonrası gönderilir:
-        // gönderim hatası onayı geri almamalı (bkz. FcmService).
-        $company = $this->company()->with('plan')->first();
-        app(\App\Services\FcmService::class)->sendToCompany(
-            $company,
-            'Aboneliğin aktif edildi',
-            sprintf(
-                '%s paketi %s tarihine kadar geçerli.',
-                $company->plan?->name ?? 'Paketin',
-                $company->subscription_expires_at?->translatedFormat('d F Y') ?? '-'
-            ),
-            ['type' => 'subscription_approved'],
+        // Süre hesabı TEK kaynaktan gelir (SubscriptionService) — admin
+        // panelindeki "Süre Uzat" aksiyonu da aynı kuralı kullanır, ikisi
+        // ayrı yazıldığı sürece birbirinden sapma riski vardı.
+        $company = $service->apply(
+            $this->company,
+            months: $duration === 'YEARLY' ? 12 : 1,
+            planId: $planId ?: null,
         );
-    }
 
-    private function approveWithinTransaction(string $duration, AdminUser $admin, ?string $note, ?string $approvedPlanId): void
-    {
-        DB::transaction(function () use ($duration, $admin, $note, $approvedPlanId) {
-            $company = $this->company()->lockForUpdate()->first();
-            $base = $company->subscription_expires_at?->isFuture()
-                ? $company->subscription_expires_at
-                : Carbon::now();
+        $this->update([
+            'status' => 'APPROVED',
+            'approved_plan_id' => $planId,
+            'approved_duration' => $duration,
+            'admin_note' => $note,
+            'reviewed_by_admin_id' => $admin->id,
+            'reviewed_at' => Carbon::now(),
+        ]);
 
-            $company->subscription_expires_at = $duration === 'YEARLY'
-                ? $base->copy()->addYear()
-                : $base->copy()->addMonth();
-            $company->is_active = true;
-
-            $planId = $approvedPlanId ?: $this->plan_id;
-            if ($planId) {
-                $company->plan_id = $planId;
-            }
-            $company->save();
-
-            $this->update([
-                'status' => 'APPROVED',
-                'approved_plan_id' => $planId,
-                'approved_duration' => $duration,
-                'admin_note' => $note,
-                'reviewed_by_admin_id' => $admin->id,
-                'reviewed_at' => Carbon::now(),
-            ]);
-        });
+        // Bildirim, abonelik yazıldıktan SONRA gönderilir: gönderim hatası
+        // onayı geri almamalı (bkz. FcmService).
+        $service->notifyExtended($company);
     }
 
     public function reject(AdminUser $admin, ?string $note = null): void
