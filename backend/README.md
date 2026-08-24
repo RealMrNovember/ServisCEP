@@ -27,15 +27,34 @@ php artisan serve
 
 ## PHP/Composer Kurulu Değilse (Docker ile)
 
-Yerel makinede PHP/Composer yoksa, `composer:2` imajı (PHP CLI + Composer birlikte) hiçbir şey kurmadan aynı işi görür — PowerShell'den proje kökünden çalıştırılır. Filament `ext-intl` gerektirir, imajda yok — `--ignore-platform-req` ile atlanabilir (yalnızca API/backend testleri için sorun değil, Filament panellerini bu şekilde çalıştırmayın):
+Yerel makinede PHP/Composer yoksa Docker kullanılır. **PowerShell'den** çalıştırın (bu makinede Docker Bash üzerinden çalışmıyor).
+
+### Bağımlılıklar
+
+`composer:2` imajı PHP CLI + Composer'ı birlikte getirir:
 
 ```powershell
-docker run --rm -v "C:\CiciByte\ServisCEP\backend:/app" -w /app composer:2 composer install --ignore-platform-req=ext-intl
-docker run --rm --entrypoint php -v "C:\CiciByte\ServisCEP\backend:/app" -w /app composer:2 artisan key:generate
-docker run --rm --entrypoint php -v "C:\CiciByte\ServisCEP\backend:/app" -w /app composer:2 artisan test
+docker run --rm -v "C:\CiciByte\ServisCEPackend:/app" -w /app composer:2 composer install --ignore-platform-req=ext-intl
+docker run --rm --entrypoint php -v "C:\CiciByte\ServisCEPackend:/app" -w /app composer:2 artisan key:generate
 ```
 
-Testler `phpunit.xml` üzerinden SQLite in-memory veritabanı kullanır. (Not: Docker Desktop bu ortamda yalnızca **PowerShell**'den erişilebiliyor; Git Bash/WSL üzerinden `docker` komutları named pipe hatası verebilir.)
+### Testler — production ile AYNI imajda çalıştırın
+
+`composer:2` imajında **`intl` eklentisi yoktur** ve Filament sayfaları
+onsuz render edilemez. Bu yüzden testler production'la aynı eklentilere
+sahip imajla çalıştırılmalıdır:
+
+```powershell
+docker build -t teknikcep/php:test C:\CiciByte\ServisCEP\deploy\docker\php
+docker run --rm -v "C:\CiciByte\ServisCEPackend:/app" -w /app teknikcep/php:test php artisan test
+```
+
+> **Neden önemli:** 2026-08-25'te admin panelindeki abonelik yönetimi
+> aksiyonu yanlış ad alanından import edilen bir bileşen yüzünden kırıldı.
+> 165 testin tamamı yeşildi, çünkü hiçbiri Filament sayfalarını render
+> etmiyordu — `intl` olmadan bu testler zaten yazılamıyordu. Hata ancak
+> kullanıcı panele girince ortaya çıktı. `AdminPanelRendersTest` bu
+> boşluğu kapatır ama YALNIZCA `intl` olan imajda çalışır.
 
 ## Production Runtime (Docker)
 
