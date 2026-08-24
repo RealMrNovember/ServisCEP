@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Bildirim vurgu rengi — simge tek renkli olmak zorunda olduğu için
+      marka rengi Android'e ayrıca bu kaynakla bildirilir; sistem simgeyi
+      bu renkle boyar. Değer docs/14 § Marka Kimliği'ndeki aksan rengiyle
+      aynı olmalıdır.
+    -->
+    <color name="notification_accent">#FF3B82F6</color>
+</resources>

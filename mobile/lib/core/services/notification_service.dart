@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../app/theme.dart';
 import '../database/app_database.dart';
 
 /// Yerel iş randevu hatırlatmaları — bkz. docs/05 § Bildirimler.
@@ -46,6 +47,8 @@ abstract final class NotificationService {
           channelDescription: 'Planlanan iş randevuları için hatırlatmalar',
           importance: Importance.high,
           priority: Priority.high,
+          // Simge tek renkli olmak zorunda; marka rengi ayrıca verilir.
+          color: AppColors.accent,
         ),
       ),
     );
@@ -56,7 +59,10 @@ abstract final class NotificationService {
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Istanbul'));
 
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Tek renkli bildirim simgesi — launcher ikonu (renkli) verilirse
+    // Android yalnızca alfa kanalını kullandığı için simge tanınmaz bir
+    // leke olarak görünür. Bkz. res/drawable/ic_notification.xml.
+    const androidInit = AndroidInitializationSettings('@drawable/ic_notification');
     const initSettings = InitializationSettings(android: androidInit);
     await _plugin.initialize(settings: initSettings);
 
@@ -97,6 +103,8 @@ abstract final class NotificationService {
           channelDescription: 'Planlanan iş randevuları için hatırlatmalar',
           importance: Importance.high,
           priority: Priority.high,
+          // Simge tek renkli olmak zorunda; marka rengi ayrıca verilir.
+          color: AppColors.accent,
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
