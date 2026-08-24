@@ -222,8 +222,9 @@ class CompaniesTable
 
                         Textarea::make('note')
                             ->label('Not (opsiyonel)')
-                            ->helperText('Neden uzatıldı? Denetim kaydına ve şirket notuna yazılır.')
+                            ->helperText('Neden değişti? Denetim kaydına ve şirket notuna yazılır.')
                             ->rows(2),
+
                     ])
                     ->action(function (Company $record, array $data): void {
                         $service = app(SubscriptionService::class);
@@ -252,7 +253,10 @@ class CompaniesTable
                             ['mode' => $data['mode'], 'note' => $data['note'] ?? null],
                         );
 
-                        $service->notifyExtended($company);
+                        // Bildirim HER ZAMAN gider (kullanıcı kararı):
+                        // müşteri ödemesini yaptıktan sonra onayı bekliyor;
+                        // haber verilmezse boşuna bekler ve destek arar.
+                        $service->notifyChanged($company, $previous);
 
                         Notification::make()
                             ->title('Abonelik güncellendi')

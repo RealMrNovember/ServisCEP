@@ -129,6 +129,57 @@ class AdminPanelRendersTest extends TestCase
         );
     }
 
+    public function test_customer_is_always_notified_when_subscription_changes(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $user = User::factory()->create();
+        $company = Company::findOrFail($user->company_id);
+
+        Livewire::test(ListCompanies::class)
+            ->callTableAction('extend', $company, [
+                'mode' => 'add',
+                'months' => '1',
+                'days' => 0,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        // Müşteri ödemesini yaptıktan sonra onayı bekliyor — bildirim
+        // KAPATILAMAZ, her değişiklikte gitmek zorunda (kullanıcı kararı).
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $user,
+            \App\Notifications\SubscriptionChanged::class,
+        );
+    }
+
+    public function test_payment_approval_notifies_the_customer(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $user = User::factory()->create();
+        $company = Company::findOrFail($user->company_id);
+        $plan = Plan::create([
+            'name' => 'Profesyonel', 'slug' => 'pro',
+            'price_minor' => 1, 'price_yearly_minor' => 1,
+            'is_active' => true, 'sort_order' => 1,
+        ]);
+
+        $request = \App\Models\PaymentRequest::create([
+            'company_id' => $company->id,
+            'requested_by_user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'requested_duration' => 'MONTHLY',
+            'status' => 'PENDING',
+        ]);
+
+        $request->approve('MONTHLY', AdminUser::first());
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $user,
+            \App\Notifications\SubscriptionChanged::class,
+        );
+    }
+
     public function test_expired_company_is_reactivated_from_today_not_from_past(): void
     {
         $user = User::factory()->create();

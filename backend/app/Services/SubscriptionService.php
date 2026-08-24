@@ -7,8 +7,11 @@ namespace App\Services;
 use App\Models\AdminUser;
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Notifications\SubscriptionChanged;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Abonelik süresi hesaplama ve uzatma — TEK kaynak.
@@ -100,22 +103,50 @@ class SubscriptionService
     }
 
     /**
-     * Müşteriyi bilgilendirir — abonelik uzatıldığında kullanıcının bunu
-     * uygulamayı açmadan öğrenmesi gerekir.
+     * Müşteriyi bilgilendirir — aboneliği değiştiğinde bunu uygulamayı
+     * açmadan öğrenmesi gerekir.
+     *
+     * Metin, sürenin YÖNÜNE göre seçilir. Önceden her durumda "uzatıldı"
+     * gönderiliyordu; admin bir yanlışı düzeltmek için tarihi geri
+     * çektiğinde ya da yalnızca paketi değiştirdiğinde bu müşteriye
+     * yanlış bilgi veriyordu.
      */
-    public function notifyExtended(Company $company): void
+    public function notifyChanged(Company $company, ?Carbon $previousExpiry): void
     {
         $company->loadMissing('plan');
+        $current = $company->subscription_expires_at;
+
+        $extended = $current !== null
+            && ($previousExpiry === null || $current->greaterThan($previousExpiry));
 
         $this->fcm->sendToCompany(
             $company,
-            'Aboneliğin uzatıldı',
+            $extended ? 'Aboneliğin uzatıldı' : 'Aboneliğin güncellendi',
             sprintf(
                 '%s paketi %s tarihine kadar geçerli.',
                 $company->plan?->name ?? 'Paketin',
-                $company->subscription_expires_at?->translatedFormat('d F Y') ?? '-'
+                $current?->translatedFormat('d F Y') ?? '-'
             ),
-            ['type' => 'subscription_extended'],
+            ['type' => $extended ? 'subscription_extended' : 'subscription_updated'],
         );
+
+        // E-posta, push'un ULAŞAMADIĞI durumları kapatır: uygulamayı henüz
+        // güncellememiş, bildirim izni vermemiş veya cihazı kayıtlı olmayan
+        // kullanıcı da haberdar olmalı. Müşteri ödemesini yaptıktan sonra
+        // onayı bekliyor — haber alamazsa boşuna bekler.
+        //
+        // Gönderim hatası aboneliği ASLA geri almamalı; abonelik zaten
+        // yazıldı, e-posta ikincil bir kanaldır.
+        try {
+            Notification::send(
+                $company->users()->get(),
+                new SubscriptionChanged($company, $extended),
+            );
+        } catch (\Throwable $e) {
+            Log::error('Abonelik bildirimi e-postası gönderilemedi', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

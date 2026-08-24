@@ -99,6 +99,8 @@ class PaymentRequest extends Model
         // Süre hesabı TEK kaynaktan gelir (SubscriptionService) — admin
         // panelindeki "Süre Uzat" aksiyonu da aynı kuralı kullanır, ikisi
         // ayrı yazıldığı sürece birbirinden sapma riski vardı.
+        $previousExpiry = $this->company->subscription_expires_at;
+
         $company = $service->apply(
             $this->company,
             months: $duration === 'YEARLY' ? 12 : 1,
@@ -116,7 +118,7 @@ class PaymentRequest extends Model
 
         // Bildirim, abonelik yazıldıktan SONRA gönderilir: gönderim hatası
         // onayı geri almamalı (bkz. FcmService).
-        $service->notifyExtended($company);
+        $service->notifyChanged($company, $previousExpiry);
     }
 
     public function reject(AdminUser $admin, ?string $note = null): void
