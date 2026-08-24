@@ -107,6 +107,9 @@ class ServiceRequests extends Table {
   TextColumn get status => text().withDefault(const Constant('BEKLIYOR'))();
   TextColumn get convertedJobId => text().nullable()();
   TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
+
+  /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
+  IntColumn get version => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -193,6 +196,12 @@ class Quotes extends Table {
   TextColumn get status => text().withDefault(const Constant('TASLAK'))();
   TextColumn get notes => text().nullable()();
   IntColumn get totalMinor => integer().withDefault(const Constant(0))();
+
+  /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
+  TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
+
+  /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
+  IntColumn get version => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -221,6 +230,12 @@ class Proformas extends Table {
   DateTimeColumn get validUntil => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   IntColumn get totalMinor => integer().withDefault(const Constant(0))();
+
+  /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
+  TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
+
+  /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
+  IntColumn get version => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -344,11 +359,13 @@ class StockMovements extends Table {
 class SyncOperations extends Table {
   TextColumn get id => text()();
 
-  /// customer / job
+  /// customer / job / service_request / quote / proforma / payment /
+  /// income_entry / expense_entry
   TextColumn get entityType => text()();
   TextColumn get entityId => text()();
 
-  /// CREATE / UPDATE / DELETE
+  /// CREATE / UPDATE / DELETE / CONVERT (yalnızca service_request —
+  /// backend'in /convert endpoint'ine gider, bkz. sync_service.dart)
   TextColumn get operation => text()();
 
   /// Gönderilecek alanların JSON gövdesi.

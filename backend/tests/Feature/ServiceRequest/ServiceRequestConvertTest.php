@@ -71,4 +71,37 @@ class ServiceRequestConvertTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
     }
+
+    public function test_convert_accepts_client_generated_job_id_and_replay_is_idempotent(): void
+    {
+        $user = User::factory()->create();
+        $this->withToken($user->createToken('test')->plainTextToken);
+
+        $serviceRequest = ServiceRequest::factory()->create([
+            'company_id' => $user->company_id,
+            'status' => 'BEKLIYOR',
+        ]);
+
+        $clientJobId = '3f7c2b9a-1d4e-4f6a-8b2c-9e5d7a1c3b6f';
+
+        // Mobilin offline oluşturduğu işin UUID'si korunmalı — job.customer_id
+        // gibi ilişkiler senkron sonrası kopmamalı (AcceptsClientGeneratedId
+        // ile aynı gerekçe).
+        $this->postJson("/api/v1/service-requests/{$serviceRequest->id}/convert", [
+            'job_id' => $clientJobId,
+        ])->assertCreated()->assertJsonPath('data.id', $clientJobId);
+
+        // Ağ kesintisi sonrası replay: aynı talep + aynı job_id → hata değil,
+        // var olan iş 200 ile döner (duplicate iş oluşmaz).
+        $this->postJson("/api/v1/service-requests/{$serviceRequest->id}/convert", [
+            'job_id' => $clientJobId,
+        ])->assertOk()->assertJsonPath('data.id', $clientJobId);
+
+        $this->assertSame(1, \App\Models\Job::where('id', $clientJobId)->count());
+
+        // Farklı bir job_id ile tekrar dönüştürme denemesi hâlâ reddedilir.
+        $this->postJson("/api/v1/service-requests/{$serviceRequest->id}/convert", [
+            'job_id' => 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+        ])->assertUnprocessable()->assertJsonValidationErrors('status');
+    }
 }

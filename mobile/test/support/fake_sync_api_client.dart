@@ -10,14 +10,31 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<Map<String, dynamic>> createJobCalls = [];
   final List<(String, Map<String, dynamic>)> updateJobCalls = [];
 
+  final List<Map<String, dynamic>> createServiceRequestCalls = [];
+  final List<(String, String)> convertCalls = [];
+  final List<Map<String, dynamic>> createQuoteCalls = [];
+  final List<(String, Map<String, dynamic>)> updateQuoteCalls = [];
+  final List<Map<String, dynamic>> createProformaCalls = [];
+  final List<(String, Map<String, dynamic>)> createPaymentCalls = [];
+  final List<Map<String, dynamic>> createIncomeCalls = [];
+  final List<Map<String, dynamic>> createExpenseCalls = [];
+
   /// Sıradaki `createCustomer`/`updateCustomer`/... çağrısında ne
   /// döneceği/fırlatılacağı — yoksa varsayılan olarak version:1 ile
   /// başarı döner.
   final List<Object> customerResponses = [];
   final List<Object> jobResponses = [];
+  final List<Object> serviceRequestResponses = [];
+  final List<Object> quoteResponses = [];
+  final List<Object> proformaResponses = [];
+  final List<Object> paymentResponses = [];
+  final List<Object> convertResponses = [];
 
   List<RemoteRecord> customersToPull = [];
   List<RemoteRecord> jobsToPull = [];
+  List<RemoteRecord> serviceRequestsToPull = [];
+  List<RemoteRecord> quotesToPull = [];
+  List<RemoteRecord> proformasToPull = [];
 
   Object _nextOrDefault(List<Object> queue, String id) {
     if (queue.isEmpty) return SyncEntityResult(id: id, version: 1);
@@ -69,6 +86,92 @@ class FakeSyncApiClient implements SyncApiClient {
 
   @override
   Future<List<RemoteRecord>> listJobs() async => jobsToPull;
+
+  @override
+  Future<SyncEntityResult> createServiceRequest(
+    Map<String, dynamic> payload,
+  ) async {
+    createServiceRequestCalls.add(payload);
+    return _resolve(
+      _nextOrDefault(serviceRequestResponses, payload['id'] as String),
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> convertServiceRequest(
+    String id,
+    String jobId,
+  ) async {
+    convertCalls.add((id, jobId));
+    if (convertResponses.isNotEmpty) {
+      final outcome = convertResponses.removeAt(0);
+      if (outcome is Exception) throw outcome;
+      return outcome as Map<String, dynamic>;
+    }
+    return {
+      'id': jobId,
+      'code': 'J-SERVER01',
+      'title': 'Sunucu başlığı',
+      'description': 'Sunucu açıklaması',
+      'version': 1,
+    };
+  }
+
+  @override
+  Future<List<RemoteRecord>> listServiceRequests() async =>
+      serviceRequestsToPull;
+
+  @override
+  Future<SyncEntityResult> createQuote(Map<String, dynamic> payload) async {
+    createQuoteCalls.add(payload);
+    return _resolve(_nextOrDefault(quoteResponses, payload['id'] as String));
+  }
+
+  @override
+  Future<SyncEntityResult> updateQuote(
+    String id,
+    Map<String, dynamic> payload,
+  ) async {
+    updateQuoteCalls.add((id, payload));
+    return _resolve(_nextOrDefault(quoteResponses, id));
+  }
+
+  @override
+  Future<List<RemoteRecord>> listQuotes() async => quotesToPull;
+
+  @override
+  Future<SyncEntityResult> createProforma(Map<String, dynamic> payload) async {
+    createProformaCalls.add(payload);
+    return _resolve(_nextOrDefault(proformaResponses, payload['id'] as String));
+  }
+
+  @override
+  Future<List<RemoteRecord>> listProformas() async => proformasToPull;
+
+  @override
+  Future<SyncEntityResult> createPayment(
+    String customerId,
+    Map<String, dynamic> payload,
+  ) async {
+    createPaymentCalls.add((customerId, payload));
+    return _resolve(_nextOrDefault(paymentResponses, payload['id'] as String));
+  }
+
+  @override
+  Future<SyncEntityResult> createIncomeEntry(
+    Map<String, dynamic> payload,
+  ) async {
+    createIncomeCalls.add(payload);
+    return SyncEntityResult(id: payload['id'] as String, version: 1);
+  }
+
+  @override
+  Future<SyncEntityResult> createExpenseEntry(
+    Map<String, dynamic> payload,
+  ) async {
+    createExpenseCalls.add(payload);
+    return SyncEntityResult(id: payload['id'] as String, version: 1);
+  }
 
   @override
   Future<AuthTokenResult> register({

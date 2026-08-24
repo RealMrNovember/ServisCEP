@@ -103,6 +103,32 @@ abstract interface class SyncApiClient {
   Future<SyncEntityResult> createJob(Map<String, dynamic> payload);
   Future<SyncEntityResult> updateJob(String id, Map<String, dynamic> payload);
   Future<List<RemoteRecord>> listJobs();
+
+  Future<SyncEntityResult> createServiceRequest(Map<String, dynamic> payload);
+
+  /// Talep → iş dönüşümü — backend'in `/convert` endpoint'i, mobilin offline
+  /// oluşturduğu işin UUID'sini (`job_id`) kabul eder; yanıt işin son hâli
+  /// (JobResource). Replay idempotenttir (200 döner, duplicate iş oluşmaz).
+  Future<Map<String, dynamic>> convertServiceRequest(
+    String id,
+    String jobId,
+  );
+  Future<List<RemoteRecord>> listServiceRequests();
+
+  Future<SyncEntityResult> createQuote(Map<String, dynamic> payload);
+  Future<SyncEntityResult> updateQuote(String id, Map<String, dynamic> payload);
+  Future<List<RemoteRecord>> listQuotes();
+
+  Future<SyncEntityResult> createProforma(Map<String, dynamic> payload);
+  Future<List<RemoteRecord>> listProformas();
+
+  /// Tahsilat müşteri altına yuvalı: POST /customers/{customerId}/payments.
+  Future<SyncEntityResult> createPayment(
+    String customerId,
+    Map<String, dynamic> payload,
+  );
+  Future<SyncEntityResult> createIncomeEntry(Map<String, dynamic> payload);
+  Future<SyncEntityResult> createExpenseEntry(Map<String, dynamic> payload);
 }
 
 class DioSyncApiClient implements SyncApiClient {
@@ -228,6 +254,65 @@ class DioSyncApiClient implements SyncApiClient {
 
   @override
   Future<List<RemoteRecord>> listJobs() => _listAllPages('/jobs');
+
+  @override
+  Future<SyncEntityResult> createServiceRequest(Map<String, dynamic> payload) =>
+      _create('/service-requests', payload);
+
+  @override
+  Future<Map<String, dynamic>> convertServiceRequest(
+    String id,
+    String jobId,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/service-requests/$id/convert',
+        data: {'job_id': jobId},
+      );
+      final body = response.data as Map<String, dynamic>;
+      return body['data'] as Map<String, dynamic>;
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<List<RemoteRecord>> listServiceRequests() =>
+      _listAllPages('/service-requests');
+
+  @override
+  Future<SyncEntityResult> createQuote(Map<String, dynamic> payload) =>
+      _create('/quotes', payload);
+
+  @override
+  Future<SyncEntityResult> updateQuote(
+    String id,
+    Map<String, dynamic> payload,
+  ) => _update('/quotes/$id', payload);
+
+  @override
+  Future<List<RemoteRecord>> listQuotes() => _listAllPages('/quotes');
+
+  @override
+  Future<SyncEntityResult> createProforma(Map<String, dynamic> payload) =>
+      _create('/proformas', payload);
+
+  @override
+  Future<List<RemoteRecord>> listProformas() => _listAllPages('/proformas');
+
+  @override
+  Future<SyncEntityResult> createPayment(
+    String customerId,
+    Map<String, dynamic> payload,
+  ) => _create('/customers/$customerId/payments', payload);
+
+  @override
+  Future<SyncEntityResult> createIncomeEntry(Map<String, dynamic> payload) =>
+      _create('/income-entries', payload);
+
+  @override
+  Future<SyncEntityResult> createExpenseEntry(Map<String, dynamic> payload) =>
+      _create('/expense-entries', payload);
 
   Future<SyncEntityResult> _create(
     String path,

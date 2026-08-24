@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -72,18 +74,34 @@ class FinanceRepository {
     String? method,
     String? note,
   }) async {
-    await _db.into(_db.incomeEntries).insert(
-      IncomeEntriesCompanion.insert(
-        id: _uuid.v4(),
-        companyId: companyId,
-        description: description,
-        amountMinor: amountMinor,
-        category: Value(category),
-        customerId: Value(customerId),
-        method: Value(method ?? 'Nakit'),
-        note: Value(note),
-      ),
-    );
+    final id = _uuid.v4();
+    await _db.transaction(() async {
+      await _db.into(_db.incomeEntries).insert(
+        IncomeEntriesCompanion.insert(
+          id: id,
+          companyId: companyId,
+          description: description,
+          amountMinor: amountMinor,
+          category: Value(category),
+          customerId: Value(customerId),
+          method: Value(method ?? 'Nakit'),
+          note: Value(note),
+        ),
+      );
+      await _enqueue(
+        entityType: 'income_entry',
+        entityId: id,
+        payload: {
+          'id': id,
+          'description': description,
+          'customer_id': customerId,
+          'category': category,
+          'amount_minor': amountMinor,
+          'method': method ?? 'Nakit',
+          'note': note,
+        },
+      );
+    });
   }
 
   Future<void> addExpense({
@@ -95,22 +113,43 @@ class FinanceRepository {
     String? method,
     String? note,
   }) async {
-    await _db.into(_db.expenseEntries).insert(
-      ExpenseEntriesCompanion.insert(
-        id: _uuid.v4(),
-        companyId: companyId,
-        description: description,
-        amountMinor: amountMinor,
-        category: Value(category),
-        vendorName: Value(vendorName),
-        method: Value(method ?? 'Nakit'),
-        note: Value(note),
-      ),
-    );
+    final id = _uuid.v4();
+    await _db.transaction(() async {
+      await _db.into(_db.expenseEntries).insert(
+        ExpenseEntriesCompanion.insert(
+          id: id,
+          companyId: companyId,
+          description: description,
+          amountMinor: amountMinor,
+          category: Value(category),
+          vendorName: Value(vendorName),
+          method: Value(method ?? 'Nakit'),
+          note: Value(note),
+        ),
+      );
+      await _enqueue(
+        entityType: 'expense_entry',
+        entityId: id,
+        payload: {
+          'id': id,
+          'description': description,
+          'category': category,
+          'amount_minor': amountMinor,
+          'vendor_name': vendorName,
+          'method': method ?? 'Nakit',
+          'note': note,
+        },
+      );
+    });
   }
 
   /// Tahsilat kaydı + cari hesaba ALACAK düşümü — tek transaction (bkz.
   /// docs/07 § Transaction Kuralı, docs/15 § Otomatik Kayıt Oluşturma).
+  ///
+  /// Senkron notu: yalnızca payment kaydı push edilir — backend, kendi
+  /// idempotent ALACAK cari kaydını tahsilatı alırken kendisi oluşturur
+  /// (cari hareketler iki tarafta bağımsız hesaplanır, bkz. ROADMAP § B10
+  /// bilinçli kapsam sınırları).
   Future<void> recordPayment({
     required String companyId,
     required String customerId,
@@ -119,10 +158,11 @@ class FinanceRepository {
     String? method,
     String? note,
   }) async {
+    final id = _uuid.v4();
     await _db.transaction(() async {
       await _db.into(_db.payments).insert(
         PaymentsCompanion.insert(
-          id: _uuid.v4(),
+          id: id,
           companyId: companyId,
           customerId: customerId,
           jobId: Value(jobId),
@@ -144,7 +184,38 @@ class FinanceRepository {
           description: note?.isNotEmpty == true ? note! : 'Tahsilat',
         ),
       );
+
+      await _enqueue(
+        entityType: 'payment',
+        entityId: id,
+        payload: {
+          'id': id,
+          // URL yolu için gerekli (POST /customers/{id}/payments) — istek
+          // gövdesine girmez, sync_service gönderirken ayıklar.
+          'customer_id': customerId,
+          'job_id': jobId,
+          'amount_minor': amountMinor,
+          'method': method ?? 'Nakit',
+          'note': note,
+        },
+      );
     });
+  }
+
+  Future<void> _enqueue({
+    required String entityType,
+    required String entityId,
+    required Map<String, dynamic> payload,
+  }) {
+    return _db.into(_db.syncOperations).insert(
+      SyncOperationsCompanion.insert(
+        id: _uuid.v4(),
+        entityType: entityType,
+        entityId: entityId,
+        operation: 'CREATE',
+        payload: jsonEncode(payload),
+      ),
+    );
   }
 }
 

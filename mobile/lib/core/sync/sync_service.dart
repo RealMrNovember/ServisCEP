@@ -12,17 +12,19 @@ import '../providers/core_providers.dart';
 /// Mobil senkron motoru — bkz. ROADMAP.md § B10 mobil yarısı.
 ///
 /// Akış: önce outbox'taki bekleyen yazmalar sunucuya gönderilir (push),
-/// sonra Customer/Job listeleri sunucudan çekilip yerel taze olmayan
-/// kayıtlar güncellenir (pull). Bir kaydın PENDING bir outbox girdisi
-/// varsa pull o kaydı EZMEZ — "telefon offline yazdı, ofis de yazdı"
-/// senaryosunda yerel taslağın üzerine sessizce yazılmaması bu motorun
-/// asıl amacı.
+/// sonra sunucu listeleri çekilip yerel taze olmayan kayıtlar güncellenir
+/// (pull). Bir kaydın PENDING bir outbox girdisi varsa pull o kaydı EZMEZ —
+/// "telefon offline yazdı, ofis de yazdı" senaryosunda yerel taslağın
+/// üzerine sessizce yazılmaması bu motorun asıl amacı.
 ///
-/// Kapsam sınırı: yalnızca Customer + Job senkronlanıyor (dikey dilim).
-/// Silinen kayıtlar (backend'in geri dönüşüm kutusu) pull listesine
-/// girmez — bu yüzden ofis tarafında silinen bir müşteri, telefonda
-/// kendisine dokunulmadığı sürece görünmeye devam eder. Tam simetrik
-/// tombstone senkronu bu iterasyonun kapsamı dışında.
+/// Kapsam (dikey dilim 2, 2026-08-24 genişletmesi):
+/// - Push + pull: Customer, Job, ServiceRequest, Quote, Proforma
+/// - Push-only: Payment, IncomeEntry, ExpenseEntry (create-only kayıtlar —
+///   sunucuda düzenlenmezler, çakışma riski yok; pull edilmemeleri bilinçli,
+///   web panelde girilen finans kayıtları mobilde görünmez)
+/// - Kapsam dışı (değişmedi): JobNote/Photo/Signature (medya upload'ı ayrı
+///   iterasyon), CustomerLedgerEntries (iki taraf bağımsız hesaplar),
+///   silinen kayıtların tombstone senkronu.
 class SyncService {
   SyncService(this._db, this._api, this._tokenStore);
 
@@ -36,6 +38,9 @@ class SyncService {
     await _drainOutbox();
     await _pullCustomers(companyId);
     await _pullJobs(companyId);
+    await _pullServiceRequests(companyId);
+    await _pullQuotes(companyId);
+    await _pullProformas(companyId);
   }
 
   Future<void> _drainOutbox() async {
@@ -69,6 +74,47 @@ class SyncService {
               'base_version': op.baseVersion,
             });
             await _markSynced('job', result);
+          case ('service_request', 'CREATE'):
+            final result = await _api.createServiceRequest(payload);
+            await _markSynced('service_request', result);
+          case ('service_request', 'CONVERT'):
+            // Backend işi bizim job_id'mizle kendisi oluşturur ve işin son
+            // hâlini döndürür — yerel iş (kod/başlık sunucu türetmesiyle)
+            // hizalanır. Talebin yeni version'ı yanıtında yok; bir sonraki
+            // pull düzeltir, şimdilik SYNCED işaretlemek yeterli.
+            final job = await _api.convertServiceRequest(
+              op.entityId,
+              payload['job_id'] as String,
+            );
+            await _applyConvertedJob(job);
+            await (_db.update(_db.serviceRequests)
+                  ..where((r) => r.id.equals(op.entityId)))
+                .write(
+                  const ServiceRequestsCompanion(
+                    syncStatus: Value('SYNCED'),
+                  ),
+                );
+          case ('quote', 'CREATE'):
+            final result = await _api.createQuote(payload);
+            await _markSynced('quote', result);
+          case ('quote', 'UPDATE'):
+            final result = await _api.updateQuote(op.entityId, {
+              ...payload,
+              'base_version': op.baseVersion,
+            });
+            await _markSynced('quote', result);
+          case ('proforma', 'CREATE'):
+            final result = await _api.createProforma(payload);
+            await _markSynced('proforma', result);
+          case ('payment', 'CREATE'):
+            // customer_id URL yolu içindir, istek gövdesine girmez.
+            final body = Map<String, dynamic>.from(payload)
+              ..remove('customer_id');
+            await _api.createPayment(payload['customer_id'] as String, body);
+          case ('income_entry', 'CREATE'):
+            await _api.createIncomeEntry(payload);
+          case ('expense_entry', 'CREATE'):
+            await _api.createExpenseEntry(payload);
           default:
             throw StateError(
               'Bilinmeyen sync operasyonu: ${op.entityType}/${op.operation}',
@@ -88,23 +134,71 @@ class SyncService {
     }
   }
 
-  Future<void> _markSynced(String entityType, SyncEntityResult result) {
-    if (entityType == 'customer') {
-      return (_db.update(
-        _db.customers,
-      )..where((c) => c.id.equals(result.id))).write(
-        CustomersCompanion(
-          version: Value(result.version),
-          syncStatus: const Value('SYNCED'),
-        ),
-      );
-    }
-    return (_db.update(_db.jobs)..where((j) => j.id.equals(result.id))).write(
+  /// Convert yanıtındaki işin sunucu hâlini yerel kayda uygular — kod
+  /// (sunucu 'J-...' üretir, yerel 'SRV-...' idi) ve başlık/açıklama
+  /// türetmesi sunucuyla hizalanır.
+  Future<void> _applyConvertedJob(Map<String, dynamic> job) {
+    return (_db.update(
+      _db.jobs,
+    )..where((j) => j.id.equals(job['id'] as String))).write(
       JobsCompanion(
-        version: Value(result.version),
+        code: Value(job['code'] as String),
+        title: Value(job['title'] as String),
+        description: Value(job['description'] as String?),
+        version: Value((job['version'] as num?)?.toInt() ?? 1),
         syncStatus: const Value('SYNCED'),
       ),
     );
+  }
+
+  Future<void> _markSynced(String entityType, SyncEntityResult result) async {
+    final version = Value(result.version);
+    const synced = Value('SYNCED');
+    switch (entityType) {
+      case 'customer':
+        await (_db.update(_db.customers)..where((c) => c.id.equals(result.id)))
+            .write(CustomersCompanion(version: version, syncStatus: synced));
+      case 'job':
+        await (_db.update(_db.jobs)..where((j) => j.id.equals(result.id)))
+            .write(JobsCompanion(version: version, syncStatus: synced));
+      case 'service_request':
+        await (_db.update(_db.serviceRequests)
+              ..where((r) => r.id.equals(result.id)))
+            .write(
+              ServiceRequestsCompanion(version: version, syncStatus: synced),
+            );
+      case 'quote':
+        await (_db.update(_db.quotes)..where((q) => q.id.equals(result.id)))
+            .write(QuotesCompanion(version: version, syncStatus: synced));
+      case 'proforma':
+        await (_db.update(_db.proformas)..where((p) => p.id.equals(result.id)))
+            .write(ProformasCompanion(version: version, syncStatus: synced));
+      // payment / income_entry / expense_entry: yerel tabloda syncStatus
+      // kolonu yok (create-only) — outbox satırının silinmesi yeterli.
+    }
+  }
+
+  Future<void> _setEntitySyncStatus(SyncOperation op, String status) async {
+    final value = Value(status);
+    switch (op.entityType) {
+      case 'customer':
+        await (_db.update(_db.customers)..where((c) => c.id.equals(op.entityId)))
+            .write(CustomersCompanion(syncStatus: value));
+      case 'job':
+        await (_db.update(_db.jobs)..where((j) => j.id.equals(op.entityId)))
+            .write(JobsCompanion(syncStatus: value));
+      case 'service_request':
+        await (_db.update(_db.serviceRequests)
+              ..where((r) => r.id.equals(op.entityId)))
+            .write(ServiceRequestsCompanion(syncStatus: value));
+      case 'quote':
+        await (_db.update(_db.quotes)..where((q) => q.id.equals(op.entityId)))
+            .write(QuotesCompanion(syncStatus: value));
+      case 'proforma':
+        await (_db.update(_db.proformas)
+              ..where((p) => p.id.equals(op.entityId)))
+            .write(ProformasCompanion(syncStatus: value));
+    }
   }
 
   Future<void> _markConflicted(SyncOperation op, ApiConflictException e) async {
@@ -116,14 +210,7 @@ class SyncService {
         lastError: Value(jsonEncode(e.serverSnapshot)),
       ),
     );
-    final syncStatus = const Value('CONFLICT');
-    if (op.entityType == 'customer') {
-      await (_db.update(_db.customers)..where((c) => c.id.equals(op.entityId)))
-          .write(CustomersCompanion(syncStatus: syncStatus));
-    } else {
-      await (_db.update(_db.jobs)..where((j) => j.id.equals(op.entityId)))
-          .write(JobsCompanion(syncStatus: syncStatus));
-    }
+    await _setEntitySyncStatus(op, 'CONFLICT');
   }
 
   Future<void> _markFailed(SyncOperation op, ApiException e) async {
@@ -136,14 +223,7 @@ class SyncService {
         attemptCount: Value(op.attemptCount + 1),
       ),
     );
-    final syncStatus = const Value('FAILED');
-    if (op.entityType == 'customer') {
-      await (_db.update(_db.customers)..where((c) => c.id.equals(op.entityId)))
-          .write(CustomersCompanion(syncStatus: syncStatus));
-    } else {
-      await (_db.update(_db.jobs)..where((j) => j.id.equals(op.entityId)))
-          .write(JobsCompanion(syncStatus: syncStatus));
-    }
+    await _setEntitySyncStatus(op, 'FAILED');
   }
 
   Future<bool> _hasPendingOutboxFor(String entityId) async {
@@ -228,6 +308,153 @@ class SyncService {
         syncStatus: const Value('SYNCED'),
       );
       await _db.into(_db.jobs).insertOnConflictUpdate(companion);
+    }
+  }
+
+  Future<void> _pullServiceRequests(String companyId) async {
+    final remoteRecords = await _api.listServiceRequests();
+    for (final remote in remoteRecords) {
+      if (await _hasPendingOutboxFor(remote.id)) continue;
+
+      final local = await (_db.select(
+        _db.serviceRequests,
+      )..where((r) => r.id.equals(remote.id))).getSingleOrNull();
+      if (local != null && local.version >= remote.version) continue;
+
+      final r = remote.raw;
+      final companion = ServiceRequestsCompanion(
+        id: Value(remote.id),
+        companyId: Value(companyId),
+        code: Value(r['code'] as String),
+        customerId: Value(r['customer_id'] as String),
+        description: Value(r['description'] as String),
+        priority: Value(r['priority'] as String),
+        address: Value(r['address'] as String?),
+        status: Value(r['status'] as String),
+        convertedJobId: Value(r['converted_job_id'] as String?),
+        version: Value(remote.version),
+        syncStatus: const Value('SYNCED'),
+      );
+      await _db.into(_db.serviceRequests).insertOnConflictUpdate(companion);
+    }
+  }
+
+  Future<void> _pullQuotes(String companyId) async {
+    final remoteRecords = await _api.listQuotes();
+    for (final remote in remoteRecords) {
+      if (await _hasPendingOutboxFor(remote.id)) continue;
+
+      final local = await (_db.select(
+        _db.quotes,
+      )..where((q) => q.id.equals(remote.id))).getSingleOrNull();
+      if (local != null && local.version >= remote.version) continue;
+
+      final r = remote.raw;
+      await _db.transaction(() async {
+        await _db.into(_db.quotes).insertOnConflictUpdate(
+          QuotesCompanion(
+            id: Value(remote.id),
+            companyId: Value(companyId),
+            code: Value(r['code'] as String),
+            customerId: Value(r['customer_id'] as String),
+            status: Value(r['status'] as String),
+            notes: Value(r['notes'] as String?),
+            totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
+            version: Value(remote.version),
+            syncStatus: const Value('SYNCED'),
+          ),
+        );
+        await _replaceDocItems(
+          quoteId: remote.id,
+          items: (r['items'] as List<dynamic>?) ?? const [],
+        );
+      });
+    }
+  }
+
+  Future<void> _pullProformas(String companyId) async {
+    final remoteRecords = await _api.listProformas();
+    for (final remote in remoteRecords) {
+      if (await _hasPendingOutboxFor(remote.id)) continue;
+
+      final local = await (_db.select(
+        _db.proformas,
+      )..where((p) => p.id.equals(remote.id))).getSingleOrNull();
+      if (local != null && local.version >= remote.version) continue;
+
+      final r = remote.raw;
+      await _db.transaction(() async {
+        await _db.into(_db.proformas).insertOnConflictUpdate(
+          ProformasCompanion(
+            id: Value(remote.id),
+            companyId: Value(companyId),
+            code: Value(r['code'] as String),
+            customerId: Value(r['customer_id'] as String),
+            validUntil: Value(
+              r['valid_until'] == null
+                  ? null
+                  : DateTime.parse(r['valid_until'] as String),
+            ),
+            notes: Value(r['notes'] as String?),
+            totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
+            version: Value(remote.version),
+            syncStatus: const Value('SYNCED'),
+          ),
+        );
+        await _replaceDocItems(
+          proformaId: remote.id,
+          items: (r['items'] as List<dynamic>?) ?? const [],
+        );
+      });
+    }
+  }
+
+  /// Belge kalemlerini sunucudakiyle bire bir değiştirir — kalemler belge
+  /// oluşturulduktan sonra düzenlenemez (immutable), bu yüzden satır bazlı
+  /// merge yerine toptan değişim yeterli ve güvenli.
+  Future<void> _replaceDocItems({
+    String? quoteId,
+    String? proformaId,
+    required List<dynamic> items,
+  }) async {
+    if (quoteId != null) {
+      await (_db.delete(
+        _db.quoteItems,
+      )..where((i) => i.quoteId.equals(quoteId))).go();
+      for (final raw in items) {
+        final item = raw as Map<String, dynamic>;
+        await _db.into(_db.quoteItems).insertOnConflictUpdate(
+          QuoteItemsCompanion(
+            id: Value(item['id'] as String),
+            quoteId: Value(quoteId),
+            description: Value(item['description'] as String),
+            quantity: Value((item['quantity'] as num).toInt()),
+            unit: Value(item['unit'] as String? ?? 'adet'),
+            unitPriceMinor: Value((item['unit_price_minor'] as num).toInt()),
+            taxRate: Value((item['tax_rate'] as num?)?.toInt() ?? 20),
+            discountMinor: Value((item['discount_minor'] as num?)?.toInt() ?? 0),
+          ),
+        );
+      }
+      return;
+    }
+    await (_db.delete(
+      _db.proformaItems,
+    )..where((i) => i.proformaId.equals(proformaId!))).go();
+    for (final raw in items) {
+      final item = raw as Map<String, dynamic>;
+      await _db.into(_db.proformaItems).insertOnConflictUpdate(
+        ProformaItemsCompanion(
+          id: Value(item['id'] as String),
+          proformaId: Value(proformaId!),
+          description: Value(item['description'] as String),
+          quantity: Value((item['quantity'] as num).toInt()),
+          unit: Value(item['unit'] as String? ?? 'adet'),
+          unitPriceMinor: Value((item['unit_price_minor'] as num).toInt()),
+          taxRate: Value((item['tax_rate'] as num?)?.toInt() ?? 20),
+          discountMinor: Value((item['discount_minor'] as num?)?.toInt() ?? 0),
+        ),
+      );
     }
   }
 }

@@ -38,6 +38,8 @@ class ProformaController extends Controller
         Gate::authorize('viewAny', Proforma::class);
 
         $proformas = Proforma::query()
+            // Mobil pull, kalemleri tek istekte alsın diye eager-load (N+1 da onlenir).
+            ->with('items')
             ->when($request->filled('customer_id'), fn ($query) => $query->where('customer_id', $request->input('customer_id')))
             ->latest('created_at')
             ->paginate((int) $request->input('per_page', 20));

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -68,10 +70,12 @@ class ProformasRepository {
           totalMinor: Value(total),
         ),
       );
+      final itemPayloads = <Map<String, dynamic>>[];
       for (final item in items) {
+        final itemId = _uuid.v4();
         await _db.into(_db.proformaItems).insert(
           ProformaItemsCompanion.insert(
-            id: _uuid.v4(),
+            id: itemId,
             proformaId: id,
             description: item.description,
             quantity: Value(item.quantity),
@@ -81,7 +85,32 @@ class ProformasRepository {
             discountMinor: Value(item.discountMinor),
           ),
         );
+        itemPayloads.add({
+          'id': itemId,
+          'description': item.description,
+          'quantity': item.quantity,
+          'unit': item.unit,
+          'unit_price_minor': item.unitPriceMinor,
+          'tax_rate': item.taxRate,
+          'discount_minor': item.discountMinor,
+        });
       }
+      await _db.into(_db.syncOperations).insert(
+        SyncOperationsCompanion.insert(
+          id: _uuid.v4(),
+          entityType: 'proforma',
+          entityId: id,
+          operation: 'CREATE',
+          payload: jsonEncode({
+            'id': id,
+            'code': code,
+            'customer_id': customerId,
+            'valid_until': validUntil?.toIso8601String(),
+            'notes': notes,
+            'items': itemPayloads,
+          }),
+        ),
+      );
     });
 
     return (await byId(id))!;

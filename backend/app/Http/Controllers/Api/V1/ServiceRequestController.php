@@ -85,12 +85,19 @@ class ServiceRequestController extends Controller
         return (new ServiceRequestResource($serviceRequest))->response();
     }
 
-    public function convert(ServiceRequest $serviceRequest): JsonResponse
+    public function convert(Request $request, ServiceRequest $serviceRequest): JsonResponse
     {
         Gate::authorize('update', $serviceRequest);
 
-        $job = $this->serviceRequestService->convertToJob($serviceRequest);
+        // Mobil senkron: offline dönüşümde yerel oluşturulan işin UUID'si
+        // korunur (bkz. ServiceRequestService::convertToJob). Replay
+        // (aynı talep + aynı job_id) 200 döner, 201 değil.
+        $validated = $request->validate(['job_id' => ['sometimes', 'uuid']]);
+        $clientJobId = $validated['job_id'] ?? null;
+        $alreadyConverted = $serviceRequest->status === 'ISE_DONUSTU';
 
-        return (new JobResource($job))->response()->setStatusCode(201);
+        $job = $this->serviceRequestService->convertToJob($serviceRequest, $clientJobId);
+
+        return (new JobResource($job))->response()->setStatusCode($alreadyConverted ? 200 : 201);
     }
 }

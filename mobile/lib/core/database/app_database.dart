@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -70,6 +70,15 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(customers, customers.version);
         await m.addColumn(jobs, jobs.version);
         await m.createTable(syncOperations);
+      }
+      if (from < 5) {
+        // Senkron kapsam genişletmesi (dikey dilim 2): ServiceRequest,
+        // Quote ve Proforma da versiyonlu senkrona katılıyor.
+        await m.addColumn(serviceRequests, serviceRequests.version);
+        await m.addColumn(quotes, quotes.syncStatus);
+        await m.addColumn(quotes, quotes.version);
+        await m.addColumn(proformas, proformas.syncStatus);
+        await m.addColumn(proformas, proformas.version);
       }
     },
   );

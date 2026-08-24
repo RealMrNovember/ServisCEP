@@ -2448,6 +2448,18 @@ class $ServiceRequestsTable extends ServiceRequests
     requiredDuringInsert: false,
     defaultValue: const Constant('PENDING'),
   );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2472,6 +2484,7 @@ class $ServiceRequestsTable extends ServiceRequests
     status,
     convertedJobId,
     syncStatus,
+    version,
     createdAt,
   ];
   @override
@@ -2559,6 +2572,12 @@ class $ServiceRequestsTable extends ServiceRequests
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2614,6 +2633,10 @@ class $ServiceRequestsTable extends ServiceRequests
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
       )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2642,6 +2665,9 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
   final String status;
   final String? convertedJobId;
   final String syncStatus;
+
+  /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
+  final int version;
   final DateTime createdAt;
   const ServiceRequest({
     required this.id,
@@ -2654,6 +2680,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
     required this.status,
     this.convertedJobId,
     required this.syncStatus,
+    required this.version,
     required this.createdAt,
   });
   @override
@@ -2673,6 +2700,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
       map['converted_job_id'] = Variable<String>(convertedJobId);
     }
     map['sync_status'] = Variable<String>(syncStatus);
+    map['version'] = Variable<int>(version);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -2693,6 +2721,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
           ? const Value.absent()
           : Value(convertedJobId),
       syncStatus: Value(syncStatus),
+      version: Value(version),
       createdAt: Value(createdAt),
     );
   }
@@ -2713,6 +2742,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
       status: serializer.fromJson<String>(json['status']),
       convertedJobId: serializer.fromJson<String?>(json['convertedJobId']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      version: serializer.fromJson<int>(json['version']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -2730,6 +2760,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
       'status': serializer.toJson<String>(status),
       'convertedJobId': serializer.toJson<String?>(convertedJobId),
       'syncStatus': serializer.toJson<String>(syncStatus),
+      'version': serializer.toJson<int>(version),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -2745,6 +2776,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
     String? status,
     Value<String?> convertedJobId = const Value.absent(),
     String? syncStatus,
+    int? version,
     DateTime? createdAt,
   }) => ServiceRequest(
     id: id ?? this.id,
@@ -2759,6 +2791,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
         ? convertedJobId.value
         : this.convertedJobId,
     syncStatus: syncStatus ?? this.syncStatus,
+    version: version ?? this.version,
     createdAt: createdAt ?? this.createdAt,
   );
   ServiceRequest copyWithCompanion(ServiceRequestsCompanion data) {
@@ -2781,6 +2814,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
+      version: data.version.present ? data.version.value : this.version,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -2798,6 +2832,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
           ..write('status: $status, ')
           ..write('convertedJobId: $convertedJobId, ')
           ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2815,6 +2850,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
     status,
     convertedJobId,
     syncStatus,
+    version,
     createdAt,
   );
   @override
@@ -2831,6 +2867,7 @@ class ServiceRequest extends DataClass implements Insertable<ServiceRequest> {
           other.status == this.status &&
           other.convertedJobId == this.convertedJobId &&
           other.syncStatus == this.syncStatus &&
+          other.version == this.version &&
           other.createdAt == this.createdAt);
 }
 
@@ -2845,6 +2882,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
   final Value<String> status;
   final Value<String?> convertedJobId;
   final Value<String> syncStatus;
+  final Value<int> version;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const ServiceRequestsCompanion({
@@ -2858,6 +2896,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
     this.status = const Value.absent(),
     this.convertedJobId = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2872,6 +2911,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
     this.status = const Value.absent(),
     this.convertedJobId = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2890,6 +2930,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
     Expression<String>? status,
     Expression<String>? convertedJobId,
     Expression<String>? syncStatus,
+    Expression<int>? version,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -2904,6 +2945,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
       if (status != null) 'status': status,
       if (convertedJobId != null) 'converted_job_id': convertedJobId,
       if (syncStatus != null) 'sync_status': syncStatus,
+      if (version != null) 'version': version,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2920,6 +2962,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
     Value<String>? status,
     Value<String?>? convertedJobId,
     Value<String>? syncStatus,
+    Value<int>? version,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -2934,6 +2977,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
       status: status ?? this.status,
       convertedJobId: convertedJobId ?? this.convertedJobId,
       syncStatus: syncStatus ?? this.syncStatus,
+      version: version ?? this.version,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -2972,6 +3016,9 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
     }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2994,6 +3041,7 @@ class ServiceRequestsCompanion extends UpdateCompanion<ServiceRequest> {
           ..write('status: $status, ')
           ..write('convertedJobId: $convertedJobId, ')
           ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5296,6 +5344,30 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('PENDING'),
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -5317,6 +5389,8 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
     status,
     notes,
     totalMinor,
+    syncStatus,
+    version,
     createdAt,
   ];
   @override
@@ -5378,6 +5452,18 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
         totalMinor.isAcceptableOrUnknown(data['total_minor']!, _totalMinorMeta),
       );
     }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -5421,6 +5507,14 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
         DriftSqlType.int,
         data['${effectivePrefix}total_minor'],
       )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5444,6 +5538,12 @@ class Quote extends DataClass implements Insertable<Quote> {
   final String status;
   final String? notes;
   final int totalMinor;
+
+  /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
+  final String syncStatus;
+
+  /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
+  final int version;
   final DateTime createdAt;
   const Quote({
     required this.id,
@@ -5453,6 +5553,8 @@ class Quote extends DataClass implements Insertable<Quote> {
     required this.status,
     this.notes,
     required this.totalMinor,
+    required this.syncStatus,
+    required this.version,
     required this.createdAt,
   });
   @override
@@ -5467,6 +5569,8 @@ class Quote extends DataClass implements Insertable<Quote> {
       map['notes'] = Variable<String>(notes);
     }
     map['total_minor'] = Variable<int>(totalMinor);
+    map['sync_status'] = Variable<String>(syncStatus);
+    map['version'] = Variable<int>(version);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -5482,6 +5586,8 @@ class Quote extends DataClass implements Insertable<Quote> {
           ? const Value.absent()
           : Value(notes),
       totalMinor: Value(totalMinor),
+      syncStatus: Value(syncStatus),
+      version: Value(version),
       createdAt: Value(createdAt),
     );
   }
@@ -5499,6 +5605,8 @@ class Quote extends DataClass implements Insertable<Quote> {
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
       totalMinor: serializer.fromJson<int>(json['totalMinor']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      version: serializer.fromJson<int>(json['version']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -5513,6 +5621,8 @@ class Quote extends DataClass implements Insertable<Quote> {
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
       'totalMinor': serializer.toJson<int>(totalMinor),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'version': serializer.toJson<int>(version),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -5525,6 +5635,8 @@ class Quote extends DataClass implements Insertable<Quote> {
     String? status,
     Value<String?> notes = const Value.absent(),
     int? totalMinor,
+    String? syncStatus,
+    int? version,
     DateTime? createdAt,
   }) => Quote(
     id: id ?? this.id,
@@ -5534,6 +5646,8 @@ class Quote extends DataClass implements Insertable<Quote> {
     status: status ?? this.status,
     notes: notes.present ? notes.value : this.notes,
     totalMinor: totalMinor ?? this.totalMinor,
+    syncStatus: syncStatus ?? this.syncStatus,
+    version: version ?? this.version,
     createdAt: createdAt ?? this.createdAt,
   );
   Quote copyWithCompanion(QuotesCompanion data) {
@@ -5549,6 +5663,10 @@ class Quote extends DataClass implements Insertable<Quote> {
       totalMinor: data.totalMinor.present
           ? data.totalMinor.value
           : this.totalMinor,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      version: data.version.present ? data.version.value : this.version,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -5563,6 +5681,8 @@ class Quote extends DataClass implements Insertable<Quote> {
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -5577,6 +5697,8 @@ class Quote extends DataClass implements Insertable<Quote> {
     status,
     notes,
     totalMinor,
+    syncStatus,
+    version,
     createdAt,
   );
   @override
@@ -5590,6 +5712,8 @@ class Quote extends DataClass implements Insertable<Quote> {
           other.status == this.status &&
           other.notes == this.notes &&
           other.totalMinor == this.totalMinor &&
+          other.syncStatus == this.syncStatus &&
+          other.version == this.version &&
           other.createdAt == this.createdAt);
 }
 
@@ -5601,6 +5725,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
   final Value<String> status;
   final Value<String?> notes;
   final Value<int> totalMinor;
+  final Value<String> syncStatus;
+  final Value<int> version;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const QuotesCompanion({
@@ -5611,6 +5737,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5622,6 +5750,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -5636,6 +5766,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     Expression<String>? status,
     Expression<String>? notes,
     Expression<int>? totalMinor,
+    Expression<String>? syncStatus,
+    Expression<int>? version,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -5647,6 +5779,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
       if (status != null) 'status': status,
       if (notes != null) 'notes': notes,
       if (totalMinor != null) 'total_minor': totalMinor,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (version != null) 'version': version,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5660,6 +5794,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     Value<String>? status,
     Value<String?>? notes,
     Value<int>? totalMinor,
+    Value<String>? syncStatus,
+    Value<int>? version,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -5671,6 +5807,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
       status: status ?? this.status,
       notes: notes ?? this.notes,
       totalMinor: totalMinor ?? this.totalMinor,
+      syncStatus: syncStatus ?? this.syncStatus,
+      version: version ?? this.version,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -5700,6 +5838,12 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     if (totalMinor.present) {
       map['total_minor'] = Variable<int>(totalMinor.value);
     }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5719,6 +5863,8 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -6328,6 +6474,30 @@ class $ProformasTable extends Proformas
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('PENDING'),
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -6349,6 +6519,8 @@ class $ProformasTable extends Proformas
     validUntil,
     notes,
     totalMinor,
+    syncStatus,
+    version,
     createdAt,
   ];
   @override
@@ -6410,6 +6582,18 @@ class $ProformasTable extends Proformas
         totalMinor.isAcceptableOrUnknown(data['total_minor']!, _totalMinorMeta),
       );
     }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -6453,6 +6637,14 @@ class $ProformasTable extends Proformas
         DriftSqlType.int,
         data['${effectivePrefix}total_minor'],
       )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -6474,6 +6666,12 @@ class Proforma extends DataClass implements Insertable<Proforma> {
   final DateTime? validUntil;
   final String? notes;
   final int totalMinor;
+
+  /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
+  final String syncStatus;
+
+  /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
+  final int version;
   final DateTime createdAt;
   const Proforma({
     required this.id,
@@ -6483,6 +6681,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     this.validUntil,
     this.notes,
     required this.totalMinor,
+    required this.syncStatus,
+    required this.version,
     required this.createdAt,
   });
   @override
@@ -6499,6 +6699,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       map['notes'] = Variable<String>(notes);
     }
     map['total_minor'] = Variable<int>(totalMinor);
+    map['sync_status'] = Variable<String>(syncStatus);
+    map['version'] = Variable<int>(version);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -6516,6 +6718,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           ? const Value.absent()
           : Value(notes),
       totalMinor: Value(totalMinor),
+      syncStatus: Value(syncStatus),
+      version: Value(version),
       createdAt: Value(createdAt),
     );
   }
@@ -6533,6 +6737,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       validUntil: serializer.fromJson<DateTime?>(json['validUntil']),
       notes: serializer.fromJson<String?>(json['notes']),
       totalMinor: serializer.fromJson<int>(json['totalMinor']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      version: serializer.fromJson<int>(json['version']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -6547,6 +6753,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       'validUntil': serializer.toJson<DateTime?>(validUntil),
       'notes': serializer.toJson<String?>(notes),
       'totalMinor': serializer.toJson<int>(totalMinor),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'version': serializer.toJson<int>(version),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -6559,6 +6767,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     Value<DateTime?> validUntil = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     int? totalMinor,
+    String? syncStatus,
+    int? version,
     DateTime? createdAt,
   }) => Proforma(
     id: id ?? this.id,
@@ -6568,6 +6778,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     validUntil: validUntil.present ? validUntil.value : this.validUntil,
     notes: notes.present ? notes.value : this.notes,
     totalMinor: totalMinor ?? this.totalMinor,
+    syncStatus: syncStatus ?? this.syncStatus,
+    version: version ?? this.version,
     createdAt: createdAt ?? this.createdAt,
   );
   Proforma copyWithCompanion(ProformasCompanion data) {
@@ -6585,6 +6797,10 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       totalMinor: data.totalMinor.present
           ? data.totalMinor.value
           : this.totalMinor,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      version: data.version.present ? data.version.value : this.version,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -6599,6 +6815,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           ..write('validUntil: $validUntil, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -6613,6 +6831,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     validUntil,
     notes,
     totalMinor,
+    syncStatus,
+    version,
     createdAt,
   );
   @override
@@ -6626,6 +6846,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           other.validUntil == this.validUntil &&
           other.notes == this.notes &&
           other.totalMinor == this.totalMinor &&
+          other.syncStatus == this.syncStatus &&
+          other.version == this.version &&
           other.createdAt == this.createdAt);
 }
 
@@ -6637,6 +6859,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
   final Value<DateTime?> validUntil;
   final Value<String?> notes;
   final Value<int> totalMinor;
+  final Value<String> syncStatus;
+  final Value<int> version;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const ProformasCompanion({
@@ -6647,6 +6871,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     this.validUntil = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -6658,6 +6884,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     this.validUntil = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -6672,6 +6900,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     Expression<DateTime>? validUntil,
     Expression<String>? notes,
     Expression<int>? totalMinor,
+    Expression<String>? syncStatus,
+    Expression<int>? version,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -6683,6 +6913,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
       if (validUntil != null) 'valid_until': validUntil,
       if (notes != null) 'notes': notes,
       if (totalMinor != null) 'total_minor': totalMinor,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (version != null) 'version': version,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -6696,6 +6928,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     Value<DateTime?>? validUntil,
     Value<String?>? notes,
     Value<int>? totalMinor,
+    Value<String>? syncStatus,
+    Value<int>? version,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -6707,6 +6941,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
       validUntil: validUntil ?? this.validUntil,
       notes: notes ?? this.notes,
       totalMinor: totalMinor ?? this.totalMinor,
+      syncStatus: syncStatus ?? this.syncStatus,
+      version: version ?? this.version,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -6736,6 +6972,12 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     if (totalMinor.present) {
       map['total_minor'] = Variable<int>(totalMinor.value);
     }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -6755,6 +6997,8 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
           ..write('validUntil: $validUntil, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('version: $version, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -11403,11 +11647,13 @@ class $SyncOperationsTable extends SyncOperations
 class SyncOperation extends DataClass implements Insertable<SyncOperation> {
   final String id;
 
-  /// customer / job
+  /// customer / job / service_request / quote / proforma / payment /
+  /// income_entry / expense_entry
   final String entityType;
   final String entityId;
 
-  /// CREATE / UPDATE / DELETE
+  /// CREATE / UPDATE / DELETE / CONVERT (yalnızca service_request —
+  /// backend'in /convert endpoint'ine gider, bkz. sync_service.dart)
   final String operation;
 
   /// Gönderilecek alanların JSON gövdesi.
@@ -15146,6 +15392,7 @@ typedef $$ServiceRequestsTableCreateCompanionBuilder =
       Value<String> status,
       Value<String?> convertedJobId,
       Value<String> syncStatus,
+      Value<int> version,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -15161,6 +15408,7 @@ typedef $$ServiceRequestsTableUpdateCompanionBuilder =
       Value<String> status,
       Value<String?> convertedJobId,
       Value<String> syncStatus,
+      Value<int> version,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -15255,6 +15503,11 @@ class $$ServiceRequestsTableFilterComposer
 
   ColumnFilters<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15359,6 +15612,11 @@ class $$ServiceRequestsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -15450,6 +15708,9 @@ class $$ServiceRequestsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -15540,6 +15801,7 @@ class $$ServiceRequestsTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> convertedJobId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
+                Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServiceRequestsCompanion(
@@ -15553,6 +15815,7 @@ class $$ServiceRequestsTableTableManager
                 status: status,
                 convertedJobId: convertedJobId,
                 syncStatus: syncStatus,
+                version: version,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -15568,6 +15831,7 @@ class $$ServiceRequestsTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> convertedJobId = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
+                Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServiceRequestsCompanion.insert(
@@ -15581,6 +15845,7 @@ class $$ServiceRequestsTableTableManager
                 status: status,
                 convertedJobId: convertedJobId,
                 syncStatus: syncStatus,
+                version: version,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -17608,6 +17873,8 @@ typedef $$QuotesTableCreateCompanionBuilder =
       Value<String> status,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String> syncStatus,
+      Value<int> version,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -17620,6 +17887,8 @@ typedef $$QuotesTableUpdateCompanionBuilder =
       Value<String> status,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String> syncStatus,
+      Value<int> version,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -17712,6 +17981,16 @@ class $$QuotesTableFilterComposer
 
   ColumnFilters<int> get totalMinor => $composableBuilder(
     column: $table.totalMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17826,6 +18105,16 @@ class $$QuotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -17903,6 +18192,14 @@ class $$QuotesTableAnnotationComposer
     column: $table.totalMinor,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -18018,6 +18315,8 @@ class $$QuotesTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuotesCompanion(
@@ -18028,6 +18327,8 @@ class $$QuotesTableTableManager
                 status: status,
                 notes: notes,
                 totalMinor: totalMinor,
+                syncStatus: syncStatus,
+                version: version,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -18040,6 +18341,8 @@ class $$QuotesTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuotesCompanion.insert(
@@ -18050,6 +18353,8 @@ class $$QuotesTableTableManager
                 status: status,
                 notes: notes,
                 totalMinor: totalMinor,
+                syncStatus: syncStatus,
+                version: version,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -18551,6 +18856,8 @@ typedef $$ProformasTableCreateCompanionBuilder =
       Value<DateTime?> validUntil,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String> syncStatus,
+      Value<int> version,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -18563,6 +18870,8 @@ typedef $$ProformasTableUpdateCompanionBuilder =
       Value<DateTime?> validUntil,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String> syncStatus,
+      Value<int> version,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -18655,6 +18964,16 @@ class $$ProformasTableFilterComposer
 
   ColumnFilters<int> get totalMinor => $composableBuilder(
     column: $table.totalMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18769,6 +19088,16 @@ class $$ProformasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -18848,6 +19177,14 @@ class $$ProformasTableAnnotationComposer
     column: $table.totalMinor,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -18963,6 +19300,8 @@ class $$ProformasTableTableManager
                 Value<DateTime?> validUntil = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProformasCompanion(
@@ -18973,6 +19312,8 @@ class $$ProformasTableTableManager
                 validUntil: validUntil,
                 notes: notes,
                 totalMinor: totalMinor,
+                syncStatus: syncStatus,
+                version: version,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -18985,6 +19326,8 @@ class $$ProformasTableTableManager
                 Value<DateTime?> validUntil = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProformasCompanion.insert(
@@ -18995,6 +19338,8 @@ class $$ProformasTableTableManager
                 validUntil: validUntil,
                 notes: notes,
                 totalMinor: totalMinor,
+                syncStatus: syncStatus,
+                version: version,
                 createdAt: createdAt,
                 rowid: rowid,
               ),

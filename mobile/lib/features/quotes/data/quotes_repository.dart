@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -65,10 +67,12 @@ class QuotesRepository {
           totalMinor: Value(total),
         ),
       );
+      final itemPayloads = <Map<String, dynamic>>[];
       for (final item in items) {
+        final itemId = _uuid.v4();
         await _db.into(_db.quoteItems).insert(
           QuoteItemsCompanion.insert(
-            id: _uuid.v4(),
+            id: itemId,
             quoteId: id,
             description: item.description,
             quantity: Value(item.quantity),
@@ -78,15 +82,67 @@ class QuotesRepository {
             discountMinor: Value(item.discountMinor),
           ),
         );
+        itemPayloads.add({
+          'id': itemId,
+          'description': item.description,
+          'quantity': item.quantity,
+          'unit': item.unit,
+          'unit_price_minor': item.unitPriceMinor,
+          'tax_rate': item.taxRate,
+          'discount_minor': item.discountMinor,
+        });
       }
+      await _enqueue(
+        entityId: id,
+        operation: 'CREATE',
+        payload: {
+          'id': id,
+          'code': code,
+          'customer_id': customerId,
+          'notes': notes,
+          'items': itemPayloads,
+        },
+      );
     });
 
     return (await byId(id))!;
   }
 
-  Future<void> updateStatus(String id, String status) {
-    return (_db.update(_db.quotes)..where((q) => q.id.equals(id))).write(
-      QuotesCompanion(status: Value(status)),
+  Future<void> updateStatus(String id, String status) async {
+    await _db.transaction(() async {
+      final quote = await (_db.select(
+        _db.quotes,
+      )..where((q) => q.id.equals(id))).getSingle();
+      await (_db.update(_db.quotes)..where((q) => q.id.equals(id))).write(
+        QuotesCompanion(
+          status: Value(status),
+          syncStatus: const Value('PENDING'),
+        ),
+      );
+      await _enqueue(
+        entityId: id,
+        operation: 'UPDATE',
+        baseVersion: quote.version,
+        payload: {'status': status},
+      );
+    });
+  }
+
+  Future<void> _enqueue({
+    required String entityId,
+    required String operation,
+    required Map<String, dynamic> payload,
+    int? baseVersion,
+  }) {
+    return _db.into(_db.syncOperations).insert(
+      SyncOperationsCompanion.insert(
+        id: _uuid.v4(),
+        entityType: 'quote',
+        entityId: entityId,
+        operation: operation,
+        payload: jsonEncode(payload),
+        baseVersion: Value(baseVersion),
+      ),
     );
   }
 }

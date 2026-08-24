@@ -38,6 +38,8 @@ class QuoteController extends Controller
         Gate::authorize('viewAny', Quote::class);
 
         $quotes = Quote::query()
+            // Mobil pull, kalemleri tek istekte alsın diye eager-load (N+1 da onlenir).
+            ->with('items')
             ->when($request->filled('customer_id'), fn ($query) => $query->where('customer_id', $request->input('customer_id')))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
             ->latest('created_at')

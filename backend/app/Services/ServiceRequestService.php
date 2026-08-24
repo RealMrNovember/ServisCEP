@@ -16,17 +16,28 @@ class ServiceRequestService
      * Talebi işe dönüştürür — bağlam (müşteri, açıklama, öncelik, adres)
      * otomatik taşınır (bkz. docs/02 § Talep → İş Dönüşümü). Zaten
      * dönüştürülmüş bir talep tekrar dönüştürülemez.
+     *
+     * $clientJobId: mobilin offline dönüşümde yerel oluşturduğu işin
+     * UUID'si (AcceptsClientGeneratedId ile aynı felsefe) — verilirse iş bu
+     * ID ile oluşturulur ki mobildeki ilişkiler kopmasın. Aynı taleple aynı
+     * job_id'nin tekrar gönderilmesi (ağ kesintisi sonrası replay) hata
+     * değil, var olan işi döndürür.
      */
-    public function convertToJob(ServiceRequest $serviceRequest): Job
+    public function convertToJob(ServiceRequest $serviceRequest, ?string $clientJobId = null): Job
     {
         if ($serviceRequest->status === 'ISE_DONUSTU') {
+            if ($clientJobId !== null && $serviceRequest->converted_job_id === $clientJobId) {
+                return Job::findOrFail($clientJobId);
+            }
+
             throw ValidationException::withMessages([
                 'status' => ['Bu talep zaten bir işe dönüştürülmüş.'],
             ]);
         }
 
-        return DB::transaction(function () use ($serviceRequest) {
+        return DB::transaction(function () use ($serviceRequest, $clientJobId) {
             $job = Job::create([
+                'id' => $clientJobId,
                 'company_id' => $serviceRequest->company_id,
                 'code' => 'J-'.Str::upper(Str::random(8)),
                 'customer_id' => $serviceRequest->customer_id,
