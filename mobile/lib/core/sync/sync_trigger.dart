@@ -51,6 +51,10 @@ class SyncTrigger with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) _trigger();
   }
 
+  /// Kullanıcı eylemi sonrası anında senkron (ör. çakışma çözülünce
+  /// sunucunun nihai hali hemen inmeli) — periyodik turu beklemeye gerek yok.
+  void syncNow() => _trigger();
+
   void _trigger() {
     final session = _ref.read(sessionControllerProvider).valueOrNull;
     if (session == null) return;

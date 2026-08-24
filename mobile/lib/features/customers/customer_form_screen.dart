@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/customer_types.dart';
 import '../../core/database/app_database.dart';
+import '../../core/services/contact_picker.dart';
 import '../auth/data/session_controller.dart';
 import 'data/customers_repository.dart';
 
@@ -112,6 +113,33 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
 
   String? _emptyToNull(String v) => v.trim().isEmpty ? null : v.trim();
 
+  /// Rehberden kişi seç — ad ve telefon alanlarını doldurur. İzin
+  /// istenmez (sistem seçicisi kullanılır, bkz. ContactPicker); seçilen
+  /// veri yalnızca formu doldurur, ayrıca saklanmaz.
+  Future<void> _pickFromContacts() async {
+    try {
+      final contact = await const ContactPicker().pick();
+      if (contact == null || !mounted) return;
+
+      setState(() {
+        final name = contact.name?.trim();
+        if (name != null && name.isNotEmpty) {
+          _contactNameController.text = name;
+        }
+        final phone = contact.phone?.replaceAll(RegExp(r'\s+'), '');
+        if (phone != null && phone.isNotEmpty) {
+          _phoneController.text = phone;
+        }
+      });
+      _formKey.currentState?.validate();
+    } on ContactPickerException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,6 +150,17 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             children: [
+              if (!_isEditing) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _pickFromContacts,
+                    icon: const Icon(Icons.contacts_outlined, size: 20),
+                    label: const Text('Rehberden seç'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               TextFormField(
                 controller: _contactNameController,
                 textCapitalization: TextCapitalization.words,

@@ -33,7 +33,12 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<Object> paymentResponses = [];
   final List<Object> convertResponses = [];
 
+  final List<(String, String)> uploadTaxCertificateCalls = [];
+  final List<(String, String)> resolveConflictCalls = [];
+  List<Map<String, dynamic>> pendingConflicts = [];
+
   List<RemoteRecord> customersToPull = [];
+  List<RemoteRecord> trashedCustomersToPull = [];
   List<RemoteRecord> jobsToPull = [];
   List<RemoteRecord> serviceRequestsToPull = [];
   List<RemoteRecord> quotesToPull = [];
@@ -71,6 +76,24 @@ class FakeSyncApiClient implements SyncApiClient {
 
   @override
   Future<List<RemoteRecord>> listCustomers() async => customersToPull;
+
+  @override
+  Future<List<RemoteRecord>> listTrashedCustomers() async =>
+      trashedCustomersToPull;
+
+  @override
+  Future<void> uploadTaxCertificate(String customerId, String filePath) async {
+    uploadTaxCertificateCalls.add((customerId, filePath));
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listPendingConflicts() async =>
+      pendingConflicts;
+
+  @override
+  Future<void> resolveConflict(String conflictId, String resolution) async {
+    resolveConflictCalls.add((conflictId, resolution));
+  }
 
   @override
   Future<SyncEntityResult> createJob(Map<String, dynamic> payload) async {

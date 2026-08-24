@@ -126,6 +126,23 @@ class SyncService {
             await _api.createIncomeEntry(payload);
           case ('expense_entry', 'CREATE'):
             await _api.createExpenseEntry(payload);
+          case ('customer', 'TAX_CERTIFICATE'):
+            if (!File(payload['file_path'] as String).existsSync()) {
+              await _markFailed(
+                op,
+                ApiException(422, 'Vergi levhası dosyası artık cihazda yok.'),
+              );
+              continue;
+            }
+            await _api.uploadTaxCertificate(
+              op.entityId,
+              payload['file_path'] as String,
+            );
+            await (_db.update(_db.customers)
+                  ..where((c) => c.id.equals(op.entityId)))
+                .write(
+                  const CustomersCompanion(hasTaxCertificate: Value(true)),
+                );
           case ('job_note', 'CREATE'):
             await _api.createJobNote(payload['job_id'] as String, {
               'id': payload['id'],
@@ -308,10 +325,40 @@ class SyncService {
         taxInfo: Value(r['tax_info'] as String?),
         notes: Value(r['notes'] as String?),
         tags: Value(r['tags'] as String?),
+        hasTaxCertificate: Value(r['has_tax_certificate'] as bool? ?? false),
         version: Value(remote.version),
         syncStatus: const Value('SYNCED'),
       );
       await _db.into(_db.customers).insertOnConflictUpdate(companion);
+    }
+
+    await _pullTrashedCustomers();
+  }
+
+  /// Tombstone senkronu — ofiste (web panelde) silinen müşteri telefonda
+  /// da silinmiş görünmeli. Backend silinen müşteriyi 3 gün çöp kutusunda
+  /// tutar; bu pencerede burada yakalanır ve yerelde soft-delete edilir.
+  ///
+  /// PENDING outbox girdisi olan kayıt ATLANIR: telefon aynı müşteriyi
+  /// offline düzenlediyse, kullanıcının bekleyen yazması sessizce
+  /// silinmez — önce push edilir, sonuç (409/başarı) ona göre işlenir.
+  Future<void> _pullTrashedCustomers() async {
+    final trashed = await _api.listTrashedCustomers();
+    for (final remote in trashed) {
+      if (await _hasPendingOutboxFor(remote.id)) continue;
+
+      final local = await (_db.select(
+        _db.customers,
+      )..where((c) => c.id.equals(remote.id))).getSingleOrNull();
+      if (local == null || local.deletedAt != null) continue;
+
+      await (_db.update(_db.customers)..where((c) => c.id.equals(remote.id)))
+          .write(
+            CustomersCompanion(
+              deletedAt: Value(DateTime.now()),
+              syncStatus: const Value('SYNCED'),
+            ),
+          );
     }
   }
 

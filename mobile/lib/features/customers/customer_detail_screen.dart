@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
 
 import '../../core/constants/customer_types.dart';
 import '../../core/constants/job_constants.dart';
@@ -111,7 +115,7 @@ class _CustomerDetailContent extends StatelessWidget {
             _GeneralTab(customer: customer),
             _FinanceTab(customerId: customer.id),
             _JobHistoryTab(customerId: customer.id),
-            const _EmptyTab(text: 'Bu müşteriye ait belge yok'),
+            _DocumentsTab(customer: customer),
             const _EmptyTab(text: 'Bu müşteriye ait fotoğraf yok'),
           ],
         ),
@@ -294,6 +298,136 @@ class _JobHistoryTab extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// Belgeler sekmesi — şimdilik tek belge türü: vergi levhası (web
+/// panelindeki `tax_certificate_path` alanının mobil karşılığı).
+///
+/// Belge kamerayla taranır (galeri izni istenmez — bkz. AndroidManifest
+/// izin disiplini). Yerel kopya cihazda tutulur, yükleme outbox üzerinden
+/// yapılır: çevrimdışıyken de çekilebilir, bağlantı gelince yüklenir.
+class _DocumentsTab extends ConsumerStatefulWidget {
+  const _DocumentsTab({required this.customer});
+  final Customer customer;
+
+  @override
+  ConsumerState<_DocumentsTab> createState() => _DocumentsTabState();
+}
+
+class _DocumentsTabState extends ConsumerState<_DocumentsTab> {
+  bool _busy = false;
+
+  Future<void> _capture() async {
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+    if (file == null || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(customersRepositoryProvider)
+          .setTaxCertificate(
+            customerId: widget.customer.id,
+            sourcePath: file.path,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vergi levhası kaydedildi, senkronda yüklenecek.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final localPath = widget.customer.taxCertificatePath;
+    final hasLocal = localPath != null && File(localPath).existsSync();
+    final hasAny = hasLocal || widget.customer.hasTaxCertificate;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+      children: [
+        Text(
+          'Vergi Levhası',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+
+        if (hasLocal)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: GestureDetector(
+              onTap: () => OpenFilex.open(localPath),
+              child: Image.file(
+                File(localPath),
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  hasAny
+                      ? Icons.cloud_done_outlined
+                      : Icons.description_outlined,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    hasAny
+                        ? 'Belge sunucuda kayıtlı. Görüntülemek için web '
+                              'panelini kullanabilir ya da yeniden tarayabilirsin.'
+                        : 'Henüz vergi levhası eklenmemiş.',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _busy ? null : _capture,
+          icon: _busy
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.document_scanner_outlined),
+          label: Text(hasAny ? 'Yeniden tara' : 'Kamerayla tara'),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Belge cihazında güvenli şekilde saklanır ve yalnızca senin '
+          'işletmene ait alana yüklenir.',
+          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 }

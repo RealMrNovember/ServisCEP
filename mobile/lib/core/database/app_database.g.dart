@@ -1062,6 +1062,32 @@ class $CustomersTable extends Customers
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _taxCertificatePathMeta =
+      const VerificationMeta('taxCertificatePath');
+  @override
+  late final GeneratedColumn<String> taxCertificatePath =
+      GeneratedColumn<String>(
+        'tax_certificate_path',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _hasTaxCertificateMeta = const VerificationMeta(
+    'hasTaxCertificate',
+  );
+  @override
+  late final GeneratedColumn<bool> hasTaxCertificate = GeneratedColumn<bool>(
+    'has_tax_certificate',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_tax_certificate" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -1142,6 +1168,8 @@ class $CustomersTable extends Customers
     il,
     ilce,
     taxInfo,
+    taxCertificatePath,
+    hasTaxCertificate,
     notes,
     tags,
     syncStatus,
@@ -1245,6 +1273,24 @@ class $CustomersTable extends Customers
         taxInfo.isAcceptableOrUnknown(data['tax_info']!, _taxInfoMeta),
       );
     }
+    if (data.containsKey('tax_certificate_path')) {
+      context.handle(
+        _taxCertificatePathMeta,
+        taxCertificatePath.isAcceptableOrUnknown(
+          data['tax_certificate_path']!,
+          _taxCertificatePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_tax_certificate')) {
+      context.handle(
+        _hasTaxCertificateMeta,
+        hasTaxCertificate.isAcceptableOrUnknown(
+          data['has_tax_certificate']!,
+          _hasTaxCertificateMeta,
+        ),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -1342,6 +1388,14 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}tax_info'],
       ),
+      taxCertificatePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tax_certificate_path'],
+      ),
+      hasTaxCertificate: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_tax_certificate'],
+      )!,
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -1395,6 +1449,13 @@ class Customer extends DataClass implements Insertable<Customer> {
   final String? il;
   final String? ilce;
   final String? taxInfo;
+
+  /// Vergi levhasının YEREL kopyasının yolu (kamerayla çekilip yüklendiyse).
+  final String? taxCertificatePath;
+
+  /// Sunucuda kayıtlı bir vergi levhası var mı — pull ile güncellenir
+  /// (web panelden yüklenen belgeler de böyle görünür).
+  final bool hasTaxCertificate;
   final String? notes;
   final String? tags;
 
@@ -1420,6 +1481,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     this.il,
     this.ilce,
     this.taxInfo,
+    this.taxCertificatePath,
+    required this.hasTaxCertificate,
     this.notes,
     this.tags,
     required this.syncStatus,
@@ -1461,6 +1524,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     if (!nullToAbsent || taxInfo != null) {
       map['tax_info'] = Variable<String>(taxInfo);
     }
+    if (!nullToAbsent || taxCertificatePath != null) {
+      map['tax_certificate_path'] = Variable<String>(taxCertificatePath);
+    }
+    map['has_tax_certificate'] = Variable<bool>(hasTaxCertificate);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -1503,6 +1570,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       taxInfo: taxInfo == null && nullToAbsent
           ? const Value.absent()
           : Value(taxInfo),
+      taxCertificatePath: taxCertificatePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taxCertificatePath),
+      hasTaxCertificate: Value(hasTaxCertificate),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -1535,6 +1606,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       il: serializer.fromJson<String?>(json['il']),
       ilce: serializer.fromJson<String?>(json['ilce']),
       taxInfo: serializer.fromJson<String?>(json['taxInfo']),
+      taxCertificatePath: serializer.fromJson<String?>(
+        json['taxCertificatePath'],
+      ),
+      hasTaxCertificate: serializer.fromJson<bool>(json['hasTaxCertificate']),
       notes: serializer.fromJson<String?>(json['notes']),
       tags: serializer.fromJson<String?>(json['tags']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -1560,6 +1635,8 @@ class Customer extends DataClass implements Insertable<Customer> {
       'il': serializer.toJson<String?>(il),
       'ilce': serializer.toJson<String?>(ilce),
       'taxInfo': serializer.toJson<String?>(taxInfo),
+      'taxCertificatePath': serializer.toJson<String?>(taxCertificatePath),
+      'hasTaxCertificate': serializer.toJson<bool>(hasTaxCertificate),
       'notes': serializer.toJson<String?>(notes),
       'tags': serializer.toJson<String?>(tags),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -1583,6 +1660,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     Value<String?> il = const Value.absent(),
     Value<String?> ilce = const Value.absent(),
     Value<String?> taxInfo = const Value.absent(),
+    Value<String?> taxCertificatePath = const Value.absent(),
+    bool? hasTaxCertificate,
     Value<String?> notes = const Value.absent(),
     Value<String?> tags = const Value.absent(),
     String? syncStatus,
@@ -1603,6 +1682,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     il: il.present ? il.value : this.il,
     ilce: ilce.present ? ilce.value : this.ilce,
     taxInfo: taxInfo.present ? taxInfo.value : this.taxInfo,
+    taxCertificatePath: taxCertificatePath.present
+        ? taxCertificatePath.value
+        : this.taxCertificatePath,
+    hasTaxCertificate: hasTaxCertificate ?? this.hasTaxCertificate,
     notes: notes.present ? notes.value : this.notes,
     tags: tags.present ? tags.value : this.tags,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -1629,6 +1712,12 @@ class Customer extends DataClass implements Insertable<Customer> {
       il: data.il.present ? data.il.value : this.il,
       ilce: data.ilce.present ? data.ilce.value : this.ilce,
       taxInfo: data.taxInfo.present ? data.taxInfo.value : this.taxInfo,
+      taxCertificatePath: data.taxCertificatePath.present
+          ? data.taxCertificatePath.value
+          : this.taxCertificatePath,
+      hasTaxCertificate: data.hasTaxCertificate.present
+          ? data.hasTaxCertificate.value
+          : this.hasTaxCertificate,
       notes: data.notes.present ? data.notes.value : this.notes,
       tags: data.tags.present ? data.tags.value : this.tags,
       syncStatus: data.syncStatus.present
@@ -1656,6 +1745,8 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('il: $il, ')
           ..write('ilce: $ilce, ')
           ..write('taxInfo: $taxInfo, ')
+          ..write('taxCertificatePath: $taxCertificatePath, ')
+          ..write('hasTaxCertificate: $hasTaxCertificate, ')
           ..write('notes: $notes, ')
           ..write('tags: $tags, ')
           ..write('syncStatus: $syncStatus, ')
@@ -1667,7 +1758,7 @@ class Customer extends DataClass implements Insertable<Customer> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     companyId,
     code,
@@ -1681,13 +1772,15 @@ class Customer extends DataClass implements Insertable<Customer> {
     il,
     ilce,
     taxInfo,
+    taxCertificatePath,
+    hasTaxCertificate,
     notes,
     tags,
     syncStatus,
     version,
     createdAt,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1705,6 +1798,8 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.il == this.il &&
           other.ilce == this.ilce &&
           other.taxInfo == this.taxInfo &&
+          other.taxCertificatePath == this.taxCertificatePath &&
+          other.hasTaxCertificate == this.hasTaxCertificate &&
           other.notes == this.notes &&
           other.tags == this.tags &&
           other.syncStatus == this.syncStatus &&
@@ -1727,6 +1822,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String?> il;
   final Value<String?> ilce;
   final Value<String?> taxInfo;
+  final Value<String?> taxCertificatePath;
+  final Value<bool> hasTaxCertificate;
   final Value<String?> notes;
   final Value<String?> tags;
   final Value<String> syncStatus;
@@ -1748,6 +1845,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.il = const Value.absent(),
     this.ilce = const Value.absent(),
     this.taxInfo = const Value.absent(),
+    this.taxCertificatePath = const Value.absent(),
+    this.hasTaxCertificate = const Value.absent(),
     this.notes = const Value.absent(),
     this.tags = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -1770,6 +1869,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.il = const Value.absent(),
     this.ilce = const Value.absent(),
     this.taxInfo = const Value.absent(),
+    this.taxCertificatePath = const Value.absent(),
+    this.hasTaxCertificate = const Value.absent(),
     this.notes = const Value.absent(),
     this.tags = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -1794,6 +1895,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? il,
     Expression<String>? ilce,
     Expression<String>? taxInfo,
+    Expression<String>? taxCertificatePath,
+    Expression<bool>? hasTaxCertificate,
     Expression<String>? notes,
     Expression<String>? tags,
     Expression<String>? syncStatus,
@@ -1816,6 +1919,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (il != null) 'il': il,
       if (ilce != null) 'ilce': ilce,
       if (taxInfo != null) 'tax_info': taxInfo,
+      if (taxCertificatePath != null)
+        'tax_certificate_path': taxCertificatePath,
+      if (hasTaxCertificate != null) 'has_tax_certificate': hasTaxCertificate,
       if (notes != null) 'notes': notes,
       if (tags != null) 'tags': tags,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -1840,6 +1946,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String?>? il,
     Value<String?>? ilce,
     Value<String?>? taxInfo,
+    Value<String?>? taxCertificatePath,
+    Value<bool>? hasTaxCertificate,
     Value<String?>? notes,
     Value<String?>? tags,
     Value<String>? syncStatus,
@@ -1862,6 +1970,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       il: il ?? this.il,
       ilce: ilce ?? this.ilce,
       taxInfo: taxInfo ?? this.taxInfo,
+      taxCertificatePath: taxCertificatePath ?? this.taxCertificatePath,
+      hasTaxCertificate: hasTaxCertificate ?? this.hasTaxCertificate,
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -1914,6 +2024,12 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (taxInfo.present) {
       map['tax_info'] = Variable<String>(taxInfo.value);
     }
+    if (taxCertificatePath.present) {
+      map['tax_certificate_path'] = Variable<String>(taxCertificatePath.value);
+    }
+    if (hasTaxCertificate.present) {
+      map['has_tax_certificate'] = Variable<bool>(hasTaxCertificate.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -1954,6 +2070,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('il: $il, ')
           ..write('ilce: $ilce, ')
           ..write('taxInfo: $taxInfo, ')
+          ..write('taxCertificatePath: $taxCertificatePath, ')
+          ..write('hasTaxCertificate: $hasTaxCertificate, ')
           ..write('notes: $notes, ')
           ..write('tags: $tags, ')
           ..write('syncStatus: $syncStatus, ')
@@ -13908,6 +14026,8 @@ typedef $$CustomersTableCreateCompanionBuilder =
       Value<String?> il,
       Value<String?> ilce,
       Value<String?> taxInfo,
+      Value<String?> taxCertificatePath,
+      Value<bool> hasTaxCertificate,
       Value<String?> notes,
       Value<String?> tags,
       Value<String> syncStatus,
@@ -13931,6 +14051,8 @@ typedef $$CustomersTableUpdateCompanionBuilder =
       Value<String?> il,
       Value<String?> ilce,
       Value<String?> taxInfo,
+      Value<String?> taxCertificatePath,
+      Value<bool> hasTaxCertificate,
       Value<String?> notes,
       Value<String?> tags,
       Value<String> syncStatus,
@@ -14148,6 +14270,16 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<String> get taxInfo => $composableBuilder(
     column: $table.taxInfo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taxCertificatePath => $composableBuilder(
+    column: $table.taxCertificatePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasTaxCertificate => $composableBuilder(
+    column: $table.hasTaxCertificate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14425,6 +14557,16 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get taxCertificatePath => $composableBuilder(
+    column: $table.taxCertificatePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasTaxCertificate => $composableBuilder(
+    column: $table.hasTaxCertificate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -14527,6 +14669,16 @@ class $$CustomersTableAnnotationComposer
 
   GeneratedColumn<String> get taxInfo =>
       $composableBuilder(column: $table.taxInfo, builder: (column) => column);
+
+  GeneratedColumn<String> get taxCertificatePath => $composableBuilder(
+    column: $table.taxCertificatePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasTaxCertificate => $composableBuilder(
+    column: $table.hasTaxCertificate,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
@@ -14772,6 +14924,8 @@ class $$CustomersTableTableManager
                 Value<String?> il = const Value.absent(),
                 Value<String?> ilce = const Value.absent(),
                 Value<String?> taxInfo = const Value.absent(),
+                Value<String?> taxCertificatePath = const Value.absent(),
+                Value<bool> hasTaxCertificate = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -14793,6 +14947,8 @@ class $$CustomersTableTableManager
                 il: il,
                 ilce: ilce,
                 taxInfo: taxInfo,
+                taxCertificatePath: taxCertificatePath,
+                hasTaxCertificate: hasTaxCertificate,
                 notes: notes,
                 tags: tags,
                 syncStatus: syncStatus,
@@ -14816,6 +14972,8 @@ class $$CustomersTableTableManager
                 Value<String?> il = const Value.absent(),
                 Value<String?> ilce = const Value.absent(),
                 Value<String?> taxInfo = const Value.absent(),
+                Value<String?> taxCertificatePath = const Value.absent(),
+                Value<bool> hasTaxCertificate = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -14837,6 +14995,8 @@ class $$CustomersTableTableManager
                 il: il,
                 ilce: ilce,
                 taxInfo: taxInfo,
+                taxCertificatePath: taxCertificatePath,
+                hasTaxCertificate: hasTaxCertificate,
                 notes: notes,
                 tags: tags,
                 syncStatus: syncStatus,

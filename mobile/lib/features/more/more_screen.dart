@@ -8,6 +8,8 @@ import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
 import '../stock/products_list_screen.dart';
 import '../subscription/subscription_screen.dart';
+import '../sync/data/sync_conflict_repository.dart';
+import '../sync/sync_conflicts_screen.dart';
 
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
@@ -70,6 +72,51 @@ class MoreScreen extends ConsumerWidget {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
             ),
+          ),
+          // Çakışma varken görünür — yoksa menüyü kalabalıklaştırmaz.
+          Consumer(
+            builder: (context, ref, _) {
+              final count =
+                  ref.watch(localConflictCountProvider).valueOrNull ?? 0;
+              if (count == 0) return const SizedBox.shrink();
+              return ListTile(
+                leading: Icon(
+                  Icons.sync_problem_outlined,
+                  color: scheme.error,
+                ),
+                title: const Text('Senkron çakışmaları'),
+                subtitle: const Text('Hangi halin kalacağını seç'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.error,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          color: scheme.onError,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right),
+                  ],
+                ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const SyncConflictsScreen(),
+                  ),
+                ),
+              );
+            },
           ),
           const ListTile(
             leading: Icon(Icons.business_outlined),

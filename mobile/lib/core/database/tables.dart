@@ -65,6 +65,14 @@ class Customers extends Table {
   TextColumn get il => text().nullable()();
   TextColumn get ilce => text().nullable()();
   TextColumn get taxInfo => text().nullable()();
+
+  /// Vergi levhasının YEREL kopyasının yolu (kamerayla çekilip yüklendiyse).
+  TextColumn get taxCertificatePath => text().nullable()();
+
+  /// Sunucuda kayıtlı bir vergi levhası var mı — pull ile güncellenir
+  /// (web panelden yüklenen belgeler de böyle görünür).
+  BoolColumn get hasTaxCertificate =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get notes => text().nullable()();
   TextColumn get tags => text().nullable()();
 

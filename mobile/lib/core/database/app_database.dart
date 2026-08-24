@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -79,6 +79,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(quotes, quotes.version);
         await m.addColumn(proformas, proformas.syncStatus);
         await m.addColumn(proformas, proformas.version);
+      }
+      if (from < 6) {
+        // Vergi levhası (müşteri belgesi) — web panelindeki
+        // tax_certificate_path alanının mobil karşılığı.
+        await m.addColumn(customers, customers.taxCertificatePath);
+        await m.addColumn(customers, customers.hasTaxCertificate);
       }
     },
   );

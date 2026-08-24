@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
@@ -132,6 +135,37 @@ class CustomersRepository {
         CustomersCompanion(deletedAt: Value(DateTime.now())),
       );
       await _enqueue(entityId: id, operation: 'DELETE', payload: const {});
+    });
+  }
+
+  /// Vergi levhası — kamerayla çekilen dosya uygulamanın kendi belge
+  /// dizinine kopyalanır (kaynak dosya geçici olabilir) ve yüklemesi
+  /// outbox'a düşer. Müşteri başına tek belge: yeni yükleme hem yerelde
+  /// hem sunucuda öncekinin yerine geçer.
+  Future<void> setTaxCertificate({
+    required String customerId,
+    required String sourcePath,
+  }) async {
+    final root = await getApplicationDocumentsDirectory();
+    final dir = Directory(
+      p.join(root.path, 'serviscep_media', 'tax_certificates'),
+    );
+    if (!await dir.exists()) await dir.create(recursive: true);
+
+    final destPath = p.join(
+      dir.path,
+      '$customerId${p.extension(sourcePath)}',
+    );
+    await File(sourcePath).copy(destPath);
+
+    await _db.transaction(() async {
+      await (_db.update(_db.customers)..where((c) => c.id.equals(customerId)))
+          .write(CustomersCompanion(taxCertificatePath: Value(destPath)));
+      await _enqueue(
+        entityId: customerId,
+        operation: 'TAX_CERTIFICATE',
+        payload: {'file_path': destPath},
+      );
     });
   }
 

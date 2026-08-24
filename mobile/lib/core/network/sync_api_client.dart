@@ -100,6 +100,14 @@ abstract interface class SyncApiClient {
   Future<void> deleteCustomer(String id);
   Future<List<RemoteRecord>> listCustomers();
 
+  /// Sunucudaki çöp kutusu (soft-deleted müşteriler) — tombstone senkronu
+  /// için: ofiste silinen müşteri telefonda da silinsin.
+  Future<List<RemoteRecord>> listTrashedCustomers();
+
+  /// Vergi levhası yükleme (multipart) — müşteri başına tek dosya, yeni
+  /// yükleme öncekinin yerine geçer.
+  Future<void> uploadTaxCertificate(String customerId, String filePath);
+
   Future<SyncEntityResult> createJob(Map<String, dynamic> payload);
   Future<SyncEntityResult> updateJob(String id, Map<String, dynamic> payload);
   Future<List<RemoteRecord>> listJobs();
@@ -150,6 +158,12 @@ abstract interface class SyncApiClient {
     required String signerName,
     required String filePath,
   });
+
+  /// Bekleyen senkron çakışmaları (OWNER-only, bkz. SyncConflictController).
+  Future<List<Map<String, dynamic>>> listPendingConflicts();
+
+  /// [resolution]: SUNUCU_TUTULDU | MOBIL_TUTULDU.
+  Future<void> resolveConflict(String conflictId, String resolution);
 }
 
 class DioSyncApiClient implements SyncApiClient {
@@ -266,6 +280,22 @@ class DioSyncApiClient implements SyncApiClient {
   Future<List<RemoteRecord>> listCustomers() => _listAllPages('/customers');
 
   @override
+  Future<List<RemoteRecord>> listTrashedCustomers() =>
+      _listAllPages('/customers/trash');
+
+  @override
+  Future<void> uploadTaxCertificate(String customerId, String filePath) async {
+    try {
+      final form = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
+      await _dio.post('/customers/$customerId/tax-certificate', data: form);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
   Future<SyncEntityResult> createJob(Map<String, dynamic> payload) =>
       _create('/jobs', payload);
 
@@ -362,6 +392,33 @@ class DioSyncApiClient implements SyncApiClient {
     'id': id,
     'signer_name': signerName,
   }, filePath);
+
+  @override
+  Future<List<Map<String, dynamic>>> listPendingConflicts() async {
+    try {
+      final response = await _dio.get(
+        '/sync-conflicts',
+        queryParameters: {'resolution': 'BEKLIYOR'},
+      );
+      final data =
+          (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
+      return data.cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> resolveConflict(String conflictId, String resolution) async {
+    try {
+      await _dio.post(
+        '/sync-conflicts/$conflictId/resolve',
+        data: {'resolution': resolution},
+      );
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
 
   Future<SyncEntityResult> _upload(
     String path,
