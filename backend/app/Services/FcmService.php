@@ -102,9 +102,7 @@ class FcmService
                 continue;
             }
 
-            // 404/403 => token artık geçersiz (uygulama silinmiş, token
-            // yenilenmiş). Ölü kaydı temizle ki kuyruk şişmesin.
-            if (in_array($response->status(), [403, 404], true)) {
+            if ($this->isDeadToken($response->status(), (string) $response->json('error.message'))) {
                 DeviceToken::where('token', $token)->delete();
 
                 continue;
@@ -117,6 +115,26 @@ class FcmService
         }
 
         return $sent;
+    }
+
+    /**
+     * Token bir daha ASLA çalışmayacak mı? Öyleyse kayıt silinir, aksi
+     * halde geçici bir hata olabilir ve kayıt korunur.
+     *
+     * - 404 (UNREGISTERED): uygulama silinmiş / token geçersizleşmiş
+     * - 403 (SENDER_ID_MISMATCH): token başka bir projeye ait
+     * - 400 (INVALID_ARGUMENT): YALNIZCA hata mesajı token'ı işaret
+     *   ediyorsa. 400, bizim gönderdiğimiz mesajın bozuk olmasından da
+     *   kaynaklanabilir — o durumda kullanıcının cihaz kaydını silmek
+     *   yanlış olurdu, bu yüzden ayrım mesaj metnine göre yapılır.
+     */
+    private function isDeadToken(int $status, string $message): bool
+    {
+        if (in_array($status, [403, 404], true)) {
+            return true;
+        }
+
+        return $status === 400 && str_contains(strtolower($message), 'registration token');
     }
 
     private function accessToken(): ?string
