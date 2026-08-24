@@ -44,10 +44,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     });
 
     Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
+        // Bu dış grup, abonelik süresi DOLMUŞ olsa da erişilebilir kalır:
+        // kullanıcı kim olduğunu görebilmeli, çıkış yapabilmeli ve
+        // aboneliğini yenileyebilmelidir (bkz. EnsureSubscriptionIsActive).
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
-
-        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
         // Abonelik — web'deki Filament App "Abonelik" sayfasının mobil
         // karşılığı: durum + paketler + havale bildirimi (admin onaylı akış).
@@ -57,6 +58,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('subscription.payment-requests.index');
         Route::post('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'store'])
             ->name('subscription.payment-requests.store');
+
+        Route::middleware('subscription.active')->group(function (): void {
+
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
         Route::apiResource('sync-conflicts', SyncConflictController::class)->only(['index']);
         Route::post('sync-conflicts/{syncConflict}/resolve', [SyncConflictController::class, 'resolve'])
@@ -101,5 +106,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::apiResource('signatures', JobSignatureController::class)->only(['index', 'store']);
             Route::get('signatures/{signature}/download', [JobSignatureController::class, 'download'])->name('signatures.download');
         });
+
+        }); // subscription.active
     });
 });

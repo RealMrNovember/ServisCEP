@@ -66,6 +66,10 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                // Abonelik süresi dolan şirketi Abonelik sayfasına
+                // yönlendirir (yalnızca GET; Livewire/logout POST'ları
+                // serbest) — bkz. EnsureAppPanelSubscriptionIsActive.
+                \App\Http\Middleware\EnsureAppPanelSubscriptionIsActive::class,
             ]);
     }
 }

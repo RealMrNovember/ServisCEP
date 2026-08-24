@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:serviscep/core/database/app_database.dart';
 import 'package:serviscep/core/models/doc_item_draft.dart';
+import 'package:serviscep/core/network/api_client.dart';
 import 'package:serviscep/core/network/sync_api_client.dart';
 import 'package:serviscep/core/sync/sync_service.dart';
 import 'package:serviscep/features/finance/data/finance_repository.dart';
@@ -251,6 +252,26 @@ void main() {
     )..where((i) => i.quoteId.equals('q-remote'))).get();
     expect(items, hasLength(1));
     expect(items.single.description, 'Sunucu kalemi');
+  });
+
+  test('402 (abonelik doldu) kuyruk satırlarını PENDING bırakır - FAILED '
+      'işaretlenmez, yenileme sonrası akar', () async {
+    final repo = FinanceRepository(db);
+    await repo.recordPayment(
+      companyId: _companyId,
+      customerId: _customerId,
+      amountMinor: 50000,
+    );
+    api.paymentResponses.add(
+      ApiException(402, 'Aboneliğinin süresi dolmuş.'),
+    );
+
+    await buildService().runOnce(_companyId);
+
+    final ops = await db.select(db.syncOperations).get();
+    expect(ops, hasLength(1));
+    expect(ops.single.status, 'PENDING');
+    expect(ops.single.attemptCount, 0);
   });
 
   test('talep pull, PENDING outbox girdisi olmayan kaydı uygular', () async {

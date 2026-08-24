@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/data/session_controller.dart';
+import '../../features/subscription/data/subscription_repository.dart';
 import 'sync_service.dart';
 
 const _periodicSyncInterval = Duration(minutes: 3);
@@ -54,6 +55,10 @@ class SyncTrigger with WidgetsBindingObserver {
     final session = _ref.read(sessionControllerProvider).valueOrNull;
     if (session == null) return;
     _lastSyncedUserId = session.userId;
+    // Abonelik durumu da her senkron döngüsünde tazelenir — süre dolduğunda
+    // (backend 402 dönmeye başladığında) dashboard'daki banner uygulama
+    // yeniden başlatılmadan "sona erdi" kademesine geçebilsin.
+    _ref.invalidate(subscriptionStatusProvider);
     unawaited(_ref.read(syncServiceProvider).runOnce(session.companyId));
   }
 

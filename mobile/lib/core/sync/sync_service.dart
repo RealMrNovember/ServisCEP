@@ -36,11 +36,18 @@ class SyncService {
     if (await _tokenStore.read() == null) return;
 
     await _drainOutbox();
-    await _pullCustomers(companyId);
-    await _pullJobs(companyId);
-    await _pullServiceRequests(companyId);
-    await _pullQuotes(companyId);
-    await _pullProformas(companyId);
+    try {
+      await _pullCustomers(companyId);
+      await _pullJobs(companyId);
+      await _pullServiceRequests(companyId);
+      await _pullQuotes(companyId);
+      await _pullProformas(companyId);
+    } on ApiException {
+      // Ağ hatası, süresi dolmuş abonelik (402) veya geçici sunucu hatası —
+      // pull bir sonraki tetiklemede yeniden dener; `runOnce` unawaited
+      // çağrıldığı için buradan exception SIZMAMALI (bkz. SyncTrigger).
+      return;
+    }
   }
 
   Future<void> _drainOutbox() async {
@@ -124,9 +131,11 @@ class SyncService {
       } on ApiConflictException catch (e) {
         await _markConflicted(op, e);
       } on ApiException catch (e) {
-        if (e.statusCode == null) {
-          // Ağ hatası — bu ve kalan kuyruk bir sonraki tetiklemede tekrar
-          // denenecek, şimdi hammer etmeden çık.
+        if (e.statusCode == null || e.statusCode == 402) {
+          // Ağ hatası veya abonelik süresi dolmuş (402) — kuyruk PENDING
+          // kalır: veri kaybolmaz, bağlantı/yenileme sonrası akar. 402'de
+          // satırları FAILED işaretlemek yanlış olurdu; sorun veride değil,
+          // abonelikte (bkz. backend EnsureSubscriptionIsActive).
           return;
         }
         await _markFailed(op, e);
