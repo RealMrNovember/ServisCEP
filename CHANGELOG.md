@@ -17,6 +17,12 @@ Kurallar:
 
 ---
 
+## v0.6.1
+
+Yenilikler:
+• "Daha Fazla" menüsünde bir ekrandayken sekmeye tekrar bastığınızda artık menüye dönüyorsunuz.
+• Ekibinize eklemek istediğiniz kişi daha önce kendi başına üye olduysa, uygulama artık ne yapmanız gerektiğini açıkça söylüyor.
+
 ## v0.6.0
 
 Yenilikler:
