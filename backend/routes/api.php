@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerLedgerController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\CustomerTaxCertificateController;
 use App\Http\Controllers\Api\V1\ExpenseEntryController;
 use App\Http\Controllers\Api\V1\IncomeEntryController;
 use App\Http\Controllers\Api\V1\JobController;
@@ -41,6 +42,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // URL'lerde "signature" query string anahtarını kendisi için ayırır,
         // aynı isimde bir route parametresiyle çakışırsa exception fırlatır.
         Route::get('/signatures/{signatureId}', [JobSignatureController::class, 'signedDownload'])->name('signatures.show');
+        Route::get('/tax-certificates/{customer}', [CustomerTaxCertificateController::class, 'signedDownload'])
+            ->name('tax-certificates.show');
     });
 
     Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
@@ -80,6 +83,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
             Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
             Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+
+            // Vergi levhası — web panelindeki FileUpload alanının mobil
+            // karşılığı (tek dosya; yeni yükleme öncekinin yerine geçer).
+            Route::post('tax-certificate', [CustomerTaxCertificateController::class, 'store'])
+                ->name('tax-certificate.store');
+            Route::get('tax-certificate', [CustomerTaxCertificateController::class, 'download'])
+                ->name('tax-certificate.download');
+            Route::delete('tax-certificate', [CustomerTaxCertificateController::class, 'destroy'])
+                ->name('tax-certificate.destroy');
         });
 
         Route::apiResource('quotes', QuoteController::class)->only(['index', 'store', 'show', 'update']);

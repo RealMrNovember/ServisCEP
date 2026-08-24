@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\URL;
 
 /**
  * @mixin \App\Models\Customer
@@ -31,6 +32,22 @@ class CustomerResource extends JsonResource
             'il' => $this->il,
             'ilce' => $this->ilce,
             'tax_info' => $this->tax_info,
+            // Dosya yolu asla ham olarak ifşa edilmez — erişim yalnızca
+            // kimlik doğrulamalı indirme veya süreli imzalı link üzerinden
+            // (bkz. docs/09 § Dosya Güvenliği, JobPhotoResource ile aynı kalıp).
+            'has_tax_certificate' => (bool) $this->tax_certificate_path,
+            'tax_certificate_download_url' => $this->when(
+                (bool) $this->tax_certificate_path,
+                fn () => route('api.v1.customers.tax-certificate.download', ['customer' => $this->id])
+            ),
+            'tax_certificate_signed_url' => $this->when(
+                (bool) $this->tax_certificate_path,
+                fn () => URL::temporarySignedRoute(
+                    'api.v1.files.tax-certificates.show',
+                    now()->addMinutes(30),
+                    ['customer' => $this->id]
+                )
+            ),
             'notes' => $this->notes,
             'tags' => $this->tags,
             'version' => $this->version,
