@@ -48,6 +48,11 @@ class CustomerResource extends JsonResource
                     ['customer' => $this->id]
                 )
             ),
+            'has_logo' => (bool) $this->logo_path,
+            'logo_download_url' => $this->when(
+                (bool) $this->logo_path,
+                fn () => route('api.v1.customers.logo.show', ['customer' => $this->id])
+            ),
             'notes' => $this->notes,
             'tags' => $this->tags,
             'version' => $this->version,

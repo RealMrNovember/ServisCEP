@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/services/play_update_service.dart';
+import '../core/services/update_prompt.dart';
 import 'theme.dart';
 
 /// Ana navigasyon iskeleti — bkz. docs/06 § Mobil Navigasyon:
@@ -55,7 +56,11 @@ class MainShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final playUpdateReady = ref.watch(playUpdateReadyProvider);
 
-    return Scaffold(
+    // Güncelleme hatırlatması uygulama her açıldığında bir kez sorulur —
+    // kullanıcılar güncellemenin geldiğini fark etmiyordu. Zorunlu değil:
+    // "Sonra" denip çalışmaya devam edilebilir (bkz. UpdatePromptGate).
+    return UpdatePromptGate(
+      child: Scaffold(
       body: Column(
         children: [
           if (playUpdateReady) const _PlayUpdateReadyBanner(),
@@ -66,6 +71,7 @@ class MainShell extends ConsumerWidget {
         currentIndex: navigationShell.currentIndex,
         destinations: _destinations,
         onSelect: (index) => _onSelect(index),
+      ),
       ),
     );
   }

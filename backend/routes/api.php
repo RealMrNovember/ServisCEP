@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\ExpenseEntryController;
 use App\Http\Controllers\Api\V1\IncomeEntryController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\LedgerEntryController;
+use App\Http\Controllers\Api\V1\LogoController;
 use App\Http\Controllers\Api\V1\JobNoteController;
 use App\Http\Controllers\Api\V1\JobPhotoController;
 use App\Http\Controllers\Api\V1\JobSignatureController;
@@ -85,6 +86,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('/company', [CompanyController::class, 'show'])->name('company.show');
         Route::put('/company', [CompanyController::class, 'update'])->name('company.update');
 
+        // Belge antedinde kullanılan logo (bkz. LogoController).
+        Route::post('/company/logo', [LogoController::class, 'storeCompanyLogo'])->name('company.logo.store');
+        Route::get('/company/logo', [LogoController::class, 'showCompanyLogo'])->name('company.logo.show');
+        Route::delete('/company/logo', [LogoController::class, 'destroyCompanyLogo'])->name('company.logo.destroy');
+
         // Personel yönetimi (yalnızca işletme sahibi) — bkz. docs/09 § 1.
         Route::get('/personnel', [PersonnelController::class, 'index'])->name('personnel.index');
         Route::post('/personnel', [PersonnelController::class, 'store'])->name('personnel.store');
@@ -120,6 +126,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
                 ->name('tax-certificate.download');
             Route::delete('tax-certificate', [CustomerTaxCertificateController::class, 'destroy'])
                 ->name('tax-certificate.destroy');
+
+            // Müşteri logosu — belgede karşı tarafın markası için (opsiyonel).
+            Route::post('logo', [LogoController::class, 'storeCustomerLogo'])->name('logo.store');
+            Route::get('logo', [LogoController::class, 'showCustomerLogo'])->name('logo.show');
+            Route::delete('logo', [LogoController::class, 'destroyCustomerLogo'])->name('logo.destroy');
         });
 
         Route::apiResource('quotes', QuoteController::class)->only(['index', 'store', 'show', 'update']);

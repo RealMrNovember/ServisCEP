@@ -22,6 +22,11 @@ class CompanyResource extends JsonResource
             'name' => $this->name,
             'business_types' => $this->business_types,
             'iban' => $this->iban,
+            'address' => $this->address,
+            'phone' => $this->phone,
+            'email' => $this->email,
+            'tax_info' => $this->tax_info,
+            'has_logo' => (bool) $this->logo_path,
             'is_active' => $this->is_active,
             'subscription_expires_at' => $this->subscription_expires_at,
         ];

@@ -16,6 +16,7 @@ class Company extends Model
 
     protected $fillable = [
         'name', 'business_types', 'iban', 'logo_path',
+        'address', 'phone', 'email', 'tax_info',
         'plan_id', 'subscription_expires_at', 'is_active', 'admin_note',
     ];
 

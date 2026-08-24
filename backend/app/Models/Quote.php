@@ -16,7 +16,9 @@ class Quote extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['id', 'company_id', 'code', 'customer_id', 'status', 'notes', 'total_minor'];
+    protected $fillable = ['id', 'company_id', 'code', 'customer_id', 'status', 'notes', 'total_minor',
+        'currency', 'vat_mode', 'vat_rate', 'valid_until',
+    ];
 
     protected function casts(): array
     {
@@ -24,6 +26,8 @@ class Quote extends Model
             'created_at' => 'datetime',
             'total_minor' => 'integer',
             'version' => 'integer',
+            'vat_rate' => 'integer',
+            'valid_until' => 'date',
         ];
     }
 

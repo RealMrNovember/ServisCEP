@@ -20,6 +20,9 @@ class StoreProformaRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'currency' => ['sometimes', 'string', 'in:TRY,USD,EUR'],
+            'vat_mode' => ['sometimes', 'string', 'in:EXCLUDED,INCLUDED'],
+            'vat_rate' => ['sometimes', 'integer', 'min:0', 'max:100'],
             'id' => ['sometimes', 'uuid'],
             'code' => ['required', 'string', 'max:50'],
             'customer_id' => [
