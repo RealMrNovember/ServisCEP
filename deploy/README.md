@@ -1,6 +1,6 @@
 # Deploy
 
-ServisCEP, `serviscep.cicibyte.com` adresinde barındırılır. Sunucu aaPanel ile yönetilen bir Ubuntu 22.04 makinedir; site dizini `/www/wwwroot/serviscep.cicibyte.com` içinde bu reponun bir git checkout'udur.
+TeknikCEP, `serviscep.cicibyte.com` adresinde barındırılır. Sunucu aaPanel ile yönetilen bir Ubuntu 22.04 makinedir; site dizini `/www/wwwroot/serviscep.cicibyte.com` içinde bu reponun bir git checkout'udur.
 
 ## Ortam
 

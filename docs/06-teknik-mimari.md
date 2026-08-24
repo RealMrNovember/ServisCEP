@@ -121,7 +121,8 @@ Mobil Uygulama                         Backend
   - Her sürüm, repo üzerinde bir GitHub Release olarak yayınlanır (`vX.Y.Z` tag'i, APK dosyası release asset'i olarak eklenir).
   - GitHub'ın **sabit "latest" URL deseni** kullanılır, böylece tek bir bağlantı her zaman en güncel sürümü çözer — yeni sürüm çıktığında link **değişmez**:
     ```
-    https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk
+    https://play.google.com/store/apps/details?id=com.cicibyte.serviscep
+    (NOT 2026-08-23: GitHub Release/APK kanalı kapatıldı — dağıtım yalnızca Google Play)
     ```
   - Bu URL hem showroom'daki "İndir" butonunda (bkz. [13 — Web Arayüzü ve Showroom § APK İndirme](13-web-arayuzu-ve-showroom.md#2-apk-i̇ndirme-play-store-yerine)) hem de backend'in `app/version` endpoint'inin döndürdüğü `apk_url` alanında **aynı sabit link** olarak kullanılabilir — ayrı bir dosya barındırma/güncelleme adımına gerek kalmaz.
   - Sunucu tarafında `/releases/` altında statik dosya barındırma, yalnızca GitHub Releases'e erişilemeyen bir senaryoda yedek plan olarak değerlendirilebilir.

@@ -25,7 +25,7 @@ gerçek kullanımı                                   derinlik      genişleme  
 
 | # | Kapsam | Karşılık gelen Phase | Durum |
 |---|---|---|---|
-| **M0** | Uygulama adı/etiketi düzeltmesi (Android+iOS: "ServisCEP") | — | ✅ Tamamlandı |
+| **M0** | Uygulama adı/etiketi düzeltmesi (Android+iOS: "TeknikCEP") | — | ✅ Tamamlandı |
 | **M1** | Yerel veritabanı şeması (Drift) — companies, users, customers, jobs, service_requests, quotes, proformas, payments, income, expenses, job_photos, job_signatures, job_notes, customer_ledger_entries | Phase 2 (yerel karşılığı) + Phase 16 | ✅ Tamamlandı |
 | **M2** | Kimlik doğrulama & onboarding (yerel-first) — Kayıt (şirket bilgileri + işletme türü + sahip bilgileri + parola), Giriş, oturum kalıcılığı, router yönlendirme | Phase 5 + Phase 6 | ✅ Tamamlandı |
 | **M3** | Ana navigasyon iskeleti — Ana Sayfa \| İşler \| Müşteriler \| Belgeler \| Daha Fazla | Phase 4 (genişletme) | ✅ Tamamlandı |

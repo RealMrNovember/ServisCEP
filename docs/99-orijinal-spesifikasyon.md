@@ -6,7 +6,7 @@
 
 Aşağıdaki dosya, projeyi İbrahim abinin gerçek kullanım senaryosundan başlayıp ileride SaaS ürününe dönüşebilecek şekilde tasarlıyor.
 
-# ServisCEP
+# TeknikCEP
 - Adres
 - İl
 - İlçe

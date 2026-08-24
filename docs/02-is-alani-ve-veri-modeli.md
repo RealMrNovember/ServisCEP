@@ -2,7 +2,7 @@
 
 > Kaynak: orijinal spesifikasyon (giriş bölümü), §10–§13.
 
-Bu doküman, ServisCEP'in temel iş alanı (domain) kavramlarını tanımlar: **Müşteri**, **İş/Servis** ve **Talep**. Bu üç kavram, sistemin tüm diğer modüllerinin (belge, finans, takvim) üzerine kurulduğu temel varlıklardır.
+Bu doküman, TeknikCEP'in temel iş alanı (domain) kavramlarını tanımlar: **Müşteri**, **İş/Servis** ve **Talep**. Bu üç kavram, sistemin tüm diğer modüllerinin (belge, finans, takvim) üzerine kurulduğu temel varlıklardır.
 
 ## 1. Müşteri (Customer)
 

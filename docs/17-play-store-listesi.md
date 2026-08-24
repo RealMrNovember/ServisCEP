@@ -106,7 +106,7 @@ Saha teknik servis işletmeleri için mobil-first iş yönetim uygulaması
 **Tam açıklama** (max 4000 karakter):
 
 ```
-ServisCEP, saha teknik servis işletmelerinin (elektrik, kamera sistemleri,
+TeknikCEP, saha teknik servis işletmelerinin (elektrik, kamera sistemleri,
 bilgisayar/beyaz eşya tamiri ve benzeri) müşteri, iş, teklif/proforma ve
 finans süreçlerini tek bir yerden yönetmesi için tasarlanmış mobil-first,
 offline-first bir işletme yönetim platformudur.
@@ -143,10 +143,10 @@ offline-first bir işletme yönetim platformudur.
   tüm veriler önce cihazda, güvenli şekilde saklanır.
 
 Bu belgeler resmi e-fatura veya resmi elektronik imza yerine geçmez;
-ServisCEP bir işletme ve teknik servis yönetim platformudur, muhasebe
+TeknikCEP bir işletme ve teknik servis yönetim platformudur, muhasebe
 yazılımı değildir.
 
-ServisCEP, Cicibyte Teknoloji (cicibyte.com) tarafından geliştirilmiştir.
+TeknikCEP, Cicibyte Teknoloji (cicibyte.com) tarafından geliştirilmiştir.
 ```
 
 **Grafikler:**

@@ -144,7 +144,7 @@ Bu nedenle aşağıdakiler tasarlanmalı ve belgelenmelidir:
 
 ## Hukuki Sınır (Konumlandırma)
 
-ServisCEP **"muhasebe programı"** olarak konumlandırılmak zorunda değildir.
+TeknikCEP **"muhasebe programı"** olarak konumlandırılmak zorunda değildir.
 
 **MVP konumlandırması:** *İşletme ve teknik servis yönetim platformu.*
 

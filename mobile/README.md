@@ -1,4 +1,4 @@
-# ServisCEP — Mobile (Flutter)
+# TeknikCEP — Mobile (Flutter)
 
 Saha teknik servis işletmeleri için offline-first, mobil-first Android uygulaması.
 

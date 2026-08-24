@@ -4,7 +4,7 @@
 
 ## Ürünün Amacı
 
-ServisCEP'in amacı **"her şeyi yapan dev bir ERP olmak" değildir.**
+TeknikCEP'in amacı **"her şeyi yapan dev bir ERP olmak" değildir.**
 
 Amaç: **sahada çalışan teknik işletmenin telefonunu, işletmenin merkezine dönüştürmek.**
 
@@ -75,7 +75,7 @@ Detaylı geliştirme kuralları için bkz. [11 — Geliştirme Prensipleri](11-g
 
 | Alan | Değer |
 |---|---|
-| Proje | ServisCEP |
+| Proje | TeknikCEP |
 | Aşama | Planlama |
 | MVP | Başlamadı |
 | Hedef Platform | Android (Flutter) |

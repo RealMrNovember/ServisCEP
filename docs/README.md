@@ -1,6 +1,6 @@
-# ServisCEP — Dokümantasyon İndeksi
+# TeknikCEP — Dokümantasyon İndeksi
 
-Bu dizin, ServisCEP projesinin ürün, mimari ve geliştirme dokümantasyonunu barındırır. Dokümanlar, orijinal proje spesifikasyonu (`99-orijinal-spesifikasyon.md`) temel alınarak katman ve iş alanına (sektör) göre ayrılmıştır.
+Bu dizin, TeknikCEP projesinin ürün, mimari ve geliştirme dokümantasyonunu barındırır. Dokümanlar, orijinal proje spesifikasyonu (`99-orijinal-spesifikasyon.md`) temel alınarak katman ve iş alanına (sektör) göre ayrılmıştır.
 
 ## İçindekiler
 

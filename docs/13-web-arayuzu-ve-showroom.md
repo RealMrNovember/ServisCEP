@@ -2,7 +2,7 @@
 
 > Bu doküman, orijinal spesifikasyonun ötesinde geliştirme sürecinde eklenen bir gereksinimdir (bkz. [ROADMAP.md § Ek Gereksinimler](../ROADMAP.md#ek-gereksinimler-sonradan-eklenen)). Orijinal spesifikasyon web paneli yalnızca V2 kapsamında öngörüyordu (§58); bu doküman kapsamı iki parçaya ayırarak netleştirir: **herkese açık showroom** (erken başlanabilir) ve **web panel** (API'ler hazır olunca).
 
-ServisCEP'in web varlığı iki ayrı amaca hizmet eder:
+TeknikCEP'in web varlığı iki ayrı amaca hizmet eder:
 
 1. **Showroom (Tanıtım Sitesi)** — `serviscep.cicibyte.com` üzerinde herkese açık, ürünü tanıtan, giriş/kayıt akışına ve APK indirmeye yönlendiren profesyonel bir açılış sayfası.
 2. **Web Panel** — mobil uygulamayla **aynı Laravel API'yi** tüketen, tarayıcı üzerinden tam işlevsel bir yönetim arayüzü (masaüstünden çalışmak isteyen kullanıcılar için).
@@ -35,7 +35,8 @@ Showroom'daki Login/Signup, [09 — Güvenlik ve Yetkilendirme § Kimlik Doğrul
 - **Konum:** Showroom'da göze çarpan, öne çıkan bir "Uygulamayı İndir" butonu/bölümü (hero alanına yakın, aşağı kaydırmadan görünür).
 - **Mekanizma:** Buton, GitHub Releases'in sabit "latest" URL desenine yönlendirir — yeni sürüm yayınlandığında bağlantı **değişmeden** en güncel APK'yı verir:
   ```
-  https://github.com/RealMrNovember/ServisCEP/releases/latest/download/serviscep.apk
+  https://play.google.com/store/apps/details?id=com.cicibyte.serviscep
+    (NOT 2026-08-23: GitHub Release/APK kanalı kapatıldı — dağıtım yalnızca Google Play)
   ```
   Aynı mekanizma, mobil uygulamanın kendi otomatik güncelleme kontrolü için de kullanılır — bkz. [06 — Teknik Mimari § Mobil Uygulama Otomatik Güncelleme](06-teknik-mimari.md#mobil-uygulama-otomatik-güncelleme-ota).
 - **İçerik:** İndirme alanı yalnızca bir link değil, kullanıcıya güven verecek kısa bir kurulum rehberi de içermelidir — "Bilinmeyen kaynaklardan yükleme" izni gerektiği kısaca açıklanmalı (Play Store dışı kurulum olduğu için).

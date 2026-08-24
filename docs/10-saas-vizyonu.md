@@ -11,7 +11,7 @@
 ### Örnek Onboarding Akışı (Self-Servis)
 
 ```
-ServisCEP'e Hoş Geldiniz
+TeknikCEP'e Hoş Geldiniz
 
 İşletme türünüz:
 ☑ Elektrik  ☑ Kamera  ☑ Bilgisayar

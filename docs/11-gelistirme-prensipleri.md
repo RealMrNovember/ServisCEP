@@ -56,7 +56,7 @@ Gerçek kullanıcı, **yardım almadan** aşağıdaki işlemleri yapabilmelidir:
 
 ## AI Destekli Geliştirme Kuralları
 
-ServisCEP'te AI destekli bir geliştirme ajanı (Cursor, Claude Code vb.) ile çalışılırken aşağıdaki kurallar bağlayıcıdır:
+TeknikCEP'te AI destekli bir geliştirme ajanı (Cursor, Claude Code vb.) ile çalışılırken aşağıdaki kurallar bağlayıcıdır:
 
 1. Önce mevcut yapı analiz edilmeli, sonra kod yazılmalıdır.
 2. Rastgele/plansız dosya oluşturulmamalıdır.
