@@ -233,6 +233,81 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 | **Abonelik Yaptırımı (Enforcement)** | Süresi dolan/askıya alınan şirketin erişimi nazikçe kesilmeli — yaptırım olmadan abonelik sistemi fiilen dekoratifti (`hasActiveSubscription()` yalnızca gösterimde kullanılıyordu) | docs/10 SaaS Vizyonu — abonelik sisteminin tamamlayıcısı | ✅ Tamamlandı (2026-08-24, v0.3.3) — API: `subscription.active` middleware'i veri uçlarında 402 + `SUBSCRIPTION_EXPIRED` döner; kimlik (me/logout) ve yenileme uçları (plans/subscription/payment-requests) bilinçli olarak açık kalır. Web panel: süresi dolan kullanıcı yalnızca Abonelik sayfasını görür, diğer GET'ler oraya yönlendirilir (Livewire/logout POST'ları serbest — ödeme bildirimi formu çalışmaya devam eder). Mobil: 402'de senkron kuyruğu PENDING kalır (veri kaybolmaz, yenileme sonrası akar), abonelik durumu her senkron döngüsünde tazelenir (banner "sona erdi" kademesine anında geçer); ayrıca pull hatalarının unawaited exception sızdırması boşluğu kapatıldı. |
 | **Hesap Yönetimi (Web Panel)** | Kayıt olan kullanıcılar e-posta adreslerini göremiyor, parolalarını değiştiremiyor, profil fotoğrafı ekleyemiyor — "Hesabım" ekranı eksik | W3 (Web Panel) genişletmesi | ✅ Tamamlandı (2026-08-22) — `EditProfile` sayfası (avatar/isim/parola/e-posta) aslında zaten kuruluydu, yalnızca e-posta değişikliğinin doğrulama akışı (`->emailChangeVerification()`) eksikti, eklendi. Bu arada bağımsız bir sorun bulunup düzeltildi: Filament'in parola sıfırlama + e-posta doğrulama bildirimleri kuyruklu (`ShouldQueue`) ama hiç queue worker yoktu (`QUEUE_CONNECTION=database` → `sync`); ayrıca `MAIL_MAILER=log` bir placeholder'dı (gerçek mail hiç gitmiyordu) — sunucudaki mevcut Postfix/Dovecot mail sunucusunda `serviscep@cicibyte.com` hesabı açılıp gerçek SMTP'ye geçildi, uçtan uca test edildi (kendi kutusuna + gerçek bir Gmail adresine teslim doğrulandı). |
 
+## Sıradaki İşler (2026-08-26 itibarıyla)
+
+Bu bölüm aktif takip içindir. Biten madde işaretlenir, açıklaması
+yukarıdaki tablolara taşınır.
+
+### W3 — Web/Mobil Eşitliği
+
+Ayrıntılı envanter: [docs/20-web-mobil-esitlik.md](docs/20-web-mobil-esitlik.md)
+
+- [ ] **Belge PDF'i (web)** — Web'den teklif/proforma oluşturulabiliyor ama
+      belge üretilemiyor. En büyük eksik: teklifin varlık sebebi o belge.
+      İki motorun AYNI belgeyi üretmesi şart.
+- [ ] **Cari hesap + tahsilat (web)** — `CustomerResource` altında hiç
+      ilişki yöneticisi yok; bakiye ve hareketler web'den görülemiyor.
+- [ ] **İş detayı: fotoğraf/imza görüntüleme + tamamlama (web)** — Web'in
+      iş formu düz CRUD. Fotoğraf ÇEKMEK web'de anlamsız ama GÖRMEK
+      değerli: ofis sahayı ancak böyle görüyor.
+- [ ] **Servis talepleri (web)** — Web'de hiç yok.
+- [ ] **İş türleri (web)**
+- [ ] **Senkron çakışmaları (web)** — Çakışmayı mobil üretiyor, çözecek
+      kişi genelde ofiste.
+- [ ] **Garantiler (mobil)** — Ters yönde eksik: web'de var, mobilde yok.
+
+Web'e taşınmayacaklar (cihaza özgü): barkod tarama, rehberden müşteri
+ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
+
+### Ödeme Sistemi
+
+- [x] Kart ödemesi altyapısı — PayTR iFrame, havale/kart kip anahtarı,
+      sahipsiz tahsilat koruması, yedi noktada loglama (2026-08-26)
+- [ ] **Kart ödeme akışı (mobil)** — Sağlayıcı anahtarları girildikten ve
+      GERÇEKTEN test edilebildikten sonra. Anahtarsız yazmak yalnızca
+      derlendiğini görmek olurdu.
+- [ ] Kayıtlı kart — PayTR'ye sorulacak: iFrame sayfasında kullanıcıya
+      kart hatırlatma var mı? Yoksa Direkt API gerekir ve o, kart verisini
+      bizim sunucumuza sokar (PCI). Bu hâliyle önerilmiyor.
+
+### Tasarım (0.8.0)
+
+- [x] Tasarım sistemi tokenları, bileşen katmanı, yeni alt menü
+- [x] Yeni marka işareti — uygulama simgesi
+- [ ] **42 ekranın yeniden düzeni** — Asıl iş. Tasarımcının teslimatı hazır.
+- [ ] Logo'nun kalan yüzeyleri: PDF anteti, favicon, tanıtım sitesi
+- [ ] Adımlı teklif formu (4 adım)
+- [ ] İkon göçü — 176 çağrı yeri Material'dan tasarım setine
+
+### Belge
+
+- [ ] **Ücretsiz pakette belge altbilgisi** — "TeknikCEP ile hazırlandı".
+      Sıfır maliyetli müşteri kanalı + paket yükseltme sebebi.
+- [ ] **Yüzde iskonto** — Backend hazır (`discount_rate`), mobil Drift
+      şeması v9 → v10 bekliyor. Altbilgiyle aynı göçte yapılacak.
+- [ ] Toplam iskonto satırı — Tasarımda var, PDF'te yok.
+
+### Büyüme (değerlendirilecek)
+
+- [ ] **Tahsilat** — Kullanıcının kendi müşterisinden tahsilat; ödeme
+      bağlantısı + vadesi geçen alacak hatırlatması. Müşteriye para
+      kazandıran özellik en kolay satılandır.
+- [ ] **İş devri ağı** — Firmalar birbirine iş gönderebilsin; karşı taraf
+      TeknikCEP'te değilse SMS ile davet. Büyüme motoru. Sohbet DEĞİL.
+- [ ] Bildirim merkezi + zil — Ancak iş devri ağıyla birlikte anlamlı;
+      tek başına içi boş kalır.
+
+### Bakım
+
+- [ ] Sürüm hattındaki eskimiş action'lar — `track` parametresi
+      kullanımdan kalkmış, ileride sürüm yayınlamayı kırabilir.
+- [ ] Sunucudaki sürüm kaydını CI'ın yazması — şu an elle giriliyor ve
+      bir kez unutuldu (güncelleme bildirimi çalışmadı).
+- [ ] `CalculatesDocumentTotal` iki dosyada duruyor (API + Filament),
+      elle eşit tutuluyor. Sapma riski.
+
+---
+
 ### Web Arayüzü — Paralel Faz Sıralaması
 
 ```
