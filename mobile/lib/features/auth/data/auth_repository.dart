@@ -40,8 +40,40 @@ class AuthSession {
 }
 
 class AuthException implements Exception {
-  AuthException(this.message);
+  AuthException(this.message, {this.isNetworkFailure = false, this.accountMissing = false});
+
   final String message;
+
+  /// Sunucuya HİÇ ulaşılamadı (bağlantı yok, zaman aşımı, TLS hatası).
+  ///
+  /// Bunu ayırmak kritik: ağ hatasını "böyle bir hesap yok" sanıp
+  /// kullanıcıyı kayıt akışına atmak, parası ödenmiş bir hesabın sahibine
+  /// "hesap oluştur" ekranı göstermek demek.
+  final bool isNetworkFailure;
+
+  /// Sunucu, bu kimlikle eşleşen bir hesap OLMADIĞINI açıkça söyledi.
+  /// Kayıt akışına yönlendirmenin tek meşru sebebi budur.
+  final bool accountMissing;
+}
+
+/// Ağ hatasının kullanıcıya gösterilecek hâli.
+///
+/// Asıl sebep (zaman aşımı mı, bağlantı mı) mesajda kalır: destek talebi
+/// geldiğinde "internet yok" demek teşhisi imkânsız kılıyordu.
+String _networkMessage(ApiException e) {
+  final detail = e.message.replaceFirst('Ağ hatası: ', '').trim();
+  const base = 'Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.';
+  if (detail.isEmpty || detail == 'null') return base;
+  return '$base\n($detail)';
+}
+
+/// Backend'in "bu Google hesabıyla eşleşen hesap yok" yanıtı
+/// (bkz. AuthService::loginWithGoogle).
+bool _saysAccountMissing(ApiException e) {
+  if (e.statusCode != 422) return false;
+  final haystack = '${e.message} ${e.body ?? ''}'.toLowerCase();
+  return haystack.contains('eşleşen bir hesap yok') ||
+      haystack.contains('önce kayıt olmalısın');
 }
 
 /// Kayıt online, giriş offline-capable — bkz. ROADMAP.md § B10 mobil
@@ -108,9 +140,13 @@ class AuthRepository {
     try {
       result = await _syncApiClient.loginWithGoogle(idToken);
     } on ApiException catch (e) {
-      throw AuthException(
-        e.statusCode == null ? 'İnternet bağlantısı gerekli.' : e.message,
-      );
+      if (e.statusCode == null) {
+        throw AuthException(
+          _networkMessage(e),
+          isNetworkFailure: true,
+        );
+      }
+      throw AuthException(e.message, accountMissing: _saysAccountMissing(e));
     }
     return _hydrateAndPersist(
       result,
@@ -137,11 +173,13 @@ class AuthRepository {
         phone: phone,
       );
     } on ApiException catch (e) {
-      throw AuthException(
-        e.statusCode == null
-            ? 'Hesap oluşturmak için internet bağlantısı gerekli.'
-            : e.message,
-      );
+      if (e.statusCode == null) {
+        throw AuthException(
+          _networkMessage(e),
+          isNetworkFailure: true,
+        );
+      }
+      throw AuthException(e.message);
     }
     return _hydrateAndPersist(
       result,
@@ -219,11 +257,13 @@ class AuthRepository {
         password: password,
       );
     } on ApiException catch (e) {
-      throw AuthException(
-        e.statusCode == null
-            ? 'Hesap oluşturmak için internet bağlantısı gerekli.'
-            : e.message,
-      );
+      if (e.statusCode == null) {
+        throw AuthException(
+          _networkMessage(e),
+          isNetworkFailure: true,
+        );
+      }
+      throw AuthException(e.message);
     }
 
     final salt = _generateSalt();
@@ -283,11 +323,13 @@ class AuthRepository {
     try {
       result = await _syncApiClient.login(email: email, password: password);
     } on ApiException catch (e) {
-      throw AuthException(
-        e.statusCode == null
-            ? 'Bu cihazda hesap bulunamadı, internet bağlantısı gerekli.'
-            : 'E-posta veya parola hatalı.',
-      );
+      if (e.statusCode == null) {
+        throw AuthException(
+          _networkMessage(e),
+          isNetworkFailure: true,
+        );
+      }
+      throw AuthException('E-posta veya parola hatalı.');
     }
 
     final salt = _generateSalt();
@@ -330,13 +372,28 @@ class AuthRepository {
     required String userId,
     required String companyId,
   }) async {
-    await _storage.write(key: _sessionUserIdKey, value: userId);
-    await _storage.write(key: _sessionCompanyIdKey, value: companyId);
+    try {
+      await _storage.write(key: _sessionUserIdKey, value: userId);
+      await _storage.write(key: _sessionCompanyIdKey, value: companyId);
+    } on Object {
+      // Oturum kalıcı yazılamadı — kullanıcı uygulamayı kapatınca yeniden
+      // giriş yapmak zorunda kalır. Girişi tamamen reddetmekten iyi.
+    }
   }
 
+  /// Kayıtlı oturumu geri yükler; okunamıyorsa oturum yok sayılır.
+  ///
+  /// Güvenli depo bozulduğunda burada hata fırlatmak, uygulamayı açılışta
+  /// kullanılamaz hâle getiriyordu (bkz. TokenStore.read yorumları).
   Future<AuthSession?> restoreSession() async {
-    final userId = await _storage.read(key: _sessionUserIdKey);
-    final companyId = await _storage.read(key: _sessionCompanyIdKey);
+    final String? userId;
+    final String? companyId;
+    try {
+      userId = await _storage.read(key: _sessionUserIdKey);
+      companyId = await _storage.read(key: _sessionCompanyIdKey);
+    } on Object {
+      return null;
+    }
     if (userId == null || companyId == null) return null;
 
     final user = await (_db.select(
@@ -360,8 +417,12 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: _sessionUserIdKey);
-    await _storage.delete(key: _sessionCompanyIdKey);
+    try {
+      await _storage.delete(key: _sessionUserIdKey);
+      await _storage.delete(key: _sessionCompanyIdKey);
+    } on Object {
+      // Silinemese bile oturum kapatma akışı sürmeli.
+    }
     await _tokenStore.clear();
   }
 }

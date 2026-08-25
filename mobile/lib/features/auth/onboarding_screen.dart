@@ -97,6 +97,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       }
       if (mounted) context.go('/dashboard');
     } on AuthException catch (e) {
+      // "Bu hesap zaten var" bir çıkmaz sokak olmamalı: kullanıcıyı giriş
+      // ekranına, ne yapması gerektiğini söyleyerek geri gönder.
+      if (mounted && e.message.toLowerCase().contains('zaten bir hesap var')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Bu hesap zaten kayıtlı. Giriş ekranından devam edebilirsin.',
+            ),
+          ),
+        );
+        context.go('/login');
+        return;
+      }
       setState(() => _errorText = e.message);
     } catch (_) {
       setState(

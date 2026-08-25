@@ -115,7 +115,11 @@ class AuthService
                 $context['google_body'] = substr((string) $response->getBody(), 0, 500);
             }
 
-            Log::warning('Google id_token doğrulanamadı', $context);
+            // `error` seviyesi bilinçli: production'da LOG_LEVEL=error
+            // olduğu için `warning` ile yazılan hiçbir şey dosyaya
+            // düşmüyor. Kimlik doğrulamanın sessizce başarısız olması
+            // zaten gerçek bir hata — kullanıcı uygulamaya giremiyor.
+            Log::error('Google id_token doğrulanamadı', $context);
 
             throw ValidationException::withMessages([
                 'id_token' => ['Google kimlik doğrulaması başarısız.'],

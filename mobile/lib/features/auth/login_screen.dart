@@ -69,10 +69,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             .read(sessionControllerProvider.notifier)
             .continueWithGoogle(result.idToken, email: result.email);
         if (mounted) context.go('/dashboard');
-      } on AuthException {
-        // Bu Google hesabıyla eşleşen bir hesap yok — kayıt akışına,
-        // Google bilgileri ön-dolu şekilde yönlendir (bkz. docs/09).
-        if (mounted) context.go('/onboarding', extra: result);
+      } on AuthException catch (e) {
+        // Kayıt akışına YALNIZCA sunucu "böyle bir hesap yok" dediğinde
+        // gidilir (bkz. docs/09).
+        //
+        // Daha önce her AuthException kayda yönlendiriyordu: sunucuya
+        // ulaşılamadığında mevcut — hatta ücretli — bir hesabın sahibi
+        // "hesabı oluştur" ekranında buluyordu kendini. Ağ hatasında
+        // kullanıcıyı giriş ekranında tutup tekrar denemesini istemek
+        // doğru davranış.
+        if (!mounted) return;
+        if (e.accountMissing) {
+          context.go('/onboarding', extra: result);
+          return;
+        }
+        setState(() => _errorText = e.message);
       }
     } catch (e) {
       // Ham hata mesajı bilinçli olarak gösteriliyor — jenerik metin,

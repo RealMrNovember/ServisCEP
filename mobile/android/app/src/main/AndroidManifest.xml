@@ -23,9 +23,26 @@
          Store sürümü bu izne ihtiyaç duymaz (resmi Play In-App Update API'si
          kullanılır) ve Play Console'un ayrı bir izin beyanı istememesi için
          Play flavor'ının manifestinde bu izin kasıtlı olarak bulunmaz. -->
+    <!--
+      allowBackup KAPALI.
+
+      Açıkken Android Auto Backup, uygulama silinip kurulduğunda şifreli
+      güvenli depoyu (flutter_secure_storage) geri yüklüyor ama onu açan
+      Keystore anahtarını geri yüklemiyor. Sonuç: hiçbir zaman çözülemeyecek
+      bir veri ve her okumada hata. Bu hata, isteğin hiç atılamamasına ve
+      kullanıcıya "internet bağlantısı gerekli" denmesine yol açtı; cihazın
+      verisi elle temizlenene kadar da geçmiyordu.
+
+      Yedeklemeden vazgeçmenin maliyeti yok: tüm veri sunucuyla eşitleniyor,
+      cihazdaki veritabanı yalnızca bir önbellek. Kullanıcı yeniden kurup
+      giriş yaptığında her şey geri geliyor.
+    -->
     <application
         android:label="TeknikCEP"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

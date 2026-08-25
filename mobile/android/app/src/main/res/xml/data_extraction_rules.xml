@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ (API 31) yedekleme/aktarım kuralları.
+
+  `android:allowBackup="false"` eski sürümleri kapsıyor; Android 12 ve
+  üstünde bulut yedeği ile cihazdan cihaza aktarım ayrı ayrı tanımlanıyor.
+  İkisi de kapalı: güvenli depodaki (flutter_secure_storage) şifreli veri,
+  onu açan Keystore anahtarı olmadan taşındığında bir daha çözülemiyor ve
+  uygulamayı kullanılamaz hâle getiriyor.
+
+  Veri kaybı yaşanmaz — her şey sunucuyla eşitleniyor, cihazdaki veritabanı
+  bir önbellek.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>
