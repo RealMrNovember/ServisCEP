@@ -64,6 +64,10 @@ abstract final class AppTypography {
   );
 
   /// Vurgulu gövde, değer.
+  ///
+  /// Tasarım sistemindeki adı `bodyS`; burada `bodyStrong` denmesinin
+  /// sebebi, Dart tarafında `bodyS` okuyan birinin bunu "body small"
+  /// sanmasıdır — oysa punto aynı, değişen yalnızca ağırlık.
   static const bodyStrong = TextStyle(
     fontFamily: uiFamily,
     fontWeight: FontWeight.w600,
@@ -99,6 +103,35 @@ abstract final class AppTypography {
     fontWeight: FontWeight.w500,
     fontSize: 14,
     height: 19 / 14,
+  );
+
+  /// Rozet metni.
+  static const badge = TextStyle(
+    fontFamily: uiFamily,
+    fontWeight: FontWeight.w700,
+    fontSize: 13,
+    height: 18 / 13,
+  );
+
+  /// Alt gezinme etiketi.
+  ///
+  /// Simge tek başına kullanılmadığı için bu etiket daima görünür;
+  /// kullanıcı kitlesi simge tahmin etmiyor, yazı okuyor.
+  static const navLabel = TextStyle(
+    fontFamily: uiFamily,
+    fontWeight: FontWeight.w600,
+    fontSize: 13,
+    height: 15 / 13,
+  );
+
+  /// Küçük kod, barkod.
+  static const monoSmall = TextStyle(
+    fontFamily: monoFamily,
+    fontFamilyFallback: monoFallback,
+    fontWeight: FontWeight.w500,
+    fontSize: 14,
+    height: 19 / 14,
+    letterSpacing: 0.2,
   );
 
   /// Para ve belge numarası — rakam hizası tabular.

@@ -85,6 +85,24 @@ abstract final class AppSize {
 
   /// Uzatılmış FAB.
   static const fab = 56.0;
+
+  /// Liste satırındaki ikon kutusu.
+  static const iconBox = 46.0;
+
+  /// Liste satırındaki avatar.
+  static const avatar = 46.0;
+
+  /// Adım göstergesindeki daire.
+  static const stepDot = 32.0;
+
+  /// Tasarımın çizildiği referans ekran genişliği.
+  ///
+  /// Ölçüler dp cinsindendir; bu değer yalnızca artboard'daki oranı
+  /// koda taşırken kıyas için kullanılır, düzen buna sabitlenmez.
+  static const refScreenWidth = 390.0;
+
+  /// Tasarımın çizildiği referans ekran yüksekliği.
+  static const refScreenHeight = 844.0;
 }
 
 /// Saha kullanımına uygun (büyük dokunma alanları, yüksek kontrast) ama
@@ -172,8 +190,8 @@ abstract final class AppTheme {
           minimumSize: const Size.fromHeight(AppSize.btnPrimary),
           backgroundColor: palette.accentSolid,
           foregroundColor: palette.onAccent,
-          disabledBackgroundColor: palette.surfaceHi,
-          disabledForegroundColor: palette.textFaint,
+          disabledBackgroundColor: palette.disabledBg,
+          disabledForegroundColor: palette.disabledText,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
           textStyle: const TextStyle(
             fontSize: 15.5,
@@ -187,6 +205,7 @@ abstract final class AppTheme {
           minimumSize: const Size.fromHeight(AppSize.btnSecondary),
           backgroundColor: palette.surface,
           foregroundColor: palette.text,
+          disabledForegroundColor: palette.disabledText,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
           side: BorderSide(color: palette.borderStrong),
           textStyle: const TextStyle(

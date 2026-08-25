@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// TeknikCEP tasarım sistemi renk kümesi.
+/// TeknikCEP tasarım sistemi renk kümesi — 45 token.
 ///
-/// Kaynak: TeknikCEP-Tasarim-Sistemi.md § 2 (25 Ağustos 2026).
+/// Kaynak: docs/19-tasarim-sistemi.md § 2 (v2.0, 25 Ağustos 2026).
 ///
 /// Koyu tema açık temanın renk çevrimi DEĞİLDİR; iki değer de elle
 /// seçilmiştir. Koyu temada gölge yerine kenarlık + yüzey merdiveni
@@ -12,6 +12,11 @@ import 'package:flutter/material.dart';
 /// 3.68:1 verir ve WCAG AA eşiğini (4.5:1) geçmez. Bu yüzden beyaz yazı
 /// taşıyan dolgular [accentSolid] kullanır; [accent] yalnızca ikon,
 /// kenarlık ve seçili çubuk gibi 3:1 eşiğine tabi öğeler içindir.
+///
+/// Aynı ayrım durum renklerinde de geçerlidir: [success], [warning] ve
+/// [danger] DOLGU renkleridir; zemin üstüne yazılan metin daima
+/// [successText] / [warningText] / [dangerText] kullanır, dolgunun
+/// ÜSTÜNE yazılan metin ise [onSuccess] / [onWarning] / [onDanger].
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   const AppPalette({
@@ -36,24 +41,38 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.successText,
     required this.successSoft,
     required this.successLine,
+    required this.onSuccess,
     required this.warning,
     required this.warningText,
     required this.warningSoft,
     required this.warningLine,
+    required this.onWarning,
     required this.danger,
     required this.dangerText,
     required this.dangerSoft,
     required this.dangerLine,
+    required this.onDanger,
     required this.neutralSoft,
     required this.navBg,
     required this.scrim,
     required this.skeleton,
+    required this.skeletonSheen,
+    required this.pressOverlay,
+    required this.disabledBg,
+    required this.disabledText,
+    required this.disabledBorder,
+    required this.shadowCard,
+    required this.shadowRaise,
+    required this.shadowSheet,
+    required this.shadowDialog,
   });
+
+  // --- Yüzeyler ---
 
   /// Ekran zemini (Scaffold).
   final Color bg;
 
-  /// Gömük zemin — liste altı, ayırıcı bölge.
+  /// Gömük bölge — liste altı, ayırıcı alan.
   final Color bgSunken;
 
   /// Kart, alt sayfa, diyalog yüzeyi.
@@ -62,7 +81,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Form alanı, gömük kart.
   final Color surfaceAlt;
 
-  /// Progress oluğu, pasif switch.
+  /// İlerleme oluğu, pasif anahtar.
   final Color surfaceHi;
 
   /// Kart ve ayırıcı çizgi.
@@ -71,7 +90,9 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// İkincil buton, alt sayfa üstü.
   final Color borderStrong;
 
-  /// Başlık ve gövde metni.
+  // --- Metin ---
+
+  /// Başlık ve gövde.
   final Color text;
 
   /// Alt açıklama, etiket.
@@ -80,10 +101,12 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Placeholder, meta.
   final Color textFaint;
 
-  /// İkon, kenarlık, seçili çubuk, imleç. Beyaz yazı TAŞIMAZ.
+  // --- Aksan ---
+
+  /// Marka rengi. İkon, kenarlık, seçili çizgi. Beyaz yazı TAŞIMAZ.
   final Color accent;
 
-  /// Beyaz yazı taşıyan dolgular: buton, FAB, çip, switch.
+  /// Beyaz yazı taşıyan dolgular: buton, FAB, seçili çip, anahtar.
   final Color accentSolid;
 
   /// Zemin üstünde aksan renkli yazı.
@@ -95,47 +118,64 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// Vurgu kart çerçevesi.
   final Color accentLine;
 
-  /// Odaklanmış form alanının halkası.
+  /// Odak halkası, FAB gölgesi.
   final Color accentGlow;
 
   /// Birincil buton yazısı.
   final Color onAccent;
 
-  /// Tamamlandı, tahsilat — DOLGU rengi (nokta, çubuk, ikon).
+  // --- Durum: başarı ---
+
+  /// Tamamlandı dolgusu (nokta, çubuk, ikon).
   final Color success;
 
-  /// Zemin üstünde başarı yazısı.
+  /// Normal zemin üstünde başarı yazısı.
   final Color successText;
 
   /// Başarı rozeti zemini.
   final Color successSoft;
 
-  /// Başarı rozeti çerçevesi.
+  /// Başarı kenarlığı.
   final Color successLine;
 
-  /// Bekleyen, çevrimdışı — DOLGU rengi.
+  /// Yeşil DOLGU üstüne yazılan metin.
+  final Color onSuccess;
+
+  // --- Durum: uyarı ---
+
+  /// Bekleyen / çevrimdışı dolgusu.
   final Color warning;
 
-  /// Zemin üstünde uyarı yazısı.
+  /// Normal zemin üstünde uyarı yazısı.
   final Color warningText;
 
   /// Uyarı rozeti zemini.
   final Color warningSoft;
 
-  /// Uyarı rozeti çerçevesi.
+  /// Uyarı kenarlığı.
   final Color warningLine;
 
-  /// Acil, borç, silme — DOLGU rengi.
+  /// Sarı DOLGU üstüne yazılan metin.
+  final Color onWarning;
+
+  // --- Durum: tehlike ---
+
+  /// Acil, borç, silme dolgusu.
   final Color danger;
 
-  /// Zemin üstünde tehlike yazısı.
+  /// Normal zemin üstünde tehlike yazısı.
   final Color dangerText;
 
   /// Tehlike rozeti zemini.
   final Color dangerSoft;
 
-  /// Tehlike rozeti çerçevesi.
+  /// Tehlike kenarlığı.
   final Color dangerLine;
+
+  /// Kırmızı DOLGU üstüne yazılan metin.
+  final Color onDanger;
+
+  // --- Diğer ---
 
   /// Nötr rozet zemini.
   final Color neutralSoft;
@@ -148,6 +188,38 @@ class AppPalette extends ThemeExtension<AppPalette> {
 
   /// Yükleniyor iskeleti.
   final Color skeleton;
+
+  /// İskelet üzerinde gezinen parıltı.
+  final Color skeletonSheen;
+
+  /// Basılı durum katmanı — dokunulan öğenin üstüne biner.
+  final Color pressOverlay;
+
+  /// Devre dışı öğe zemini.
+  final Color disabledBg;
+
+  /// Devre dışı öğe yazısı.
+  final Color disabledText;
+
+  /// Devre dışı öğe kenarlığı.
+  final Color disabledBorder;
+
+  // --- Gölgeler ---
+  //
+  // Renk değil, gölge listesi. Koyu temada kart gölgesi YOKTUR: yüzey
+  // merdiveni ve kenarlık aynı işi yapar, gölge koyu zeminde kirli görünür.
+
+  /// Kart gölgesi. Koyu temada boş liste.
+  final List<BoxShadow> shadowCard;
+
+  /// Alt eylem çubuğu gölgesi (yukarı doğru).
+  final List<BoxShadow> shadowRaise;
+
+  /// Alt sayfa gölgesi.
+  final List<BoxShadow> shadowSheet;
+
+  /// Diyalog gölgesi.
+  final List<BoxShadow> shadowDialog;
 
   static const dark = AppPalette(
     bg: Color(0xFF0B0C0F),
@@ -171,18 +243,48 @@ class AppPalette extends ThemeExtension<AppPalette> {
     successText: Color(0xFF5BE08C),
     successSoft: Color(0x2922C55E),
     successLine: Color(0x5C22C55E),
+    onSuccess: Color(0xFF052E16),
     warning: Color(0xFFFBBF24),
     warningText: Color(0xFFFBD268),
     warningSoft: Color(0x29FBBF24),
     warningLine: Color(0x5CFBBF24),
+    onWarning: Color(0xFF3A2A03),
     danger: Color(0xFFF87171),
     dangerText: Color(0xFFFCA5A5),
     dangerSoft: Color(0x29F87171),
     dangerLine: Color(0x5CF87171),
+    onDanger: Color(0xFF3A0A0A),
     neutralSoft: Color(0x2498A2B0),
     navBg: Color(0xFF0E1014),
     scrim: Color(0xA8000000),
     skeleton: Color(0xFF1F232B),
+    skeletonSheen: Color(0xFF2C313C),
+    pressOverlay: Color(0x1AFFFFFF),
+    disabledBg: Color(0xFF181B21),
+    disabledText: Color(0xFF5A6371),
+    disabledBorder: Color(0xFF262A33),
+    shadowCard: <BoxShadow>[],
+    shadowRaise: <BoxShadow>[
+      BoxShadow(
+        color: Color(0x8C000000),
+        offset: Offset(0, -8),
+        blurRadius: 24,
+      ),
+    ],
+    shadowSheet: <BoxShadow>[
+      BoxShadow(
+        color: Color(0x99000000),
+        offset: Offset(0, -16),
+        blurRadius: 40,
+      ),
+    ],
+    shadowDialog: <BoxShadow>[
+      BoxShadow(
+        color: Color(0xA8000000),
+        offset: Offset(0, 24),
+        blurRadius: 60,
+      ),
+    ],
   );
 
   static const light = AppPalette(
@@ -207,18 +309,51 @@ class AppPalette extends ThemeExtension<AppPalette> {
     successText: Color(0xFF0E5B2F),
     successSoft: Color(0xFFE1F4E8),
     successLine: Color(0xFF9BD4B1),
+    onSuccess: Color(0xFFFFFFFF),
     warning: Color(0xFF9A5B06),
     warningText: Color(0xFF7C4805),
     warningSoft: Color(0xFFFCEFDA),
     warningLine: Color(0xFFE8C089),
+    onWarning: Color(0xFFFFFFFF),
     danger: Color(0xFFB3231E),
     dangerText: Color(0xFF8F1B17),
     dangerSoft: Color(0xFFFBE7E6),
     dangerLine: Color(0xFFEFAFAC),
+    onDanger: Color(0xFFFFFFFF),
     neutralSoft: Color(0xFFE7ECF2),
     navBg: Color(0xFFFFFFFF),
     scrim: Color(0x7A0C1016),
     skeleton: Color(0xFFE7ECF2),
+    skeletonSheen: Color(0xFFF6F8FA),
+    pressOverlay: Color(0x140C1016),
+    disabledBg: Color(0xFFEDF0F4),
+    disabledText: Color(0xFF98A2AF),
+    disabledBorder: Color(0xFFDFE4EA),
+    shadowCard: <BoxShadow>[
+      BoxShadow(color: Color(0x0F0C1016), offset: Offset(0, 1), blurRadius: 2),
+      BoxShadow(color: Color(0x0F0C1016), offset: Offset(0, 6), blurRadius: 16),
+    ],
+    shadowRaise: <BoxShadow>[
+      BoxShadow(
+        color: Color(0x1A0C1016),
+        offset: Offset(0, -6),
+        blurRadius: 20,
+      ),
+    ],
+    shadowSheet: <BoxShadow>[
+      BoxShadow(
+        color: Color(0x290C1016),
+        offset: Offset(0, -16),
+        blurRadius: 40,
+      ),
+    ],
+    shadowDialog: <BoxShadow>[
+      BoxShadow(
+        color: Color(0x380C1016),
+        offset: Offset(0, 24),
+        blurRadius: 60,
+      ),
+    ],
   );
 
   bool get isDark => bg.computeLuminance() < 0.5;
@@ -250,7 +385,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
       onTertiaryContainer: accentText,
 
       error: danger,
-      onError: onAccent,
+      onError: onDanger,
       errorContainer: dangerSoft,
       onErrorContainer: dangerText,
 
@@ -307,18 +442,30 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? successText,
     Color? successSoft,
     Color? successLine,
+    Color? onSuccess,
     Color? warning,
     Color? warningText,
     Color? warningSoft,
     Color? warningLine,
+    Color? onWarning,
     Color? danger,
     Color? dangerText,
     Color? dangerSoft,
     Color? dangerLine,
+    Color? onDanger,
     Color? neutralSoft,
     Color? navBg,
     Color? scrim,
     Color? skeleton,
+    Color? skeletonSheen,
+    Color? pressOverlay,
+    Color? disabledBg,
+    Color? disabledText,
+    Color? disabledBorder,
+    List<BoxShadow>? shadowCard,
+    List<BoxShadow>? shadowRaise,
+    List<BoxShadow>? shadowSheet,
+    List<BoxShadow>? shadowDialog,
   }) {
     return AppPalette(
       bg: bg ?? this.bg,
@@ -342,18 +489,30 @@ class AppPalette extends ThemeExtension<AppPalette> {
       successText: successText ?? this.successText,
       successSoft: successSoft ?? this.successSoft,
       successLine: successLine ?? this.successLine,
+      onSuccess: onSuccess ?? this.onSuccess,
       warning: warning ?? this.warning,
       warningText: warningText ?? this.warningText,
       warningSoft: warningSoft ?? this.warningSoft,
       warningLine: warningLine ?? this.warningLine,
+      onWarning: onWarning ?? this.onWarning,
       danger: danger ?? this.danger,
       dangerText: dangerText ?? this.dangerText,
       dangerSoft: dangerSoft ?? this.dangerSoft,
       dangerLine: dangerLine ?? this.dangerLine,
+      onDanger: onDanger ?? this.onDanger,
       neutralSoft: neutralSoft ?? this.neutralSoft,
       navBg: navBg ?? this.navBg,
       scrim: scrim ?? this.scrim,
       skeleton: skeleton ?? this.skeleton,
+      skeletonSheen: skeletonSheen ?? this.skeletonSheen,
+      pressOverlay: pressOverlay ?? this.pressOverlay,
+      disabledBg: disabledBg ?? this.disabledBg,
+      disabledText: disabledText ?? this.disabledText,
+      disabledBorder: disabledBorder ?? this.disabledBorder,
+      shadowCard: shadowCard ?? this.shadowCard,
+      shadowRaise: shadowRaise ?? this.shadowRaise,
+      shadowSheet: shadowSheet ?? this.shadowSheet,
+      shadowDialog: shadowDialog ?? this.shadowDialog,
     );
   }
 
@@ -362,6 +521,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     if (other is! AppPalette) return this;
 
     Color mix(Color a, Color b) => Color.lerp(a, b, t) ?? a;
+    List<BoxShadow> mixShadow(List<BoxShadow> a, List<BoxShadow> b) =>
+        BoxShadow.lerpList(a, b, t) ?? a;
 
     return AppPalette(
       bg: mix(bg, other.bg),
@@ -385,18 +546,30 @@ class AppPalette extends ThemeExtension<AppPalette> {
       successText: mix(successText, other.successText),
       successSoft: mix(successSoft, other.successSoft),
       successLine: mix(successLine, other.successLine),
+      onSuccess: mix(onSuccess, other.onSuccess),
       warning: mix(warning, other.warning),
       warningText: mix(warningText, other.warningText),
       warningSoft: mix(warningSoft, other.warningSoft),
       warningLine: mix(warningLine, other.warningLine),
+      onWarning: mix(onWarning, other.onWarning),
       danger: mix(danger, other.danger),
       dangerText: mix(dangerText, other.dangerText),
       dangerSoft: mix(dangerSoft, other.dangerSoft),
       dangerLine: mix(dangerLine, other.dangerLine),
+      onDanger: mix(onDanger, other.onDanger),
       neutralSoft: mix(neutralSoft, other.neutralSoft),
       navBg: mix(navBg, other.navBg),
       scrim: mix(scrim, other.scrim),
       skeleton: mix(skeleton, other.skeleton),
+      skeletonSheen: mix(skeletonSheen, other.skeletonSheen),
+      pressOverlay: mix(pressOverlay, other.pressOverlay),
+      disabledBg: mix(disabledBg, other.disabledBg),
+      disabledText: mix(disabledText, other.disabledText),
+      disabledBorder: mix(disabledBorder, other.disabledBorder),
+      shadowCard: mixShadow(shadowCard, other.shadowCard),
+      shadowRaise: mixShadow(shadowRaise, other.shadowRaise),
+      shadowSheet: mixShadow(shadowSheet, other.shadowSheet),
+      shadowDialog: mixShadow(shadowDialog, other.shadowDialog),
     );
   }
 }

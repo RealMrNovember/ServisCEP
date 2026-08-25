@@ -160,6 +160,8 @@ flutter:
     # çıkar.
     - family: JetBrainsMono
       fonts:
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
         - asset: assets/fonts/JetBrainsMono-SemiBold.ttf
           weight: 600
         - asset: assets/fonts/JetBrainsMono-Bold.ttf

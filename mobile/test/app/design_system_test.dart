@@ -61,6 +61,28 @@ void main() {
         expect(_kontrast(palet.accent, palet.bg), greaterThanOrEqualTo(3.0));
       });
 
+      test('$ad tema: dolgu üstü yazılar AA geçer', () {
+        // success/warning/danger DOLGU renkleridir. Üstlerine yazı
+        // yazıldığında on* karşılığı kullanılır; bu tokenların var olma
+        // sebebi de bu. Sarı dolgu üstünde beyaz yazı okunmaz.
+        expect(_kontrast(palet.onSuccess, palet.success), greaterThanOrEqualTo(4.5));
+        expect(_kontrast(palet.onWarning, palet.warning), greaterThanOrEqualTo(4.5));
+        expect(_kontrast(palet.onDanger, palet.danger), greaterThanOrEqualTo(4.5));
+      });
+
+      test('$ad tema: gölge kullanımı temaya uygun', () {
+        if (palet.isDark) {
+          // Koyu temada kart gölgesi yoktur; yüzey merdiveni ve kenarlık
+          // aynı işi yapar, gölge koyu zeminde kirli görünür.
+          expect(palet.shadowCard, isEmpty);
+        } else {
+          expect(palet.shadowCard, isNotEmpty);
+        }
+        // Yükseltilmiş yüzeylerin gölgesi iki temada da vardır.
+        expect(palet.shadowSheet, isNotEmpty);
+        expect(palet.shadowDialog, isNotEmpty);
+      });
+
       test('$ad tema: durum yazıları kendi rozet zemininde AA geçer', () {
         expect(
           _kontrast(palet.successText, _uzerine(palet.successSoft, palet.surface)),
@@ -126,6 +148,66 @@ void main() {
     test('gövde metni 16sp altına inmiyor', () {
       expect(AppTypography.body.fontSize, greaterThanOrEqualTo(16));
       expect(AppTypography.bodyStrong.fontSize, greaterThanOrEqualTo(16));
+    });
+
+    test('tüm mono stilleri yedek aile taşıyor', () {
+      for (final stil in [
+        AppTypography.mono,
+        AppTypography.monoSmall,
+        AppTypography.monoLarge,
+      ]) {
+        expect(stil.fontFamilyFallback, contains('Roboto'));
+      }
+    });
+
+    test('kullanılan her ağırlık pubspec içinde tanımlı', () {
+      // Tanımsız bir ağırlık hata vermez; Flutter sessizce en yakın
+      // ağırlığa düşer ve tasarım fark edilmeden bozulur.
+      final pubspec = File('pubspec.yaml').readAsStringSync();
+
+      final tanimli = <String, Set<int>>{};
+      String? aile;
+      for (final satir in pubspec.split('\n')) {
+        final aileEslesme = RegExp(r'^\s*- family:\s*(\S+)').firstMatch(satir);
+        if (aileEslesme != null) {
+          aile = aileEslesme.group(1);
+          tanimli[aile!] = <int>{};
+          continue;
+        }
+        final agirlik = RegExp(r'^\s*weight:\s*(\d+)').firstMatch(satir);
+        if (agirlik != null && aile != null) {
+          tanimli[aile]!.add(int.parse(agirlik.group(1)!));
+        }
+      }
+
+      const stiller = <String, TextStyle>{
+        'display': AppTypography.display,
+        'h1': AppTypography.h1,
+        'h2': AppTypography.h2,
+        'h3': AppTypography.h3,
+        'body': AppTypography.body,
+        'bodyStrong': AppTypography.bodyStrong,
+        'label': AppTypography.label,
+        'labelUp': AppTypography.labelUp,
+        'caption': AppTypography.caption,
+        'badge': AppTypography.badge,
+        'navLabel': AppTypography.navLabel,
+        'mono': AppTypography.mono,
+        'monoSmall': AppTypography.monoSmall,
+        'monoLarge': AppTypography.monoLarge,
+      };
+
+      for (final girdi in stiller.entries) {
+        final stil = girdi.value;
+        final agirlik = (stil.fontWeight?.value) ?? 400;
+        expect(
+          tanimli[stil.fontFamily],
+          contains(agirlik),
+          reason:
+              '${girdi.key} stili ${stil.fontFamily} $agirlik istiyor ama '
+              'pubspec içinde o ağırlık tanımlı değil',
+        );
+      }
     });
   });
 
