@@ -1,0 +1,145 @@
+name: Play Durum İzleyici
+
+# Play Console'daki kapalı test kanalının durumunu izler.
+#
+# Neden gerekli: bir sürüm Play'e yüklendikten sonra "inceleme" aşamasında
+# saatlerce bekleyebiliyor ve testçilere ne zaman ulaştığını Console'a elle
+# bakmadan öğrenmenin yolu yok. Bu iş, inceleme bittiği anda depoda bir
+# issue açar; GitHub da bunu e-posta/telefon bildirimi olarak iletir.
+#
+# Play Developer API anahtarı YALNIZCA bu depodaki secret'ta duruyor;
+# sorgunun burada çalışmasının sebebi bu.
+#
+# Sürüm testçilere ulaştıktan sonra bu iş gereksizdir — Actions sekmesinden
+# devre dışı bırakılabilir veya dosya silinebilir.
+
+on:
+  schedule:
+    # 20 dakikada bir. :00 gibi tepe dakikalardan bilinçli olarak kaçınıldı.
+    - cron: '7,27,47 * * * *'
+  workflow_dispatch:
+    inputs:
+      versionCode:
+        description: 'İzlenecek sürüm kodu (boşsa kanaldaki en yeni sürüm)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: play-durum
+  cancel-in-progress: false
+
+jobs:
+  durum:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Erişim jetonu al
+        id: token
+        env:
+          PLAY_SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PLAY_SA" ]; then
+            echo "HATA: PLAY_SERVICE_ACCOUNT_JSON secret'ı tanımlı değil"
+            exit 1
+          fi
+          printf '%s' "$PLAY_SA" > "$RUNNER_TEMP/play-sa.json"
+          gcloud auth activate-service-account \
+            --key-file="$RUNNER_TEMP/play-sa.json" --quiet
+          # Jeton loglara yazılmaz; maskelenip çıktı olarak taşınır.
+          TOKEN="$(gcloud auth print-access-token)"
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Kapalı test kanalını oku
+        id: track
+        env:
+          TOKEN: ${{ steps.token.outputs.token }}
+          WANTED: ${{ inputs.versionCode }}
+        run: |
+          set -euo pipefail
+          PKG=com.cicibyte.serviscep
+          API=https://androidpublisher.googleapis.com/androidpublisher/v3
+
+          EDIT=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Length: 0" \
+            "$API/applications/$PKG/edits" | jq -r .id)
+
+          TRACK=$(curl -sS -H "Authorization: Bearer $TOKEN" \
+            "$API/applications/$PKG/edits/$EDIT/tracks/alpha")
+
+          echo "--- alpha kanalı ---"
+          echo "$TRACK" | jq -r '.releases[] | "sürüm=\(.name // "?") kod=\(.versionCodes // [] | join(",")) durum=\(.status)"'
+
+          # İzlenecek sürüm: elle verilmişse o, yoksa en yüksek sürüm kodu.
+          if [ -n "${WANTED:-}" ]; then
+            SEL=$(echo "$TRACK" | jq --arg vc "$WANTED" '.releases[] | select((.versionCodes // []) | map(tostring) | index($vc))')
+          else
+            SEL=$(echo "$TRACK" | jq '[.releases[] | select((.versionCodes // []) | length > 0)] | max_by((.versionCodes | map(tonumber) | max))')
+          fi
+
+          if [ -z "$SEL" ] || [ "$SEL" = "null" ]; then
+            echo "İzlenecek sürüm bulunamadı."
+            echo "yayinda=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          NAME=$(echo "$SEL" | jq -r '.name // "?"')
+          CODE=$(echo "$SEL" | jq -r '.versionCodes | map(tostring) | join(",")')
+          STATUS=$(echo "$SEL" | jq -r '.status')
+
+          echo "izlenen: $NAME (kod $CODE) → $STATUS"
+          echo "surum=$NAME" >> "$GITHUB_OUTPUT"
+          echo "kod=$CODE" >> "$GITHUB_OUTPUT"
+          echo "durum=$STATUS" >> "$GITHUB_OUTPUT"
+
+          # "completed" = inceleme bitti, sürüm kanaldaki testçilere açık.
+          if [ "$STATUS" = "completed" ]; then
+            echo "yayinda=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "yayinda=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Yayına girdiyse haber ver
+        if: steps.track.outputs.yayinda == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SURUM: ${{ steps.track.outputs.surum }}
+          KOD: ${{ steps.track.outputs.kod }}
+        run: |
+          set -euo pipefail
+          BASLIK="Play: $SURUM kapalı teste açıldı (sürüm kodu $KOD)"
+
+          # Aynı sürüm için ikinci kez issue açma — iş 20 dakikada bir koşuyor.
+          VAR=$(gh issue list --state all --search "$BASLIK in:title" \
+            --json title --jq "map(select(.title == \"$BASLIK\")) | length")
+          if [ "$VAR" != "0" ]; then
+            echo "Bu sürüm için bildirim zaten açılmış."
+            exit 0
+          fi
+
+          cat > "$RUNNER_TEMP/govde.md" <<'SABLON'
+          SURUM_ADI sürümü Google Play incelemesinden geçti ve kapalı test
+          kanalındaki testçilere açıldı.
+
+          - Sürüm kodu: SURUM_KODU
+          - Kanal: Kapalı test - Alpha
+
+          Testçiler artık Play Store'dan güncellemeyi görebilir. Cihazda hemen
+          görünmezse Play Store uygulamasında "Uygulamalarım" bölümünü
+          yenilemek yeterli oluyor.
+
+          Bu bildirim, kanal durumunu izleyen zamanlanmış iş tarafından
+          oluşturuldu (.github/workflows/play-durum.yml). Sürüm dağıtıldıktan
+          sonra iş Actions sekmesinden devre dışı bırakılabilir.
+          SABLON
+
+          # Şablondaki yer tutucular değişkenlerle değiştirilir; metin hiçbir
+          # noktada kabuk genişletmesinden geçmediği için Türkçe karakterler
+          # ve tırnaklar bozulmaz.
+          sed -i "s/SURUM_ADI/$SURUM/; s/SURUM_KODU/$KOD/" "$RUNNER_TEMP/govde.md"
+
+          gh issue create --title "$BASLIK" --body-file "$RUNNER_TEMP/govde.md"
