@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PlanResource;
 use App\Models\Setting;
+use App\Support\PaymentConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -38,6 +39,17 @@ class SubscriptionController extends Controller
                 'has_active_subscription' => $company->hasActiveSubscription(),
                 'subscription_expires_at' => $expiresAt?->toISOString(),
                 'days_remaining' => $daysRemaining,
+                // Mobil ekranın hangi akışı göstereceği.
+                //
+                // 'transfer': IBAN + elle bildirim (admin onayı gerekir).
+                // 'card': sağlayıcı üzerinden kartla ödeme.
+                //
+                // Karar SUNUCUDA verilir. Uygulama sürümü ne olursa olsun,
+                // sağlayıcı hazır değilken kart akışı gösterilmemeli;
+                // kullanıcı çalışmayan bir ekranda takılırdı.
+                'payment_mode' => PaymentConfig::mode(),
+                // Havale bilgisi kart kipinde de gönderilir: sağlayıcı
+                // geçici olarak düşerse kullanıcı yine de ödeyebilmeli.
                 'payment_info' => [
                     'iban' => Setting::get('payment_iban'),
                     'account_holder' => Setting::get('payment_account_holder'),

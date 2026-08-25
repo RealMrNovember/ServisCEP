@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProformaController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
+use App\Http\Controllers\Api\V1\SubscriptionCheckoutController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SubscriptionPaymentRequestController;
 use App\Http\Controllers\Api\V1\SyncConflictController;
@@ -48,6 +49,14 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
     // Yayındaki sürüm — kimlik doğrulaması yok (bkz. AppVersionController).
     // Uygulama güncel mi sorusu, giriş yapılamadığında da sorulabilmeli.
     Route::get('/app/version', [AppVersionController::class, 'show'])->name('app.version');
+
+    // Ödeme sağlayıcısının bildirimi.
+    //
+    // Kimlik doğrulaması YOK: istek PayTR'nin sunucusundan gelir,
+    // bizim oturumumuz yoktur. Güvenlik imzayla sağlanır —
+    // doğrulanmayan bir bildirim hiçbir şeyi değiştirmez.
+    Route::post('/payments/paytr/callback', [SubscriptionCheckoutController::class, 'callback'])
+        ->name('payments.paytr.callback');
 
     // Mobil tanılama — KİMLİK DOĞRULAMASI YOK.
     //
@@ -95,6 +104,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
         Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
         Route::get('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'index'])
             ->name('subscription.payment-requests.index');
+        // Kartla ödeme başlatma. Tutar SUNUCUDA hesaplanır.
+        Route::post('/subscription/checkout', [SubscriptionCheckoutController::class, 'checkout'])
+            ->name('subscription.checkout');
         Route::post('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'store'])
             ->name('subscription.payment-requests.store');
 

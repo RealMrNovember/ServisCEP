@@ -70,7 +70,7 @@ class UsersTable
                     ->label('Sürüm')
                     ->badge()
                     ->placeholder('bilinmiyor')
-                    ->sortable('app_build')
+                    ->sortable(['app_build'])
                     ->color(fn (?string $state) => match (true) {
                         $state === null => 'gray',
                         $state === AppVersionController::currentVersion() => 'success',
