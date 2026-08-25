@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/theme.dart';
 import '../../core/constants/customer_types.dart';
 import '../../core/database/app_database.dart';
 import '../../core/utils/customer_display.dart';
 import '../../shared/skeleton.dart';
+import '../../shared/sync_indicators.dart';
 import '../../shared/ui.dart';
 import 'data/customers_repository.dart';
 
@@ -33,7 +35,10 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Müşteriler')),
+      appBar: AppBar(
+        title: const Text('Müşteriler'),
+        actions: const [PendingBadge(), SizedBox(width: AppSpacing.md)],
+      ),
       body: Column(
         children: [
           Padding(

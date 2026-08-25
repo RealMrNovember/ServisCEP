@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/theme.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/utils/customer_display.dart';
 import '../../core/utils/money.dart';
 import '../../shared/skeleton.dart';
+import '../../shared/sync_indicators.dart';
 import '../../shared/ui.dart';
 import '../service_requests/data/service_requests_repository.dart';
 import '../service_requests/service_request_form_screen.dart';
@@ -40,6 +42,9 @@ class _JobsListScreenState extends State<JobsListScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('İşler'),
+        // Bekleyen kayıt rozeti — tasarım sistemi § 6.2. Sayı 0
+        // olduğunda tamamen kaybolur.
+        actions: const [PendingBadge(), SizedBox(width: AppSpacing.md)],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

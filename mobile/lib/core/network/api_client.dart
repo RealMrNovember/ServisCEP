@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/app_config.dart';
+import 'client_headers.dart';
 import 'token_store.dart';
 
 /// Backend'in genel hata gövdesi (`{"message": "...", "errors": {...}}`).
@@ -68,6 +69,12 @@ class ApiClient {
           } on Object {
             // Yetkisiz devam edilir.
           }
+
+          // İstemci künyesi — sunucu kimin hangi sürümü kullandığını
+          // buradan öğreniyor. Okuma kendi içinde hata yutuyor; künye
+          // alınamadı diye istek engellenmez.
+          options.headers.addAll(await ClientHeaders.read());
+
           handler.next(options);
         },
       ),

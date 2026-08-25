@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme.dart';
 import '../../core/utils/customer_display.dart';
 import '../../core/utils/money.dart';
 import '../../shared/skeleton.dart';
+import '../../shared/sync_indicators.dart';
 import '../../shared/ui.dart';
 import '../proformas/data/proformas_repository.dart';
 import '../proformas/proforma_detail_screen.dart';
@@ -51,6 +53,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Belgeler'),
+        actions: const [PendingBadge(), SizedBox(width: AppSpacing.md)],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

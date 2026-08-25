@@ -88,22 +88,44 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palet = context.palette;
 
-    final decorated = Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: accent ? palet.accentSoft : palet.surface,
-        borderRadius: AppRadius.card,
-        border: Border(
-          top: BorderSide(color: accent ? palet.accentLine : palet.border),
-          right: BorderSide(color: accent ? palet.accentLine : palet.border),
-          bottom: BorderSide(color: accent ? palet.accentLine : palet.border),
-          left: pending
-              ? BorderSide(color: palet.warning, width: 3)
-              : BorderSide(color: accent ? palet.accentLine : palet.border),
+    final kenarlik = accent ? palet.accentLine : palet.border;
+
+    // Bekleyen çubuğu KENARLIK olarak çizilmez.
+    //
+    // Flutter, köşe yarıçapı olan bir kutuda eşit olmayan kenarlığa izin
+    // vermiyor: "A borderRadius can only be given for a uniform Border."
+    // Sol kenarı 3dp yapmak, kartı kullanan her ekranı çizim anında
+    // çökertiyordu. Çubuk bu yüzden kartın İÇİNE, kırpılmış bir çocuk
+    // olarak konuyor.
+    final decorated = ClipRRect(
+      borderRadius: AppRadius.card,
+      child: Container(
+        decoration: BoxDecoration(
+          color: accent ? palet.accentSoft : palet.surface,
+          borderRadius: AppRadius.card,
+          border: Border.all(color: kenarlik),
+          boxShadow: palet.shadowCard,
         ),
-        boxShadow: palet.shadowCard,
+        // Stack, konumlandırılmamış çocuğuna (içerik) göre boyutlanır;
+        // çubuk Positioned ile onun yüksekliğine uzanır.
+        //
+        // Row + CrossAxisAlignment.stretch DENENDİ ve olmuyor: Column
+        // çocuklarına SINIRSIZ yükseklik verdiği için stretch sonsuza
+        // uzanmaya çalışıyor ve kart taşma hatasıyla çöküyor.
+        child: Stack(
+          children: [
+            Padding(padding: padding, child: child),
+            if (pending)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                child: ColoredBox(color: palet.warning),
+              ),
+          ],
+        ),
       ),
-      child: child,
     );
 
     if (onTap == null) return decorated;

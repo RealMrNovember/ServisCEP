@@ -4,28 +4,32 @@ import 'package:go_router/go_router.dart';
 
 import '../core/services/play_update_service.dart';
 import '../core/services/update_prompt.dart';
+import '../shared/app_bottom_nav.dart';
 import '../shared/sync_indicators.dart';
-import 'theme.dart';
+import '../shared/tc_icon.dart';
 
 /// Ana navigasyon iskeleti — bkz. docs/06 § Mobil Navigasyon:
-/// Ana Sayfa | İşler | Müşteriler | Belgeler | Daha Fazla.
+/// Ana Sayfa | İşler | Müşteriler | Belgeler | Menü.
 ///
-/// Kayan (floating), koyu ve marka renkleriyle uyumlu özel bir alt gezinme
-/// çubuğu kullanılır — standart [NavigationBar] beş etiketi eşit genişliğe
-/// sığdırmaya çalışırken küçük ekranlarda/daha büyük yazı tipi ölçeğinde
-/// taşabiliyordu. Etiketler [FittedBox] ile daralan alana göre otomatik
-/// küçültülür; bu nedenle hiçbir cihaz genişliğinde taşma oluşmaz.
+/// Alt çubuk için standart [NavigationBar] KULLANILMAZ: beş etiketi eşit
+/// genişliğe sığdırmaya çalışırken küçük ekranlarda ve büyük yazı tipi
+/// ölçeğinde taşıyordu. Yerine [AppBottomNav] var.
 class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
+  /// Son sekmenin etiketi "Daha Fazla" değil "Menü".
+  ///
+  /// Beş sekme dar ekranda yan yana durunca uzun etiketler birbirine
+  /// değiyordu; "Daha Fazla" çubuğun sağ kenarına yapışıyordu. "Menü"
+  /// hem kısa hem daha doğru — orası gerçekten bir menü.
   static const _destinations = [
-    (icon: Icons.home_rounded, label: 'Ana Sayfa'),
-    (icon: Icons.work_rounded, label: 'İşler'),
-    (icon: Icons.people_rounded, label: 'Müşteriler'),
-    (icon: Icons.folder_rounded, label: 'Belgeler'),
-    (icon: Icons.more_horiz_rounded, label: 'Daha Fazla'),
+    AppNavDestination(icon: TcIcons.home, label: 'Ana Sayfa'),
+    AppNavDestination(icon: TcIcons.briefcase, label: 'İşler'),
+    AppNavDestination(icon: TcIcons.users, label: 'Müşteriler'),
+    AppNavDestination(icon: TcIcons.file, label: 'Belgeler'),
+    AppNavDestination(icon: TcIcons.grid, label: 'Menü'),
   ];
 
   /// Alt çubuktaki sekme davranışı.
@@ -89,7 +93,7 @@ class MainShell extends ConsumerWidget {
             ],
           ),
         ),
-        bottomNavigationBar: _FloatingNavBar(
+        bottomNavigationBar: AppBottomNav(
           currentIndex: navigationShell.currentIndex,
           destinations: _destinations,
           onSelect: (index) => _onSelect(index),
@@ -119,120 +123,6 @@ class _PlayUpdateReadyBanner extends StatelessWidget {
           child: const Text('YENİDEN BAŞLAT'),
         ),
       ],
-    );
-  }
-}
-
-class _FloatingNavBar extends StatelessWidget {
-  const _FloatingNavBar({
-    required this.currentIndex,
-    required this.destinations,
-    required this.onSelect,
-  });
-
-  final int currentIndex;
-  final List<({IconData icon, String label})> destinations;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        0,
-        16,
-        bottomInset > 0 ? bottomInset + 8 : 16,
-      ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.darkBg,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.darkBg.withValues(alpha: 0.4),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              for (var i = 0; i < destinations.length; i++)
-                Expanded(
-                  child: _NavItem(
-                    icon: destinations[i].icon,
-                    label: destinations[i].label,
-                    selected: i == currentIndex,
-                    onTap: () => onSelect(i),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : Colors.white.withValues(alpha: 0.5);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 3),
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.accent.withValues(alpha: 0.18)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 22, color: selected ? AppColors.accent : fg),
-              const SizedBox(height: 3),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: fg,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
