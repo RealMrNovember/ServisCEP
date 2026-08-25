@@ -35,6 +35,8 @@ class UserResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Kullanıcılar';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Yönetim';
+
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'full_name';

@@ -26,6 +26,8 @@ class CompanyResource extends Resource
 
     protected static ?string $navigationLabel = 'Şirketler';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Yönetim';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema

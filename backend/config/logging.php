@@ -58,6 +58,21 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        /*
+         * Veritabanı kanalı — kayıtlar admin panelinden görülebilsin diye.
+         *
+         * Dosya logunun YERİNE değil YANINA çalışır (bkz. LOG_STACK).
+         * Seviye bilinçli olarak `warning`: dosya logu `error` ile
+         * sınırlıyken uyarılar hiçbir yere düşmüyordu ve teşhis
+         * yapılamıyordu. Panelde filtre olduğu için buradaki hacim
+         * sorun değil; `logs:prune` ile budanıyor.
+         */
+        'database' => [
+            'driver' => 'monolog',
+            'handler' => App\Logging\DatabaseLogHandler::class,
+            'level' => env('LOG_DB_LEVEL', 'warning'),
+        ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),

@@ -31,7 +31,9 @@ class PaymentSettings extends Page implements HasForms
 
     protected static ?string $title = 'Ödeme Ayarları';
 
-    protected static ?int $navigationSort = 4;
+    protected static string|\UnitEnum|null $navigationGroup = 'Abonelik';
+
+    protected static ?int $navigationSort = 3;
 
     /** @var array<string, mixed>|null */
     public ?array $data = [];

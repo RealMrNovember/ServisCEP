@@ -17,6 +17,15 @@ Kurallar:
 
 ---
 
+## v0.7.1
+
+Yenilikler:
+• Uygulamayı silip yeniden kurduktan sonra bazı cihazlarda hiç giriş yapılamamasına yol açan sorun giderildi.
+• Bağlantı hatası artık sizi yanlışlıkla yeni hesap açma ekranına göndermiyor.
+• Bir aksilik olduğunda hatanın gerçek sebebi ekranda yazıyor.
+• Zayıf bağlantıda giriş daha sabırlı bekliyor.
+• Tamamlanan işin ücreti iş listesinde görünüyor.
+
 ## v0.7.0
 
 Yenilikler:

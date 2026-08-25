@@ -25,7 +25,9 @@ class PaymentRequestResource extends Resource
 
     protected static ?string $navigationLabel = 'Ödeme Talepleri';
 
-    protected static ?int $navigationSort = 3;
+    protected static string|\UnitEnum|null $navigationGroup = 'Abonelik';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

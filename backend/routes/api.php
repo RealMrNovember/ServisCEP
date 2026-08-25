@@ -27,9 +27,14 @@ use App\Http\Controllers\Api\V1\ServiceRequestController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SubscriptionPaymentRequestController;
 use App\Http\Controllers\Api\V1\SyncConflictController;
+use App\Http\Controllers\Api\V1\DiagnosticsController;
+use App\Http\Middleware\LogApiRequests;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->name('api.v1.')->group(function (): void {
+// Günlükleme ara katmanı rota grubunda TANIMLI (middleware grubuna
+// eklenmek yerine): burada hangi isteklerin kapsandığı gözle görülür ve
+// `route:list` çıktısında da doğrulanabilir.
+Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(function (): void {
     // Bkz. docs/09 § 2 Güvenlik Kontrol Listesi — "API rate limiting".
     // Brute-force/spam koruması için IP başına dakikada 10 istek.
     Route::middleware('throttle:10,1')->group(function (): void {
@@ -37,6 +42,16 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
         Route::post('/auth/google/login', [AuthController::class, 'googleLogin'])->name('auth.google.login');
         Route::post('/auth/google/register', [AuthController::class, 'googleRegister'])->name('auth.google.register');
+    });
+
+    // Mobil tanılama — KİMLİK DOĞRULAMASI YOK.
+    //
+    // Bilinçli: kimlik doğrulamanın kendisi bozulduğunda hatayı bize
+    // ulaştırabilecek tek yol bu uçtur. Bir cihazda tam olarak bu yaşandı
+    // ve arıza günlerce görünmez kaldı. Koruma, kimlik yerine hız
+    // sınırıyla sağlanır (bkz. DiagnosticsController).
+    Route::middleware('throttle:20,1')->group(function (): void {
+        Route::post('/diagnostics', [DiagnosticsController::class, 'store'])->name('diagnostics.store');
     });
 
     // İmzalı, süreli dosya erişimi — kasıtlı olarak auth:sanctum dışında;

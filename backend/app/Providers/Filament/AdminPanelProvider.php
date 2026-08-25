@@ -9,9 +9,10 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Navigation\NavigationGroup;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
+use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -45,10 +46,26 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
+            // Varsayılan Filament tanıtım kutusu (FilamentInfoWidget)
+            // bilinçli olarak kaldırıldı: panelin ana sayfası işletmeye
+            // dair göstergeler için var, kullanılan çatının reklamı için
+            // değil. Kendi widget'larımız `discoverWidgets` ile bulunur.
+            ->widgets([])
+            // Menü grupları — kaynak sayısı arttıkça düz liste
+            // gezinilemez hâle geliyordu.
+            ->navigationGroups([
+                NavigationGroup::make('Yönetim')
+                    ->icon(Heroicon::OutlinedBuildingOffice2),
+                NavigationGroup::make('Abonelik')
+                    ->icon(Heroicon::OutlinedCreditCard),
+                NavigationGroup::make('Sistem')
+                    ->icon(Heroicon::OutlinedCog6Tooth),
             ])
+            // Geniş ekranda içerik ortada dar bir sütuna sıkışıyordu;
+            // günlük ve şirket tabloları yatay alanı gerçekten kullanıyor.
+            ->maxContentWidth(Width::Full)
+            ->sidebarCollapsibleOnDesktop()
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

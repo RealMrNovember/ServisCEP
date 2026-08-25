@@ -14,3 +14,11 @@ Schedule::command('customers:purge-trash')->daily();
 // Abonelik hatırlatma push'u — sabah 10:00'da, makul bir saatte
 // (gece yarısı bildirim göndermek kullanıcıyı rahatsız eder).
 Schedule::command('subscriptions:notify-expiring')->dailyAt('10:00');
+
+// Uygulama günlüğü budaması.
+//
+// HAFTALIK çalışır ve saklama süreleri geniştir (bilgi 30, hata 180 gün).
+// Günlük ve dar pencereli bir budama, seyrek ortaya çıkan bir arızanın
+// kanıtını daha fark edilmeden siliyordu. Pazar gecesi 03:40 — haftanın
+// en sakin saati.
+Schedule::command('logs:prune')->weeklyOn(0, '03:40');

@@ -386,15 +386,20 @@ class AuthRepository {
   /// Güvenli depo bozulduğunda burada hata fırlatmak, uygulamayı açılışta
   /// kullanılamaz hâle getiriyordu (bkz. TokenStore.read yorumları).
   Future<AuthSession?> restoreSession() async {
-    final String? userId;
-    final String? companyId;
+    String? storedUserId;
+    String? storedCompanyId;
     try {
-      userId = await _storage.read(key: _sessionUserIdKey);
-      companyId = await _storage.read(key: _sessionCompanyIdKey);
+      storedUserId = await _storage.read(key: _sessionUserIdKey);
+      storedCompanyId = await _storage.read(key: _sessionCompanyIdKey);
     } on Object {
       return null;
     }
-    if (userId == null || companyId == null) return null;
+    if (storedUserId == null || storedCompanyId == null) return null;
+
+    // Kapanışlara (`where` gövdesi) tip yükseltmesi taşınmadığı için
+    // null kontrolünden sonra yerel non-nullable kopyalar alınır.
+    final userId = storedUserId;
+    final companyId = storedCompanyId;
 
     final user = await (_db.select(
       _db.users,
