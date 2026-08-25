@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/job_constants.dart';
 import '../../core/utils/customer_display.dart';
+import '../../core/utils/money.dart';
 import '../service_requests/data/service_requests_repository.dart';
 import '../service_requests/service_request_form_screen.dart';
 import 'data/jobs_repository.dart';
@@ -268,6 +269,13 @@ class _JobTile extends StatelessWidget {
         ? DateFormat('d MMM, HH:mm', 'tr_TR').format(job.appointmentDate!)
         : 'Tarih belirlenmedi';
 
+    // Gerçekleşen ücret yoksa tahmini fiyata düşülmez: tamamlanmış bir işte
+    // tahmini rakam göstermek, tahsil edilen tutarmış gibi okunur.
+    final priceMinor = job.status == 'TAMAMLANDI' ? job.actualPriceMinor : null;
+    final priceLabel = priceMinor == null || priceMinor == 0
+        ? null
+        : Money.formatMinor(priceMinor);
+
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -304,6 +312,21 @@ class _JobTile extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   const Spacer(),
+                  // Tamamlanan işlerde alınan ücret kartta görünür:
+                  // kullanıcı "bu işten ne kazandım" sorusunun cevabını
+                  // detaya girmeden görebilmeli. Ücret girilmemişse hiçbir
+                  // şey gösterilmez — "₺0,00" yazmak yanıltıcı olurdu.
+                  if (priceLabel != null) ...[
+                    Text(
+                      priceLabel,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: jobStatusColors['TAMAMLANDI'] ?? statusColor,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(

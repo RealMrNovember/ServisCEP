@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 
+import '../../app/theme.dart';
 import '../../core/database/app_database.dart';
-import '../../core/providers/company_provider.dart';
+import '../../core/services/document_share.dart';
 import '../../core/services/pdf_service.dart';
 import '../../core/utils/money.dart';
+import '../../shared/document_detail.dart';
+import '../../shared/ui.dart';
+import '../auth/data/session_controller.dart';
 import '../customers/data/customers_repository.dart';
+import '../settings/data/company_repository.dart';
 import 'data/quotes_repository.dart';
 
 const _quoteStatusLabels = {
@@ -18,15 +23,25 @@ const _quoteStatusLabels = {
   'SURESI_DOLDU': 'Süresi Doldu',
 };
 
-final _quoteProvider = FutureProvider.family<Quote?, String>((ref, id) {
-  return ref.watch(quotesRepositoryProvider).byId(id);
-});
+Color _statusColor(String status, ColorScheme scheme) => switch (status) {
+  'KABUL_EDILDI' => AppColors.success,
+  'REDDEDILDI' => AppColors.danger,
+  'SURESI_DOLDU' => AppColors.warning,
+  'GONDERILDI' => scheme.primary,
+  _ => scheme.onSurfaceVariant,
+};
+
+final _dateFormat = DateFormat('d MMMM y', 'tr_TR');
 
 class QuoteDetailScreen extends ConsumerWidget {
   const QuoteDetailScreen({super.key, required this.quoteId});
   final String quoteId;
 
-  Future<void> _changeStatus(BuildContext context, WidgetRef ref, Quote quote) async {
+  Future<void> _changeStatus(
+    BuildContext context,
+    WidgetRef ref,
+    Quote quote,
+  ) async {
     final selected = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
@@ -36,7 +51,9 @@ class QuoteDetailScreen extends ConsumerWidget {
             for (final entry in _quoteStatusLabels.entries)
               ListTile(
                 title: Text(entry.value),
-                trailing: quote.status == entry.key ? const Icon(Icons.check) : null,
+                trailing: quote.status == entry.key
+                    ? const Icon(Icons.check)
+                    : null,
                 onTap: () => Navigator.pop(context, entry.key),
               ),
           ],
@@ -48,112 +65,100 @@ class QuoteDetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _sharePdf(BuildContext context, WidgetRef ref, Quote quote) async {
+  Future<void> _sharePdf(
+    BuildContext context,
+    WidgetRef ref,
+    Quote quote,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
     final company = await ref.read(currentCompanyProvider.future);
-    final customer = await ref.read(customersRepositoryProvider).byId(quote.customerId);
-    final items = await ref.read(quotesRepositoryProvider).watchItems(quote.id).first;
-    if (company == null || customer == null) return;
+    final customer = await ref
+        .read(customersRepositoryProvider)
+        .byId(quote.customerId);
+    final items = await ref.read(quotesRepositoryProvider).itemsOf(quote.id);
 
+    if (company == null || customer == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Firma veya müşteri bilgisi bulunamadı.')),
+      );
+      return;
+    }
+
+    final currency = Currency.fromCode(quote.currency);
     final file = await PdfService.buildQuoteOrProformaPdf(
-      documentTitle: 'TEKLİF',
+      documentTitle: 'Teklif Formu',
       code: quote.code,
       date: quote.createdAt,
       company: company,
       customer: customer,
       items: items.map((i) => i.toLineItem()).toList(),
       notes: quote.notes,
+      introText: quote.introText,
+      paymentTerms: quote.paymentTerms,
+      deliveryTime: quote.deliveryTime,
+      warrantyTerms: quote.warrantyTerms,
+      preparedBy: ref.read(sessionControllerProvider).valueOrNull?.fullName,
+      validUntil: quote.validUntil,
+      currency: currency,
+      vatMode: VatMode.fromCode(quote.vatMode),
+      vatRate: quote.vatRate,
     );
-    if (context.mounted) {
-      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)], text: 'Teklif ${quote.code}'));
-    }
+
+    if (!context.mounted) return;
+    final validity = quote.validUntil == null
+        ? ''
+        : '\nGeçerlilik: ${_dateFormat.format(quote.validUntil!)}';
+    await showDocumentShareSheet(
+      context,
+      file: file,
+      title: 'Teklif Formu ${quote.code}',
+      shareText:
+          '${company.name} — Teklif ${quote.code}\n'
+          'Toplam: ${Money.formatMinor(quote.totalMinor, currency: currency)}'
+          '$validity',
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final quoteAsync = ref.watch(_quoteProvider(quoteId));
+    final scheme = Theme.of(context).colorScheme;
 
-    return quoteAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('Hata: $e'))),
-      data: (quote) {
-        if (quote == null) return const Scaffold(body: Center(child: Text('Teklif bulunamadı')));
+    return ref
+        .watch(quoteByIdProvider(quoteId))
+        .when(
+          loading: () =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
+          error: (e, _) => Scaffold(body: Center(child: Text('Hata: $e'))),
+          data: (quote) {
+            if (quote == null) {
+              return const Scaffold(
+                body: Center(child: Text('Teklif bulunamadı')),
+              );
+            }
 
-        final itemsAsync = ref.watch(quoteItemsProvider(quote.id));
-
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(quote.code),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.share_outlined),
-                tooltip: 'PDF Paylaş',
-                onPressed: () => _sharePdf(context, ref, quote),
-              ),
-            ],
-          ),
-          body: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              ActionChip(
-                label: Text(_quoteStatusLabels[quote.status] ?? quote.status),
-                onPressed: () => _changeStatus(context, ref, quote),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Kalemler',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              itemsAsync.when(
-                loading: () => const CircularProgressIndicator(),
-                error: (e, _) => Text('Hata: $e'),
-                data: (items) => Column(
-                  children: [
-                    for (final item in items)
-                      Card(
-                        child: ListTile(
-                          title: Text(item.description),
-                          subtitle: Text(
-                            '${item.quantity} ${item.unit} × ${Money.formatMinor(item.unitPriceMinor)}',
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (quote.notes?.isNotEmpty == true) ...[
-                const SizedBox(height: 16),
-                Text(
-                  'Notlar',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(quote.notes!),
-              ],
-              const Divider(height: 32),
-              Row(
-                children: [
-                  Text(
-                    'Genel Toplam',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            return DocumentDetailScaffold(
+              code: quote.code,
+              customerId: quote.customerId,
+              createdAt: quote.createdAt,
+              validUntil: quote.validUntil,
+              notes: quote.notes,
+              currency: Currency.fromCode(quote.currency),
+              vatMode: VatMode.fromCode(quote.vatMode),
+              vatRate: quote.vatRate,
+              items: ref
+                  .watch(quoteItemsProvider(quote.id))
+                  .whenData(
+                    (items) => items.map((i) => i.toLineItem()).toList(),
                   ),
-                  const Spacer(),
-                  Text(
-                    Money.formatMinor(quote.totalMinor),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ],
+              statusPill: StatusPill(
+                label: _quoteStatusLabels[quote.status] ?? quote.status,
+                color: _statusColor(quote.status, scheme),
+                icon: Icons.expand_more,
               ),
-              const SizedBox(height: 24),
-              OutlinedButton.icon(
-                onPressed: () => _sharePdf(context, ref, quote),
-                icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('PDF Oluştur ve Paylaş'),
-              ),
-            ],
-          ),
+              onChangeStatus: () => _changeStatus(context, ref, quote),
+              onShare: () => _sharePdf(context, ref, quote),
+            );
+          },
         );
-      },
-    );
   }
 }

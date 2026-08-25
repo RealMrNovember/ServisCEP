@@ -19,6 +19,10 @@ class UpdateQuoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'intro_text' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'payment_terms' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'delivery_time' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'warranty_terms' => ['sometimes', 'nullable', 'string', 'max:255'],
             'currency' => ['sometimes', 'string', 'in:TRY,USD,EUR'],
             'vat_mode' => ['sometimes', 'string', 'in:EXCLUDED,INCLUDED'],
             'vat_rate' => ['sometimes', 'integer', 'min:0', 'max:100'],

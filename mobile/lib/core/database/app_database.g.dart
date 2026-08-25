@@ -48,6 +48,90 @@ class $CompaniesTable extends Companies
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _addressMeta = const VerificationMeta(
+    'address',
+  );
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+    'address',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taxInfoMeta = const VerificationMeta(
+    'taxInfo',
+  );
+  @override
+  late final GeneratedColumn<String> taxInfo = GeneratedColumn<String>(
+    'tax_info',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _introTextMeta = const VerificationMeta(
+    'introText',
+  );
+  @override
+  late final GeneratedColumn<String> introText = GeneratedColumn<String>(
+    'intro_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _paymentTermsMeta = const VerificationMeta(
+    'paymentTerms',
+  );
+  @override
+  late final GeneratedColumn<String> paymentTerms = GeneratedColumn<String>(
+    'payment_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deliveryTimeMeta = const VerificationMeta(
+    'deliveryTime',
+  );
+  @override
+  late final GeneratedColumn<String> deliveryTime = GeneratedColumn<String>(
+    'delivery_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _warrantyTermsMeta = const VerificationMeta(
+    'warrantyTerms',
+  );
+  @override
+  late final GeneratedColumn<String> warrantyTerms = GeneratedColumn<String>(
+    'warranty_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _logoPathMeta = const VerificationMeta(
     'logoPath',
   );
@@ -58,6 +142,21 @@ class $CompaniesTable extends Companies
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hasLogoMeta = const VerificationMeta(
+    'hasLogo',
+  );
+  @override
+  late final GeneratedColumn<bool> hasLogo = GeneratedColumn<bool>(
+    'has_logo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_logo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -77,7 +176,16 @@ class $CompaniesTable extends Companies
     name,
     businessTypes,
     iban,
+    address,
+    phone,
+    email,
+    taxInfo,
+    introText,
+    paymentTerms,
+    deliveryTime,
+    warrantyTerms,
     logoPath,
+    hasLogo,
     createdAt,
   ];
   @override
@@ -120,10 +228,73 @@ class $CompaniesTable extends Companies
         iban.isAcceptableOrUnknown(data['iban']!, _ibanMeta),
       );
     }
+    if (data.containsKey('address')) {
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
+      );
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('tax_info')) {
+      context.handle(
+        _taxInfoMeta,
+        taxInfo.isAcceptableOrUnknown(data['tax_info']!, _taxInfoMeta),
+      );
+    }
+    if (data.containsKey('intro_text')) {
+      context.handle(
+        _introTextMeta,
+        introText.isAcceptableOrUnknown(data['intro_text']!, _introTextMeta),
+      );
+    }
+    if (data.containsKey('payment_terms')) {
+      context.handle(
+        _paymentTermsMeta,
+        paymentTerms.isAcceptableOrUnknown(
+          data['payment_terms']!,
+          _paymentTermsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('delivery_time')) {
+      context.handle(
+        _deliveryTimeMeta,
+        deliveryTime.isAcceptableOrUnknown(
+          data['delivery_time']!,
+          _deliveryTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('warranty_terms')) {
+      context.handle(
+        _warrantyTermsMeta,
+        warrantyTerms.isAcceptableOrUnknown(
+          data['warranty_terms']!,
+          _warrantyTermsMeta,
+        ),
+      );
+    }
     if (data.containsKey('logo_path')) {
       context.handle(
         _logoPathMeta,
         logoPath.isAcceptableOrUnknown(data['logo_path']!, _logoPathMeta),
+      );
+    }
+    if (data.containsKey('has_logo')) {
+      context.handle(
+        _hasLogoMeta,
+        hasLogo.isAcceptableOrUnknown(data['has_logo']!, _hasLogoMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -157,10 +328,46 @@ class $CompaniesTable extends Companies
         DriftSqlType.string,
         data['${effectivePrefix}iban'],
       ),
+      address: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address'],
+      ),
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      ),
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      taxInfo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tax_info'],
+      ),
+      introText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}intro_text'],
+      ),
+      paymentTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_terms'],
+      ),
+      deliveryTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivery_time'],
+      ),
+      warrantyTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}warranty_terms'],
+      ),
       logoPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}logo_path'],
       ),
+      hasLogo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_logo'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -181,14 +388,39 @@ class Company extends DataClass implements Insertable<Company> {
   /// Virgülle ayrılmış işletme türleri (Elektrik, Kamera, Bilgisayar, ...)
   final String businessTypes;
   final String? iban;
+
+  /// Belge antedinde görünen bilgiler (bkz. PdfService).
+  final String? address;
+  final String? phone;
+  final String? email;
+  final String? taxInfo;
+
+  /// Belge metinleri için şirket varsayılanları — her teklifte yeniden
+  /// yazılmasın diye. Belge oluşturulurken kopyalanır.
+  final String? introText;
+  final String? paymentTerms;
+  final String? deliveryTime;
+  final String? warrantyTerms;
+
+  /// Logonun YEREL kopyasının yolu (kırpılmış hâli).
   final String? logoPath;
+  final bool hasLogo;
   final DateTime createdAt;
   const Company({
     required this.id,
     required this.name,
     required this.businessTypes,
     this.iban,
+    this.address,
+    this.phone,
+    this.email,
+    this.taxInfo,
+    this.introText,
+    this.paymentTerms,
+    this.deliveryTime,
+    this.warrantyTerms,
     this.logoPath,
+    required this.hasLogo,
     required this.createdAt,
   });
   @override
@@ -200,9 +432,34 @@ class Company extends DataClass implements Insertable<Company> {
     if (!nullToAbsent || iban != null) {
       map['iban'] = Variable<String>(iban);
     }
+    if (!nullToAbsent || address != null) {
+      map['address'] = Variable<String>(address);
+    }
+    if (!nullToAbsent || phone != null) {
+      map['phone'] = Variable<String>(phone);
+    }
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    if (!nullToAbsent || taxInfo != null) {
+      map['tax_info'] = Variable<String>(taxInfo);
+    }
+    if (!nullToAbsent || introText != null) {
+      map['intro_text'] = Variable<String>(introText);
+    }
+    if (!nullToAbsent || paymentTerms != null) {
+      map['payment_terms'] = Variable<String>(paymentTerms);
+    }
+    if (!nullToAbsent || deliveryTime != null) {
+      map['delivery_time'] = Variable<String>(deliveryTime);
+    }
+    if (!nullToAbsent || warrantyTerms != null) {
+      map['warranty_terms'] = Variable<String>(warrantyTerms);
+    }
     if (!nullToAbsent || logoPath != null) {
       map['logo_path'] = Variable<String>(logoPath);
     }
+    map['has_logo'] = Variable<bool>(hasLogo);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -213,9 +470,34 @@ class Company extends DataClass implements Insertable<Company> {
       name: Value(name),
       businessTypes: Value(businessTypes),
       iban: iban == null && nullToAbsent ? const Value.absent() : Value(iban),
+      address: address == null && nullToAbsent
+          ? const Value.absent()
+          : Value(address),
+      phone: phone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phone),
+      email: email == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email),
+      taxInfo: taxInfo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taxInfo),
+      introText: introText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(introText),
+      paymentTerms: paymentTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentTerms),
+      deliveryTime: deliveryTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveryTime),
+      warrantyTerms: warrantyTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warrantyTerms),
       logoPath: logoPath == null && nullToAbsent
           ? const Value.absent()
           : Value(logoPath),
+      hasLogo: Value(hasLogo),
       createdAt: Value(createdAt),
     );
   }
@@ -230,7 +512,16 @@ class Company extends DataClass implements Insertable<Company> {
       name: serializer.fromJson<String>(json['name']),
       businessTypes: serializer.fromJson<String>(json['businessTypes']),
       iban: serializer.fromJson<String?>(json['iban']),
+      address: serializer.fromJson<String?>(json['address']),
+      phone: serializer.fromJson<String?>(json['phone']),
+      email: serializer.fromJson<String?>(json['email']),
+      taxInfo: serializer.fromJson<String?>(json['taxInfo']),
+      introText: serializer.fromJson<String?>(json['introText']),
+      paymentTerms: serializer.fromJson<String?>(json['paymentTerms']),
+      deliveryTime: serializer.fromJson<String?>(json['deliveryTime']),
+      warrantyTerms: serializer.fromJson<String?>(json['warrantyTerms']),
       logoPath: serializer.fromJson<String?>(json['logoPath']),
+      hasLogo: serializer.fromJson<bool>(json['hasLogo']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -242,7 +533,16 @@ class Company extends DataClass implements Insertable<Company> {
       'name': serializer.toJson<String>(name),
       'businessTypes': serializer.toJson<String>(businessTypes),
       'iban': serializer.toJson<String?>(iban),
+      'address': serializer.toJson<String?>(address),
+      'phone': serializer.toJson<String?>(phone),
+      'email': serializer.toJson<String?>(email),
+      'taxInfo': serializer.toJson<String?>(taxInfo),
+      'introText': serializer.toJson<String?>(introText),
+      'paymentTerms': serializer.toJson<String?>(paymentTerms),
+      'deliveryTime': serializer.toJson<String?>(deliveryTime),
+      'warrantyTerms': serializer.toJson<String?>(warrantyTerms),
       'logoPath': serializer.toJson<String?>(logoPath),
+      'hasLogo': serializer.toJson<bool>(hasLogo),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -252,14 +552,34 @@ class Company extends DataClass implements Insertable<Company> {
     String? name,
     String? businessTypes,
     Value<String?> iban = const Value.absent(),
+    Value<String?> address = const Value.absent(),
+    Value<String?> phone = const Value.absent(),
+    Value<String?> email = const Value.absent(),
+    Value<String?> taxInfo = const Value.absent(),
+    Value<String?> introText = const Value.absent(),
+    Value<String?> paymentTerms = const Value.absent(),
+    Value<String?> deliveryTime = const Value.absent(),
+    Value<String?> warrantyTerms = const Value.absent(),
     Value<String?> logoPath = const Value.absent(),
+    bool? hasLogo,
     DateTime? createdAt,
   }) => Company(
     id: id ?? this.id,
     name: name ?? this.name,
     businessTypes: businessTypes ?? this.businessTypes,
     iban: iban.present ? iban.value : this.iban,
+    address: address.present ? address.value : this.address,
+    phone: phone.present ? phone.value : this.phone,
+    email: email.present ? email.value : this.email,
+    taxInfo: taxInfo.present ? taxInfo.value : this.taxInfo,
+    introText: introText.present ? introText.value : this.introText,
+    paymentTerms: paymentTerms.present ? paymentTerms.value : this.paymentTerms,
+    deliveryTime: deliveryTime.present ? deliveryTime.value : this.deliveryTime,
+    warrantyTerms: warrantyTerms.present
+        ? warrantyTerms.value
+        : this.warrantyTerms,
     logoPath: logoPath.present ? logoPath.value : this.logoPath,
+    hasLogo: hasLogo ?? this.hasLogo,
     createdAt: createdAt ?? this.createdAt,
   );
   Company copyWithCompanion(CompaniesCompanion data) {
@@ -270,7 +590,22 @@ class Company extends DataClass implements Insertable<Company> {
           ? data.businessTypes.value
           : this.businessTypes,
       iban: data.iban.present ? data.iban.value : this.iban,
+      address: data.address.present ? data.address.value : this.address,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      email: data.email.present ? data.email.value : this.email,
+      taxInfo: data.taxInfo.present ? data.taxInfo.value : this.taxInfo,
+      introText: data.introText.present ? data.introText.value : this.introText,
+      paymentTerms: data.paymentTerms.present
+          ? data.paymentTerms.value
+          : this.paymentTerms,
+      deliveryTime: data.deliveryTime.present
+          ? data.deliveryTime.value
+          : this.deliveryTime,
+      warrantyTerms: data.warrantyTerms.present
+          ? data.warrantyTerms.value
+          : this.warrantyTerms,
       logoPath: data.logoPath.present ? data.logoPath.value : this.logoPath,
+      hasLogo: data.hasLogo.present ? data.hasLogo.value : this.hasLogo,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -282,15 +617,39 @@ class Company extends DataClass implements Insertable<Company> {
           ..write('name: $name, ')
           ..write('businessTypes: $businessTypes, ')
           ..write('iban: $iban, ')
+          ..write('address: $address, ')
+          ..write('phone: $phone, ')
+          ..write('email: $email, ')
+          ..write('taxInfo: $taxInfo, ')
+          ..write('introText: $introText, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTime: $deliveryTime, ')
+          ..write('warrantyTerms: $warrantyTerms, ')
           ..write('logoPath: $logoPath, ')
+          ..write('hasLogo: $hasLogo, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, businessTypes, iban, logoPath, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    businessTypes,
+    iban,
+    address,
+    phone,
+    email,
+    taxInfo,
+    introText,
+    paymentTerms,
+    deliveryTime,
+    warrantyTerms,
+    logoPath,
+    hasLogo,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -299,7 +658,16 @@ class Company extends DataClass implements Insertable<Company> {
           other.name == this.name &&
           other.businessTypes == this.businessTypes &&
           other.iban == this.iban &&
+          other.address == this.address &&
+          other.phone == this.phone &&
+          other.email == this.email &&
+          other.taxInfo == this.taxInfo &&
+          other.introText == this.introText &&
+          other.paymentTerms == this.paymentTerms &&
+          other.deliveryTime == this.deliveryTime &&
+          other.warrantyTerms == this.warrantyTerms &&
           other.logoPath == this.logoPath &&
+          other.hasLogo == this.hasLogo &&
           other.createdAt == this.createdAt);
 }
 
@@ -308,7 +676,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
   final Value<String> name;
   final Value<String> businessTypes;
   final Value<String?> iban;
+  final Value<String?> address;
+  final Value<String?> phone;
+  final Value<String?> email;
+  final Value<String?> taxInfo;
+  final Value<String?> introText;
+  final Value<String?> paymentTerms;
+  final Value<String?> deliveryTime;
+  final Value<String?> warrantyTerms;
   final Value<String?> logoPath;
+  final Value<bool> hasLogo;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const CompaniesCompanion({
@@ -316,7 +693,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     this.name = const Value.absent(),
     this.businessTypes = const Value.absent(),
     this.iban = const Value.absent(),
+    this.address = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.email = const Value.absent(),
+    this.taxInfo = const Value.absent(),
+    this.introText = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTime = const Value.absent(),
+    this.warrantyTerms = const Value.absent(),
     this.logoPath = const Value.absent(),
+    this.hasLogo = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -325,7 +711,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     required String name,
     this.businessTypes = const Value.absent(),
     this.iban = const Value.absent(),
+    this.address = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.email = const Value.absent(),
+    this.taxInfo = const Value.absent(),
+    this.introText = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTime = const Value.absent(),
+    this.warrantyTerms = const Value.absent(),
     this.logoPath = const Value.absent(),
+    this.hasLogo = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -335,7 +730,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Expression<String>? name,
     Expression<String>? businessTypes,
     Expression<String>? iban,
+    Expression<String>? address,
+    Expression<String>? phone,
+    Expression<String>? email,
+    Expression<String>? taxInfo,
+    Expression<String>? introText,
+    Expression<String>? paymentTerms,
+    Expression<String>? deliveryTime,
+    Expression<String>? warrantyTerms,
     Expression<String>? logoPath,
+    Expression<bool>? hasLogo,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -344,7 +748,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
       if (name != null) 'name': name,
       if (businessTypes != null) 'business_types': businessTypes,
       if (iban != null) 'iban': iban,
+      if (address != null) 'address': address,
+      if (phone != null) 'phone': phone,
+      if (email != null) 'email': email,
+      if (taxInfo != null) 'tax_info': taxInfo,
+      if (introText != null) 'intro_text': introText,
+      if (paymentTerms != null) 'payment_terms': paymentTerms,
+      if (deliveryTime != null) 'delivery_time': deliveryTime,
+      if (warrantyTerms != null) 'warranty_terms': warrantyTerms,
       if (logoPath != null) 'logo_path': logoPath,
+      if (hasLogo != null) 'has_logo': hasLogo,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -355,7 +768,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Value<String>? name,
     Value<String>? businessTypes,
     Value<String?>? iban,
+    Value<String?>? address,
+    Value<String?>? phone,
+    Value<String?>? email,
+    Value<String?>? taxInfo,
+    Value<String?>? introText,
+    Value<String?>? paymentTerms,
+    Value<String?>? deliveryTime,
+    Value<String?>? warrantyTerms,
     Value<String?>? logoPath,
+    Value<bool>? hasLogo,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -364,7 +786,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
       name: name ?? this.name,
       businessTypes: businessTypes ?? this.businessTypes,
       iban: iban ?? this.iban,
+      address: address ?? this.address,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      taxInfo: taxInfo ?? this.taxInfo,
+      introText: introText ?? this.introText,
+      paymentTerms: paymentTerms ?? this.paymentTerms,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
+      warrantyTerms: warrantyTerms ?? this.warrantyTerms,
       logoPath: logoPath ?? this.logoPath,
+      hasLogo: hasLogo ?? this.hasLogo,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -385,8 +816,35 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     if (iban.present) {
       map['iban'] = Variable<String>(iban.value);
     }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (taxInfo.present) {
+      map['tax_info'] = Variable<String>(taxInfo.value);
+    }
+    if (introText.present) {
+      map['intro_text'] = Variable<String>(introText.value);
+    }
+    if (paymentTerms.present) {
+      map['payment_terms'] = Variable<String>(paymentTerms.value);
+    }
+    if (deliveryTime.present) {
+      map['delivery_time'] = Variable<String>(deliveryTime.value);
+    }
+    if (warrantyTerms.present) {
+      map['warranty_terms'] = Variable<String>(warrantyTerms.value);
+    }
     if (logoPath.present) {
       map['logo_path'] = Variable<String>(logoPath.value);
+    }
+    if (hasLogo.present) {
+      map['has_logo'] = Variable<bool>(hasLogo.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -404,7 +862,16 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
           ..write('name: $name, ')
           ..write('businessTypes: $businessTypes, ')
           ..write('iban: $iban, ')
+          ..write('address: $address, ')
+          ..write('phone: $phone, ')
+          ..write('email: $email, ')
+          ..write('taxInfo: $taxInfo, ')
+          ..write('introText: $introText, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTime: $deliveryTime, ')
+          ..write('warrantyTerms: $warrantyTerms, ')
           ..write('logoPath: $logoPath, ')
+          ..write('hasLogo: $hasLogo, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1088,6 +1555,32 @@ class $CustomersTable extends Customers
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _logoPathMeta = const VerificationMeta(
+    'logoPath',
+  );
+  @override
+  late final GeneratedColumn<String> logoPath = GeneratedColumn<String>(
+    'logo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hasLogoMeta = const VerificationMeta(
+    'hasLogo',
+  );
+  @override
+  late final GeneratedColumn<bool> hasLogo = GeneratedColumn<bool>(
+    'has_logo',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_logo" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -1170,6 +1663,8 @@ class $CustomersTable extends Customers
     taxInfo,
     taxCertificatePath,
     hasTaxCertificate,
+    logoPath,
+    hasLogo,
     notes,
     tags,
     syncStatus,
@@ -1291,6 +1786,18 @@ class $CustomersTable extends Customers
         ),
       );
     }
+    if (data.containsKey('logo_path')) {
+      context.handle(
+        _logoPathMeta,
+        logoPath.isAcceptableOrUnknown(data['logo_path']!, _logoPathMeta),
+      );
+    }
+    if (data.containsKey('has_logo')) {
+      context.handle(
+        _hasLogoMeta,
+        hasLogo.isAcceptableOrUnknown(data['has_logo']!, _hasLogoMeta),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -1396,6 +1903,14 @@ class $CustomersTable extends Customers
         DriftSqlType.bool,
         data['${effectivePrefix}has_tax_certificate'],
       )!,
+      logoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}logo_path'],
+      ),
+      hasLogo: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_logo'],
+      )!,
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -1456,6 +1971,10 @@ class Customer extends DataClass implements Insertable<Customer> {
   /// Sunucuda kayıtlı bir vergi levhası var mı — pull ile güncellenir
   /// (web panelden yüklenen belgeler de böyle görünür).
   final bool hasTaxCertificate;
+
+  /// Müşteri logosu — belgede karşı tarafın markası (opsiyonel).
+  final String? logoPath;
+  final bool hasLogo;
   final String? notes;
   final String? tags;
 
@@ -1483,6 +2002,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     this.taxInfo,
     this.taxCertificatePath,
     required this.hasTaxCertificate,
+    this.logoPath,
+    required this.hasLogo,
     this.notes,
     this.tags,
     required this.syncStatus,
@@ -1528,6 +2049,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       map['tax_certificate_path'] = Variable<String>(taxCertificatePath);
     }
     map['has_tax_certificate'] = Variable<bool>(hasTaxCertificate);
+    if (!nullToAbsent || logoPath != null) {
+      map['logo_path'] = Variable<String>(logoPath);
+    }
+    map['has_logo'] = Variable<bool>(hasLogo);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -1574,6 +2099,10 @@ class Customer extends DataClass implements Insertable<Customer> {
           ? const Value.absent()
           : Value(taxCertificatePath),
       hasTaxCertificate: Value(hasTaxCertificate),
+      logoPath: logoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(logoPath),
+      hasLogo: Value(hasLogo),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -1610,6 +2139,8 @@ class Customer extends DataClass implements Insertable<Customer> {
         json['taxCertificatePath'],
       ),
       hasTaxCertificate: serializer.fromJson<bool>(json['hasTaxCertificate']),
+      logoPath: serializer.fromJson<String?>(json['logoPath']),
+      hasLogo: serializer.fromJson<bool>(json['hasLogo']),
       notes: serializer.fromJson<String?>(json['notes']),
       tags: serializer.fromJson<String?>(json['tags']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
@@ -1637,6 +2168,8 @@ class Customer extends DataClass implements Insertable<Customer> {
       'taxInfo': serializer.toJson<String?>(taxInfo),
       'taxCertificatePath': serializer.toJson<String?>(taxCertificatePath),
       'hasTaxCertificate': serializer.toJson<bool>(hasTaxCertificate),
+      'logoPath': serializer.toJson<String?>(logoPath),
+      'hasLogo': serializer.toJson<bool>(hasLogo),
       'notes': serializer.toJson<String?>(notes),
       'tags': serializer.toJson<String?>(tags),
       'syncStatus': serializer.toJson<String>(syncStatus),
@@ -1662,6 +2195,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     Value<String?> taxInfo = const Value.absent(),
     Value<String?> taxCertificatePath = const Value.absent(),
     bool? hasTaxCertificate,
+    Value<String?> logoPath = const Value.absent(),
+    bool? hasLogo,
     Value<String?> notes = const Value.absent(),
     Value<String?> tags = const Value.absent(),
     String? syncStatus,
@@ -1686,6 +2221,8 @@ class Customer extends DataClass implements Insertable<Customer> {
         ? taxCertificatePath.value
         : this.taxCertificatePath,
     hasTaxCertificate: hasTaxCertificate ?? this.hasTaxCertificate,
+    logoPath: logoPath.present ? logoPath.value : this.logoPath,
+    hasLogo: hasLogo ?? this.hasLogo,
     notes: notes.present ? notes.value : this.notes,
     tags: tags.present ? tags.value : this.tags,
     syncStatus: syncStatus ?? this.syncStatus,
@@ -1718,6 +2255,8 @@ class Customer extends DataClass implements Insertable<Customer> {
       hasTaxCertificate: data.hasTaxCertificate.present
           ? data.hasTaxCertificate.value
           : this.hasTaxCertificate,
+      logoPath: data.logoPath.present ? data.logoPath.value : this.logoPath,
+      hasLogo: data.hasLogo.present ? data.hasLogo.value : this.hasLogo,
       notes: data.notes.present ? data.notes.value : this.notes,
       tags: data.tags.present ? data.tags.value : this.tags,
       syncStatus: data.syncStatus.present
@@ -1747,6 +2286,8 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('taxInfo: $taxInfo, ')
           ..write('taxCertificatePath: $taxCertificatePath, ')
           ..write('hasTaxCertificate: $hasTaxCertificate, ')
+          ..write('logoPath: $logoPath, ')
+          ..write('hasLogo: $hasLogo, ')
           ..write('notes: $notes, ')
           ..write('tags: $tags, ')
           ..write('syncStatus: $syncStatus, ')
@@ -1774,6 +2315,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     taxInfo,
     taxCertificatePath,
     hasTaxCertificate,
+    logoPath,
+    hasLogo,
     notes,
     tags,
     syncStatus,
@@ -1800,6 +2343,8 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.taxInfo == this.taxInfo &&
           other.taxCertificatePath == this.taxCertificatePath &&
           other.hasTaxCertificate == this.hasTaxCertificate &&
+          other.logoPath == this.logoPath &&
+          other.hasLogo == this.hasLogo &&
           other.notes == this.notes &&
           other.tags == this.tags &&
           other.syncStatus == this.syncStatus &&
@@ -1824,6 +2369,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String?> taxInfo;
   final Value<String?> taxCertificatePath;
   final Value<bool> hasTaxCertificate;
+  final Value<String?> logoPath;
+  final Value<bool> hasLogo;
   final Value<String?> notes;
   final Value<String?> tags;
   final Value<String> syncStatus;
@@ -1847,6 +2394,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.taxInfo = const Value.absent(),
     this.taxCertificatePath = const Value.absent(),
     this.hasTaxCertificate = const Value.absent(),
+    this.logoPath = const Value.absent(),
+    this.hasLogo = const Value.absent(),
     this.notes = const Value.absent(),
     this.tags = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -1871,6 +2420,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.taxInfo = const Value.absent(),
     this.taxCertificatePath = const Value.absent(),
     this.hasTaxCertificate = const Value.absent(),
+    this.logoPath = const Value.absent(),
+    this.hasLogo = const Value.absent(),
     this.notes = const Value.absent(),
     this.tags = const Value.absent(),
     this.syncStatus = const Value.absent(),
@@ -1897,6 +2448,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? taxInfo,
     Expression<String>? taxCertificatePath,
     Expression<bool>? hasTaxCertificate,
+    Expression<String>? logoPath,
+    Expression<bool>? hasLogo,
     Expression<String>? notes,
     Expression<String>? tags,
     Expression<String>? syncStatus,
@@ -1922,6 +2475,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (taxCertificatePath != null)
         'tax_certificate_path': taxCertificatePath,
       if (hasTaxCertificate != null) 'has_tax_certificate': hasTaxCertificate,
+      if (logoPath != null) 'logo_path': logoPath,
+      if (hasLogo != null) 'has_logo': hasLogo,
       if (notes != null) 'notes': notes,
       if (tags != null) 'tags': tags,
       if (syncStatus != null) 'sync_status': syncStatus,
@@ -1948,6 +2503,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String?>? taxInfo,
     Value<String?>? taxCertificatePath,
     Value<bool>? hasTaxCertificate,
+    Value<String?>? logoPath,
+    Value<bool>? hasLogo,
     Value<String?>? notes,
     Value<String?>? tags,
     Value<String>? syncStatus,
@@ -1972,6 +2529,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       taxInfo: taxInfo ?? this.taxInfo,
       taxCertificatePath: taxCertificatePath ?? this.taxCertificatePath,
       hasTaxCertificate: hasTaxCertificate ?? this.hasTaxCertificate,
+      logoPath: logoPath ?? this.logoPath,
+      hasLogo: hasLogo ?? this.hasLogo,
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
       syncStatus: syncStatus ?? this.syncStatus,
@@ -2030,6 +2589,12 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (hasTaxCertificate.present) {
       map['has_tax_certificate'] = Variable<bool>(hasTaxCertificate.value);
     }
+    if (logoPath.present) {
+      map['logo_path'] = Variable<String>(logoPath.value);
+    }
+    if (hasLogo.present) {
+      map['has_logo'] = Variable<bool>(hasLogo.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -2072,6 +2637,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('taxInfo: $taxInfo, ')
           ..write('taxCertificatePath: $taxCertificatePath, ')
           ..write('hasTaxCertificate: $hasTaxCertificate, ')
+          ..write('logoPath: $logoPath, ')
+          ..write('hasLogo: $hasLogo, ')
           ..write('notes: $notes, ')
           ..write('tags: $tags, ')
           ..write('syncStatus: $syncStatus, ')
@@ -5462,6 +6029,97 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _introTextMeta = const VerificationMeta(
+    'introText',
+  );
+  @override
+  late final GeneratedColumn<String> introText = GeneratedColumn<String>(
+    'intro_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _paymentTermsMeta = const VerificationMeta(
+    'paymentTerms',
+  );
+  @override
+  late final GeneratedColumn<String> paymentTerms = GeneratedColumn<String>(
+    'payment_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deliveryTimeMeta = const VerificationMeta(
+    'deliveryTime',
+  );
+  @override
+  late final GeneratedColumn<String> deliveryTime = GeneratedColumn<String>(
+    'delivery_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _warrantyTermsMeta = const VerificationMeta(
+    'warrantyTerms',
+  );
+  @override
+  late final GeneratedColumn<String> warrantyTerms = GeneratedColumn<String>(
+    'warranty_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('TRY'),
+  );
+  static const VerificationMeta _vatModeMeta = const VerificationMeta(
+    'vatMode',
+  );
+  @override
+  late final GeneratedColumn<String> vatMode = GeneratedColumn<String>(
+    'vat_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('EXCLUDED'),
+  );
+  static const VerificationMeta _vatRateMeta = const VerificationMeta(
+    'vatRate',
+  );
+  @override
+  late final GeneratedColumn<int> vatRate = GeneratedColumn<int>(
+    'vat_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(20),
+  );
+  static const VerificationMeta _validUntilMeta = const VerificationMeta(
+    'validUntil',
+  );
+  @override
+  late final GeneratedColumn<DateTime> validUntil = GeneratedColumn<DateTime>(
+    'valid_until',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _syncStatusMeta = const VerificationMeta(
     'syncStatus',
   );
@@ -5507,6 +6165,14 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
     status,
     notes,
     totalMinor,
+    introText,
+    paymentTerms,
+    deliveryTime,
+    warrantyTerms,
+    currency,
+    vatMode,
+    vatRate,
+    validUntil,
     syncStatus,
     version,
     createdAt,
@@ -5570,6 +6236,63 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
         totalMinor.isAcceptableOrUnknown(data['total_minor']!, _totalMinorMeta),
       );
     }
+    if (data.containsKey('intro_text')) {
+      context.handle(
+        _introTextMeta,
+        introText.isAcceptableOrUnknown(data['intro_text']!, _introTextMeta),
+      );
+    }
+    if (data.containsKey('payment_terms')) {
+      context.handle(
+        _paymentTermsMeta,
+        paymentTerms.isAcceptableOrUnknown(
+          data['payment_terms']!,
+          _paymentTermsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('delivery_time')) {
+      context.handle(
+        _deliveryTimeMeta,
+        deliveryTime.isAcceptableOrUnknown(
+          data['delivery_time']!,
+          _deliveryTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('warranty_terms')) {
+      context.handle(
+        _warrantyTermsMeta,
+        warrantyTerms.isAcceptableOrUnknown(
+          data['warranty_terms']!,
+          _warrantyTermsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    }
+    if (data.containsKey('vat_mode')) {
+      context.handle(
+        _vatModeMeta,
+        vatMode.isAcceptableOrUnknown(data['vat_mode']!, _vatModeMeta),
+      );
+    }
+    if (data.containsKey('vat_rate')) {
+      context.handle(
+        _vatRateMeta,
+        vatRate.isAcceptableOrUnknown(data['vat_rate']!, _vatRateMeta),
+      );
+    }
+    if (data.containsKey('valid_until')) {
+      context.handle(
+        _validUntilMeta,
+        validUntil.isAcceptableOrUnknown(data['valid_until']!, _validUntilMeta),
+      );
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
         _syncStatusMeta,
@@ -5625,6 +6348,38 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
         DriftSqlType.int,
         data['${effectivePrefix}total_minor'],
       )!,
+      introText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}intro_text'],
+      ),
+      paymentTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_terms'],
+      ),
+      deliveryTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivery_time'],
+      ),
+      warrantyTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}warranty_terms'],
+      ),
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      vatMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vat_mode'],
+      )!,
+      vatRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vat_rate'],
+      )!,
+      validUntil: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}valid_until'],
+      ),
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
@@ -5657,6 +6412,26 @@ class Quote extends DataClass implements Insertable<Quote> {
   final String? notes;
   final int totalMinor;
 
+  /// Belgenin giriş yazısı ve şartları.
+  ///
+  /// Şirket ayarlarındaki varsayılanlar belge OLUŞTURULURKEN kopyalanır;
+  /// sonradan ayar değişse bile gönderilmiş bir teklifin şartları
+  /// kendiliğinden değişmez.
+  final String? introText;
+  final String? paymentTerms;
+  final String? deliveryTime;
+  final String? warrantyTerms;
+
+  /// TRY / USD / EUR — kur DÖNÜŞÜMÜ yapılmaz, bkz. core/utils/money.dart.
+  final String currency;
+
+  /// EXCLUDED ("+ KDV") / INCLUDED ("KDV dahil").
+  final String vatMode;
+
+  /// Belge geneli varsayılan KDV oranı; kalemler kendi oranını taşır.
+  final int vatRate;
+  final DateTime? validUntil;
+
   /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
   final String syncStatus;
 
@@ -5671,6 +6446,14 @@ class Quote extends DataClass implements Insertable<Quote> {
     required this.status,
     this.notes,
     required this.totalMinor,
+    this.introText,
+    this.paymentTerms,
+    this.deliveryTime,
+    this.warrantyTerms,
+    required this.currency,
+    required this.vatMode,
+    required this.vatRate,
+    this.validUntil,
     required this.syncStatus,
     required this.version,
     required this.createdAt,
@@ -5687,6 +6470,24 @@ class Quote extends DataClass implements Insertable<Quote> {
       map['notes'] = Variable<String>(notes);
     }
     map['total_minor'] = Variable<int>(totalMinor);
+    if (!nullToAbsent || introText != null) {
+      map['intro_text'] = Variable<String>(introText);
+    }
+    if (!nullToAbsent || paymentTerms != null) {
+      map['payment_terms'] = Variable<String>(paymentTerms);
+    }
+    if (!nullToAbsent || deliveryTime != null) {
+      map['delivery_time'] = Variable<String>(deliveryTime);
+    }
+    if (!nullToAbsent || warrantyTerms != null) {
+      map['warranty_terms'] = Variable<String>(warrantyTerms);
+    }
+    map['currency'] = Variable<String>(currency);
+    map['vat_mode'] = Variable<String>(vatMode);
+    map['vat_rate'] = Variable<int>(vatRate);
+    if (!nullToAbsent || validUntil != null) {
+      map['valid_until'] = Variable<DateTime>(validUntil);
+    }
     map['sync_status'] = Variable<String>(syncStatus);
     map['version'] = Variable<int>(version);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -5704,6 +6505,24 @@ class Quote extends DataClass implements Insertable<Quote> {
           ? const Value.absent()
           : Value(notes),
       totalMinor: Value(totalMinor),
+      introText: introText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(introText),
+      paymentTerms: paymentTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentTerms),
+      deliveryTime: deliveryTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveryTime),
+      warrantyTerms: warrantyTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warrantyTerms),
+      currency: Value(currency),
+      vatMode: Value(vatMode),
+      vatRate: Value(vatRate),
+      validUntil: validUntil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(validUntil),
       syncStatus: Value(syncStatus),
       version: Value(version),
       createdAt: Value(createdAt),
@@ -5723,6 +6542,14 @@ class Quote extends DataClass implements Insertable<Quote> {
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
       totalMinor: serializer.fromJson<int>(json['totalMinor']),
+      introText: serializer.fromJson<String?>(json['introText']),
+      paymentTerms: serializer.fromJson<String?>(json['paymentTerms']),
+      deliveryTime: serializer.fromJson<String?>(json['deliveryTime']),
+      warrantyTerms: serializer.fromJson<String?>(json['warrantyTerms']),
+      currency: serializer.fromJson<String>(json['currency']),
+      vatMode: serializer.fromJson<String>(json['vatMode']),
+      vatRate: serializer.fromJson<int>(json['vatRate']),
+      validUntil: serializer.fromJson<DateTime?>(json['validUntil']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       version: serializer.fromJson<int>(json['version']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -5739,6 +6566,14 @@ class Quote extends DataClass implements Insertable<Quote> {
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
       'totalMinor': serializer.toJson<int>(totalMinor),
+      'introText': serializer.toJson<String?>(introText),
+      'paymentTerms': serializer.toJson<String?>(paymentTerms),
+      'deliveryTime': serializer.toJson<String?>(deliveryTime),
+      'warrantyTerms': serializer.toJson<String?>(warrantyTerms),
+      'currency': serializer.toJson<String>(currency),
+      'vatMode': serializer.toJson<String>(vatMode),
+      'vatRate': serializer.toJson<int>(vatRate),
+      'validUntil': serializer.toJson<DateTime?>(validUntil),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'version': serializer.toJson<int>(version),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -5753,6 +6588,14 @@ class Quote extends DataClass implements Insertable<Quote> {
     String? status,
     Value<String?> notes = const Value.absent(),
     int? totalMinor,
+    Value<String?> introText = const Value.absent(),
+    Value<String?> paymentTerms = const Value.absent(),
+    Value<String?> deliveryTime = const Value.absent(),
+    Value<String?> warrantyTerms = const Value.absent(),
+    String? currency,
+    String? vatMode,
+    int? vatRate,
+    Value<DateTime?> validUntil = const Value.absent(),
     String? syncStatus,
     int? version,
     DateTime? createdAt,
@@ -5764,6 +6607,16 @@ class Quote extends DataClass implements Insertable<Quote> {
     status: status ?? this.status,
     notes: notes.present ? notes.value : this.notes,
     totalMinor: totalMinor ?? this.totalMinor,
+    introText: introText.present ? introText.value : this.introText,
+    paymentTerms: paymentTerms.present ? paymentTerms.value : this.paymentTerms,
+    deliveryTime: deliveryTime.present ? deliveryTime.value : this.deliveryTime,
+    warrantyTerms: warrantyTerms.present
+        ? warrantyTerms.value
+        : this.warrantyTerms,
+    currency: currency ?? this.currency,
+    vatMode: vatMode ?? this.vatMode,
+    vatRate: vatRate ?? this.vatRate,
+    validUntil: validUntil.present ? validUntil.value : this.validUntil,
     syncStatus: syncStatus ?? this.syncStatus,
     version: version ?? this.version,
     createdAt: createdAt ?? this.createdAt,
@@ -5781,6 +6634,22 @@ class Quote extends DataClass implements Insertable<Quote> {
       totalMinor: data.totalMinor.present
           ? data.totalMinor.value
           : this.totalMinor,
+      introText: data.introText.present ? data.introText.value : this.introText,
+      paymentTerms: data.paymentTerms.present
+          ? data.paymentTerms.value
+          : this.paymentTerms,
+      deliveryTime: data.deliveryTime.present
+          ? data.deliveryTime.value
+          : this.deliveryTime,
+      warrantyTerms: data.warrantyTerms.present
+          ? data.warrantyTerms.value
+          : this.warrantyTerms,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      vatMode: data.vatMode.present ? data.vatMode.value : this.vatMode,
+      vatRate: data.vatRate.present ? data.vatRate.value : this.vatRate,
+      validUntil: data.validUntil.present
+          ? data.validUntil.value
+          : this.validUntil,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
@@ -5799,6 +6668,14 @@ class Quote extends DataClass implements Insertable<Quote> {
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('introText: $introText, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTime: $deliveryTime, ')
+          ..write('warrantyTerms: $warrantyTerms, ')
+          ..write('currency: $currency, ')
+          ..write('vatMode: $vatMode, ')
+          ..write('vatRate: $vatRate, ')
+          ..write('validUntil: $validUntil, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
           ..write('createdAt: $createdAt')
@@ -5815,6 +6692,14 @@ class Quote extends DataClass implements Insertable<Quote> {
     status,
     notes,
     totalMinor,
+    introText,
+    paymentTerms,
+    deliveryTime,
+    warrantyTerms,
+    currency,
+    vatMode,
+    vatRate,
+    validUntil,
     syncStatus,
     version,
     createdAt,
@@ -5830,6 +6715,14 @@ class Quote extends DataClass implements Insertable<Quote> {
           other.status == this.status &&
           other.notes == this.notes &&
           other.totalMinor == this.totalMinor &&
+          other.introText == this.introText &&
+          other.paymentTerms == this.paymentTerms &&
+          other.deliveryTime == this.deliveryTime &&
+          other.warrantyTerms == this.warrantyTerms &&
+          other.currency == this.currency &&
+          other.vatMode == this.vatMode &&
+          other.vatRate == this.vatRate &&
+          other.validUntil == this.validUntil &&
           other.syncStatus == this.syncStatus &&
           other.version == this.version &&
           other.createdAt == this.createdAt);
@@ -5843,6 +6736,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
   final Value<String> status;
   final Value<String?> notes;
   final Value<int> totalMinor;
+  final Value<String?> introText;
+  final Value<String?> paymentTerms;
+  final Value<String?> deliveryTime;
+  final Value<String?> warrantyTerms;
+  final Value<String> currency;
+  final Value<String> vatMode;
+  final Value<int> vatRate;
+  final Value<DateTime?> validUntil;
   final Value<String> syncStatus;
   final Value<int> version;
   final Value<DateTime> createdAt;
@@ -5855,6 +6756,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.introText = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTime = const Value.absent(),
+    this.warrantyTerms = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.vatMode = const Value.absent(),
+    this.vatRate = const Value.absent(),
+    this.validUntil = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -5868,6 +6777,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.introText = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTime = const Value.absent(),
+    this.warrantyTerms = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.vatMode = const Value.absent(),
+    this.vatRate = const Value.absent(),
+    this.validUntil = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -5884,6 +6801,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     Expression<String>? status,
     Expression<String>? notes,
     Expression<int>? totalMinor,
+    Expression<String>? introText,
+    Expression<String>? paymentTerms,
+    Expression<String>? deliveryTime,
+    Expression<String>? warrantyTerms,
+    Expression<String>? currency,
+    Expression<String>? vatMode,
+    Expression<int>? vatRate,
+    Expression<DateTime>? validUntil,
     Expression<String>? syncStatus,
     Expression<int>? version,
     Expression<DateTime>? createdAt,
@@ -5897,6 +6822,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
       if (status != null) 'status': status,
       if (notes != null) 'notes': notes,
       if (totalMinor != null) 'total_minor': totalMinor,
+      if (introText != null) 'intro_text': introText,
+      if (paymentTerms != null) 'payment_terms': paymentTerms,
+      if (deliveryTime != null) 'delivery_time': deliveryTime,
+      if (warrantyTerms != null) 'warranty_terms': warrantyTerms,
+      if (currency != null) 'currency': currency,
+      if (vatMode != null) 'vat_mode': vatMode,
+      if (vatRate != null) 'vat_rate': vatRate,
+      if (validUntil != null) 'valid_until': validUntil,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (version != null) 'version': version,
       if (createdAt != null) 'created_at': createdAt,
@@ -5912,6 +6845,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     Value<String>? status,
     Value<String?>? notes,
     Value<int>? totalMinor,
+    Value<String?>? introText,
+    Value<String?>? paymentTerms,
+    Value<String?>? deliveryTime,
+    Value<String?>? warrantyTerms,
+    Value<String>? currency,
+    Value<String>? vatMode,
+    Value<int>? vatRate,
+    Value<DateTime?>? validUntil,
     Value<String>? syncStatus,
     Value<int>? version,
     Value<DateTime>? createdAt,
@@ -5925,6 +6866,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
       status: status ?? this.status,
       notes: notes ?? this.notes,
       totalMinor: totalMinor ?? this.totalMinor,
+      introText: introText ?? this.introText,
+      paymentTerms: paymentTerms ?? this.paymentTerms,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
+      warrantyTerms: warrantyTerms ?? this.warrantyTerms,
+      currency: currency ?? this.currency,
+      vatMode: vatMode ?? this.vatMode,
+      vatRate: vatRate ?? this.vatRate,
+      validUntil: validUntil ?? this.validUntil,
       syncStatus: syncStatus ?? this.syncStatus,
       version: version ?? this.version,
       createdAt: createdAt ?? this.createdAt,
@@ -5956,6 +6905,30 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     if (totalMinor.present) {
       map['total_minor'] = Variable<int>(totalMinor.value);
     }
+    if (introText.present) {
+      map['intro_text'] = Variable<String>(introText.value);
+    }
+    if (paymentTerms.present) {
+      map['payment_terms'] = Variable<String>(paymentTerms.value);
+    }
+    if (deliveryTime.present) {
+      map['delivery_time'] = Variable<String>(deliveryTime.value);
+    }
+    if (warrantyTerms.present) {
+      map['warranty_terms'] = Variable<String>(warrantyTerms.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (vatMode.present) {
+      map['vat_mode'] = Variable<String>(vatMode.value);
+    }
+    if (vatRate.present) {
+      map['vat_rate'] = Variable<int>(vatRate.value);
+    }
+    if (validUntil.present) {
+      map['valid_until'] = Variable<DateTime>(validUntil.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
     }
@@ -5981,6 +6954,14 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('introText: $introText, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTime: $deliveryTime, ')
+          ..write('warrantyTerms: $warrantyTerms, ')
+          ..write('currency: $currency, ')
+          ..write('vatMode: $vatMode, ')
+          ..write('vatRate: $vatRate, ')
+          ..write('validUntil: $validUntil, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
           ..write('createdAt: $createdAt, ')
@@ -6592,6 +7573,86 @@ class $ProformasTable extends Proformas
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _introTextMeta = const VerificationMeta(
+    'introText',
+  );
+  @override
+  late final GeneratedColumn<String> introText = GeneratedColumn<String>(
+    'intro_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _paymentTermsMeta = const VerificationMeta(
+    'paymentTerms',
+  );
+  @override
+  late final GeneratedColumn<String> paymentTerms = GeneratedColumn<String>(
+    'payment_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deliveryTimeMeta = const VerificationMeta(
+    'deliveryTime',
+  );
+  @override
+  late final GeneratedColumn<String> deliveryTime = GeneratedColumn<String>(
+    'delivery_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _warrantyTermsMeta = const VerificationMeta(
+    'warrantyTerms',
+  );
+  @override
+  late final GeneratedColumn<String> warrantyTerms = GeneratedColumn<String>(
+    'warranty_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('TRY'),
+  );
+  static const VerificationMeta _vatModeMeta = const VerificationMeta(
+    'vatMode',
+  );
+  @override
+  late final GeneratedColumn<String> vatMode = GeneratedColumn<String>(
+    'vat_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('EXCLUDED'),
+  );
+  static const VerificationMeta _vatRateMeta = const VerificationMeta(
+    'vatRate',
+  );
+  @override
+  late final GeneratedColumn<int> vatRate = GeneratedColumn<int>(
+    'vat_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(20),
+  );
   static const VerificationMeta _syncStatusMeta = const VerificationMeta(
     'syncStatus',
   );
@@ -6637,6 +7698,13 @@ class $ProformasTable extends Proformas
     validUntil,
     notes,
     totalMinor,
+    introText,
+    paymentTerms,
+    deliveryTime,
+    warrantyTerms,
+    currency,
+    vatMode,
+    vatRate,
     syncStatus,
     version,
     createdAt,
@@ -6700,6 +7768,57 @@ class $ProformasTable extends Proformas
         totalMinor.isAcceptableOrUnknown(data['total_minor']!, _totalMinorMeta),
       );
     }
+    if (data.containsKey('intro_text')) {
+      context.handle(
+        _introTextMeta,
+        introText.isAcceptableOrUnknown(data['intro_text']!, _introTextMeta),
+      );
+    }
+    if (data.containsKey('payment_terms')) {
+      context.handle(
+        _paymentTermsMeta,
+        paymentTerms.isAcceptableOrUnknown(
+          data['payment_terms']!,
+          _paymentTermsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('delivery_time')) {
+      context.handle(
+        _deliveryTimeMeta,
+        deliveryTime.isAcceptableOrUnknown(
+          data['delivery_time']!,
+          _deliveryTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('warranty_terms')) {
+      context.handle(
+        _warrantyTermsMeta,
+        warrantyTerms.isAcceptableOrUnknown(
+          data['warranty_terms']!,
+          _warrantyTermsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    }
+    if (data.containsKey('vat_mode')) {
+      context.handle(
+        _vatModeMeta,
+        vatMode.isAcceptableOrUnknown(data['vat_mode']!, _vatModeMeta),
+      );
+    }
+    if (data.containsKey('vat_rate')) {
+      context.handle(
+        _vatRateMeta,
+        vatRate.isAcceptableOrUnknown(data['vat_rate']!, _vatRateMeta),
+      );
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
         _syncStatusMeta,
@@ -6755,6 +7874,34 @@ class $ProformasTable extends Proformas
         DriftSqlType.int,
         data['${effectivePrefix}total_minor'],
       )!,
+      introText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}intro_text'],
+      ),
+      paymentTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_terms'],
+      ),
+      deliveryTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivery_time'],
+      ),
+      warrantyTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}warranty_terms'],
+      ),
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      vatMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vat_mode'],
+      )!,
+      vatRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vat_rate'],
+      )!,
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
@@ -6785,6 +7932,21 @@ class Proforma extends DataClass implements Insertable<Proforma> {
   final String? notes;
   final int totalMinor;
 
+  /// Belgenin giriş yazısı ve şartları.
+  ///
+  /// Şirket ayarlarındaki varsayılanlar belge OLUŞTURULURKEN kopyalanır;
+  /// sonradan ayar değişse bile gönderilmiş bir teklifin şartları
+  /// kendiliğinden değişmez.
+  final String? introText;
+  final String? paymentTerms;
+  final String? deliveryTime;
+  final String? warrantyTerms;
+
+  /// TRY / USD / EUR — bkz. core/utils/money.dart.
+  final String currency;
+  final String vatMode;
+  final int vatRate;
+
   /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
   final String syncStatus;
 
@@ -6799,6 +7961,13 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     this.validUntil,
     this.notes,
     required this.totalMinor,
+    this.introText,
+    this.paymentTerms,
+    this.deliveryTime,
+    this.warrantyTerms,
+    required this.currency,
+    required this.vatMode,
+    required this.vatRate,
     required this.syncStatus,
     required this.version,
     required this.createdAt,
@@ -6817,6 +7986,21 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       map['notes'] = Variable<String>(notes);
     }
     map['total_minor'] = Variable<int>(totalMinor);
+    if (!nullToAbsent || introText != null) {
+      map['intro_text'] = Variable<String>(introText);
+    }
+    if (!nullToAbsent || paymentTerms != null) {
+      map['payment_terms'] = Variable<String>(paymentTerms);
+    }
+    if (!nullToAbsent || deliveryTime != null) {
+      map['delivery_time'] = Variable<String>(deliveryTime);
+    }
+    if (!nullToAbsent || warrantyTerms != null) {
+      map['warranty_terms'] = Variable<String>(warrantyTerms);
+    }
+    map['currency'] = Variable<String>(currency);
+    map['vat_mode'] = Variable<String>(vatMode);
+    map['vat_rate'] = Variable<int>(vatRate);
     map['sync_status'] = Variable<String>(syncStatus);
     map['version'] = Variable<int>(version);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -6836,6 +8020,21 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           ? const Value.absent()
           : Value(notes),
       totalMinor: Value(totalMinor),
+      introText: introText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(introText),
+      paymentTerms: paymentTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentTerms),
+      deliveryTime: deliveryTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveryTime),
+      warrantyTerms: warrantyTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warrantyTerms),
+      currency: Value(currency),
+      vatMode: Value(vatMode),
+      vatRate: Value(vatRate),
       syncStatus: Value(syncStatus),
       version: Value(version),
       createdAt: Value(createdAt),
@@ -6855,6 +8054,13 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       validUntil: serializer.fromJson<DateTime?>(json['validUntil']),
       notes: serializer.fromJson<String?>(json['notes']),
       totalMinor: serializer.fromJson<int>(json['totalMinor']),
+      introText: serializer.fromJson<String?>(json['introText']),
+      paymentTerms: serializer.fromJson<String?>(json['paymentTerms']),
+      deliveryTime: serializer.fromJson<String?>(json['deliveryTime']),
+      warrantyTerms: serializer.fromJson<String?>(json['warrantyTerms']),
+      currency: serializer.fromJson<String>(json['currency']),
+      vatMode: serializer.fromJson<String>(json['vatMode']),
+      vatRate: serializer.fromJson<int>(json['vatRate']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       version: serializer.fromJson<int>(json['version']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -6871,6 +8077,13 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       'validUntil': serializer.toJson<DateTime?>(validUntil),
       'notes': serializer.toJson<String?>(notes),
       'totalMinor': serializer.toJson<int>(totalMinor),
+      'introText': serializer.toJson<String?>(introText),
+      'paymentTerms': serializer.toJson<String?>(paymentTerms),
+      'deliveryTime': serializer.toJson<String?>(deliveryTime),
+      'warrantyTerms': serializer.toJson<String?>(warrantyTerms),
+      'currency': serializer.toJson<String>(currency),
+      'vatMode': serializer.toJson<String>(vatMode),
+      'vatRate': serializer.toJson<int>(vatRate),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'version': serializer.toJson<int>(version),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -6885,6 +8098,13 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     Value<DateTime?> validUntil = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     int? totalMinor,
+    Value<String?> introText = const Value.absent(),
+    Value<String?> paymentTerms = const Value.absent(),
+    Value<String?> deliveryTime = const Value.absent(),
+    Value<String?> warrantyTerms = const Value.absent(),
+    String? currency,
+    String? vatMode,
+    int? vatRate,
     String? syncStatus,
     int? version,
     DateTime? createdAt,
@@ -6896,6 +8116,15 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     validUntil: validUntil.present ? validUntil.value : this.validUntil,
     notes: notes.present ? notes.value : this.notes,
     totalMinor: totalMinor ?? this.totalMinor,
+    introText: introText.present ? introText.value : this.introText,
+    paymentTerms: paymentTerms.present ? paymentTerms.value : this.paymentTerms,
+    deliveryTime: deliveryTime.present ? deliveryTime.value : this.deliveryTime,
+    warrantyTerms: warrantyTerms.present
+        ? warrantyTerms.value
+        : this.warrantyTerms,
+    currency: currency ?? this.currency,
+    vatMode: vatMode ?? this.vatMode,
+    vatRate: vatRate ?? this.vatRate,
     syncStatus: syncStatus ?? this.syncStatus,
     version: version ?? this.version,
     createdAt: createdAt ?? this.createdAt,
@@ -6915,6 +8144,19 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       totalMinor: data.totalMinor.present
           ? data.totalMinor.value
           : this.totalMinor,
+      introText: data.introText.present ? data.introText.value : this.introText,
+      paymentTerms: data.paymentTerms.present
+          ? data.paymentTerms.value
+          : this.paymentTerms,
+      deliveryTime: data.deliveryTime.present
+          ? data.deliveryTime.value
+          : this.deliveryTime,
+      warrantyTerms: data.warrantyTerms.present
+          ? data.warrantyTerms.value
+          : this.warrantyTerms,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      vatMode: data.vatMode.present ? data.vatMode.value : this.vatMode,
+      vatRate: data.vatRate.present ? data.vatRate.value : this.vatRate,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
@@ -6933,6 +8175,13 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           ..write('validUntil: $validUntil, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('introText: $introText, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTime: $deliveryTime, ')
+          ..write('warrantyTerms: $warrantyTerms, ')
+          ..write('currency: $currency, ')
+          ..write('vatMode: $vatMode, ')
+          ..write('vatRate: $vatRate, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
           ..write('createdAt: $createdAt')
@@ -6949,6 +8198,13 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     validUntil,
     notes,
     totalMinor,
+    introText,
+    paymentTerms,
+    deliveryTime,
+    warrantyTerms,
+    currency,
+    vatMode,
+    vatRate,
     syncStatus,
     version,
     createdAt,
@@ -6964,6 +8220,13 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           other.validUntil == this.validUntil &&
           other.notes == this.notes &&
           other.totalMinor == this.totalMinor &&
+          other.introText == this.introText &&
+          other.paymentTerms == this.paymentTerms &&
+          other.deliveryTime == this.deliveryTime &&
+          other.warrantyTerms == this.warrantyTerms &&
+          other.currency == this.currency &&
+          other.vatMode == this.vatMode &&
+          other.vatRate == this.vatRate &&
           other.syncStatus == this.syncStatus &&
           other.version == this.version &&
           other.createdAt == this.createdAt);
@@ -6977,6 +8240,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
   final Value<DateTime?> validUntil;
   final Value<String?> notes;
   final Value<int> totalMinor;
+  final Value<String?> introText;
+  final Value<String?> paymentTerms;
+  final Value<String?> deliveryTime;
+  final Value<String?> warrantyTerms;
+  final Value<String> currency;
+  final Value<String> vatMode;
+  final Value<int> vatRate;
   final Value<String> syncStatus;
   final Value<int> version;
   final Value<DateTime> createdAt;
@@ -6989,6 +8259,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     this.validUntil = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.introText = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTime = const Value.absent(),
+    this.warrantyTerms = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.vatMode = const Value.absent(),
+    this.vatRate = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -7002,6 +8279,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     this.validUntil = const Value.absent(),
     this.notes = const Value.absent(),
     this.totalMinor = const Value.absent(),
+    this.introText = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTime = const Value.absent(),
+    this.warrantyTerms = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.vatMode = const Value.absent(),
+    this.vatRate = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -7018,6 +8302,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     Expression<DateTime>? validUntil,
     Expression<String>? notes,
     Expression<int>? totalMinor,
+    Expression<String>? introText,
+    Expression<String>? paymentTerms,
+    Expression<String>? deliveryTime,
+    Expression<String>? warrantyTerms,
+    Expression<String>? currency,
+    Expression<String>? vatMode,
+    Expression<int>? vatRate,
     Expression<String>? syncStatus,
     Expression<int>? version,
     Expression<DateTime>? createdAt,
@@ -7031,6 +8322,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
       if (validUntil != null) 'valid_until': validUntil,
       if (notes != null) 'notes': notes,
       if (totalMinor != null) 'total_minor': totalMinor,
+      if (introText != null) 'intro_text': introText,
+      if (paymentTerms != null) 'payment_terms': paymentTerms,
+      if (deliveryTime != null) 'delivery_time': deliveryTime,
+      if (warrantyTerms != null) 'warranty_terms': warrantyTerms,
+      if (currency != null) 'currency': currency,
+      if (vatMode != null) 'vat_mode': vatMode,
+      if (vatRate != null) 'vat_rate': vatRate,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (version != null) 'version': version,
       if (createdAt != null) 'created_at': createdAt,
@@ -7046,6 +8344,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     Value<DateTime?>? validUntil,
     Value<String?>? notes,
     Value<int>? totalMinor,
+    Value<String?>? introText,
+    Value<String?>? paymentTerms,
+    Value<String?>? deliveryTime,
+    Value<String?>? warrantyTerms,
+    Value<String>? currency,
+    Value<String>? vatMode,
+    Value<int>? vatRate,
     Value<String>? syncStatus,
     Value<int>? version,
     Value<DateTime>? createdAt,
@@ -7059,6 +8364,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
       validUntil: validUntil ?? this.validUntil,
       notes: notes ?? this.notes,
       totalMinor: totalMinor ?? this.totalMinor,
+      introText: introText ?? this.introText,
+      paymentTerms: paymentTerms ?? this.paymentTerms,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
+      warrantyTerms: warrantyTerms ?? this.warrantyTerms,
+      currency: currency ?? this.currency,
+      vatMode: vatMode ?? this.vatMode,
+      vatRate: vatRate ?? this.vatRate,
       syncStatus: syncStatus ?? this.syncStatus,
       version: version ?? this.version,
       createdAt: createdAt ?? this.createdAt,
@@ -7090,6 +8402,27 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     if (totalMinor.present) {
       map['total_minor'] = Variable<int>(totalMinor.value);
     }
+    if (introText.present) {
+      map['intro_text'] = Variable<String>(introText.value);
+    }
+    if (paymentTerms.present) {
+      map['payment_terms'] = Variable<String>(paymentTerms.value);
+    }
+    if (deliveryTime.present) {
+      map['delivery_time'] = Variable<String>(deliveryTime.value);
+    }
+    if (warrantyTerms.present) {
+      map['warranty_terms'] = Variable<String>(warrantyTerms.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (vatMode.present) {
+      map['vat_mode'] = Variable<String>(vatMode.value);
+    }
+    if (vatRate.present) {
+      map['vat_rate'] = Variable<int>(vatRate.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
     }
@@ -7115,6 +8448,13 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
           ..write('validUntil: $validUntil, ')
           ..write('notes: $notes, ')
           ..write('totalMinor: $totalMinor, ')
+          ..write('introText: $introText, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTime: $deliveryTime, ')
+          ..write('warrantyTerms: $warrantyTerms, ')
+          ..write('currency: $currency, ')
+          ..write('vatMode: $vatMode, ')
+          ..write('vatRate: $vatRate, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
           ..write('createdAt: $createdAt, ')
@@ -12235,7 +13575,16 @@ typedef $$CompaniesTableCreateCompanionBuilder =
       required String name,
       Value<String> businessTypes,
       Value<String?> iban,
+      Value<String?> address,
+      Value<String?> phone,
+      Value<String?> email,
+      Value<String?> taxInfo,
+      Value<String?> introText,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTime,
+      Value<String?> warrantyTerms,
       Value<String?> logoPath,
+      Value<bool> hasLogo,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -12245,7 +13594,16 @@ typedef $$CompaniesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> businessTypes,
       Value<String?> iban,
+      Value<String?> address,
+      Value<String?> phone,
+      Value<String?> email,
+      Value<String?> taxInfo,
+      Value<String?> introText,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTime,
+      Value<String?> warrantyTerms,
       Value<String?> logoPath,
+      Value<bool> hasLogo,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -12533,8 +13891,53 @@ class $$CompaniesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taxInfo => $composableBuilder(
+    column: $table.taxInfo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get introText => $composableBuilder(
+    column: $table.introText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get logoPath => $composableBuilder(
     column: $table.logoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasLogo => $composableBuilder(
+    column: $table.hasLogo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12899,8 +14302,53 @@ class $$CompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taxInfo => $composableBuilder(
+    column: $table.taxInfo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get introText => $composableBuilder(
+    column: $table.introText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get logoPath => $composableBuilder(
     column: $table.logoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasLogo => $composableBuilder(
+    column: $table.hasLogo,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -12933,8 +14381,41 @@ class $$CompaniesTableAnnotationComposer
   GeneratedColumn<String> get iban =>
       $composableBuilder(column: $table.iban, builder: (column) => column);
 
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get taxInfo =>
+      $composableBuilder(column: $table.taxInfo, builder: (column) => column);
+
+  GeneratedColumn<String> get introText =>
+      $composableBuilder(column: $table.introText, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get logoPath =>
       $composableBuilder(column: $table.logoPath, builder: (column) => column);
+
+  GeneratedColumn<bool> get hasLogo =>
+      $composableBuilder(column: $table.hasLogo, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -13312,7 +14793,16 @@ class $$CompaniesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> businessTypes = const Value.absent(),
                 Value<String?> iban = const Value.absent(),
+                Value<String?> address = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> taxInfo = const Value.absent(),
+                Value<String?> introText = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTime = const Value.absent(),
+                Value<String?> warrantyTerms = const Value.absent(),
                 Value<String?> logoPath = const Value.absent(),
+                Value<bool> hasLogo = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CompaniesCompanion(
@@ -13320,7 +14810,16 @@ class $$CompaniesTableTableManager
                 name: name,
                 businessTypes: businessTypes,
                 iban: iban,
+                address: address,
+                phone: phone,
+                email: email,
+                taxInfo: taxInfo,
+                introText: introText,
+                paymentTerms: paymentTerms,
+                deliveryTime: deliveryTime,
+                warrantyTerms: warrantyTerms,
                 logoPath: logoPath,
+                hasLogo: hasLogo,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -13330,7 +14829,16 @@ class $$CompaniesTableTableManager
                 required String name,
                 Value<String> businessTypes = const Value.absent(),
                 Value<String?> iban = const Value.absent(),
+                Value<String?> address = const Value.absent(),
+                Value<String?> phone = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> taxInfo = const Value.absent(),
+                Value<String?> introText = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTime = const Value.absent(),
+                Value<String?> warrantyTerms = const Value.absent(),
                 Value<String?> logoPath = const Value.absent(),
+                Value<bool> hasLogo = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CompaniesCompanion.insert(
@@ -13338,7 +14846,16 @@ class $$CompaniesTableTableManager
                 name: name,
                 businessTypes: businessTypes,
                 iban: iban,
+                address: address,
+                phone: phone,
+                email: email,
+                taxInfo: taxInfo,
+                introText: introText,
+                paymentTerms: paymentTerms,
+                deliveryTime: deliveryTime,
+                warrantyTerms: warrantyTerms,
                 logoPath: logoPath,
+                hasLogo: hasLogo,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -14085,6 +15602,8 @@ typedef $$CustomersTableCreateCompanionBuilder =
       Value<String?> taxInfo,
       Value<String?> taxCertificatePath,
       Value<bool> hasTaxCertificate,
+      Value<String?> logoPath,
+      Value<bool> hasLogo,
       Value<String?> notes,
       Value<String?> tags,
       Value<String> syncStatus,
@@ -14110,6 +15629,8 @@ typedef $$CustomersTableUpdateCompanionBuilder =
       Value<String?> taxInfo,
       Value<String?> taxCertificatePath,
       Value<bool> hasTaxCertificate,
+      Value<String?> logoPath,
+      Value<bool> hasLogo,
       Value<String?> notes,
       Value<String?> tags,
       Value<String> syncStatus,
@@ -14337,6 +15858,16 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<bool> get hasTaxCertificate => $composableBuilder(
     column: $table.hasTaxCertificate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get logoPath => $composableBuilder(
+    column: $table.logoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasLogo => $composableBuilder(
+    column: $table.hasLogo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14624,6 +16155,16 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get logoPath => $composableBuilder(
+    column: $table.logoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasLogo => $composableBuilder(
+    column: $table.hasLogo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -14736,6 +16277,12 @@ class $$CustomersTableAnnotationComposer
     column: $table.hasTaxCertificate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get logoPath =>
+      $composableBuilder(column: $table.logoPath, builder: (column) => column);
+
+  GeneratedColumn<bool> get hasLogo =>
+      $composableBuilder(column: $table.hasLogo, builder: (column) => column);
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
@@ -14983,6 +16530,8 @@ class $$CustomersTableTableManager
                 Value<String?> taxInfo = const Value.absent(),
                 Value<String?> taxCertificatePath = const Value.absent(),
                 Value<bool> hasTaxCertificate = const Value.absent(),
+                Value<String?> logoPath = const Value.absent(),
+                Value<bool> hasLogo = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -15006,6 +16555,8 @@ class $$CustomersTableTableManager
                 taxInfo: taxInfo,
                 taxCertificatePath: taxCertificatePath,
                 hasTaxCertificate: hasTaxCertificate,
+                logoPath: logoPath,
+                hasLogo: hasLogo,
                 notes: notes,
                 tags: tags,
                 syncStatus: syncStatus,
@@ -15031,6 +16582,8 @@ class $$CustomersTableTableManager
                 Value<String?> taxInfo = const Value.absent(),
                 Value<String?> taxCertificatePath = const Value.absent(),
                 Value<bool> hasTaxCertificate = const Value.absent(),
+                Value<String?> logoPath = const Value.absent(),
+                Value<bool> hasLogo = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
@@ -15054,6 +16607,8 @@ class $$CustomersTableTableManager
                 taxInfo: taxInfo,
                 taxCertificatePath: taxCertificatePath,
                 hasTaxCertificate: hasTaxCertificate,
+                logoPath: logoPath,
+                hasLogo: hasLogo,
                 notes: notes,
                 tags: tags,
                 syncStatus: syncStatus,
@@ -18090,6 +19645,14 @@ typedef $$QuotesTableCreateCompanionBuilder =
       Value<String> status,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String?> introText,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTime,
+      Value<String?> warrantyTerms,
+      Value<String> currency,
+      Value<String> vatMode,
+      Value<int> vatRate,
+      Value<DateTime?> validUntil,
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
@@ -18104,6 +19667,14 @@ typedef $$QuotesTableUpdateCompanionBuilder =
       Value<String> status,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String?> introText,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTime,
+      Value<String?> warrantyTerms,
+      Value<String> currency,
+      Value<String> vatMode,
+      Value<int> vatRate,
+      Value<DateTime?> validUntil,
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
@@ -18198,6 +19769,46 @@ class $$QuotesTableFilterComposer
 
   ColumnFilters<int> get totalMinor => $composableBuilder(
     column: $table.totalMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get introText => $composableBuilder(
+    column: $table.introText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vatMode => $composableBuilder(
+    column: $table.vatMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get vatRate => $composableBuilder(
+    column: $table.vatRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get validUntil => $composableBuilder(
+    column: $table.validUntil,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18322,6 +19933,46 @@ class $$QuotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get introText => $composableBuilder(
+    column: $table.introText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vatMode => $composableBuilder(
+    column: $table.vatMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get vatRate => $composableBuilder(
+    column: $table.vatRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get validUntil => $composableBuilder(
+    column: $table.validUntil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -18407,6 +20058,38 @@ class $$QuotesTableAnnotationComposer
 
   GeneratedColumn<int> get totalMinor => $composableBuilder(
     column: $table.totalMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get introText =>
+      $composableBuilder(column: $table.introText, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get vatMode =>
+      $composableBuilder(column: $table.vatMode, builder: (column) => column);
+
+  GeneratedColumn<int> get vatRate =>
+      $composableBuilder(column: $table.vatRate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get validUntil => $composableBuilder(
+    column: $table.validUntil,
     builder: (column) => column,
   );
 
@@ -18532,6 +20215,14 @@ class $$QuotesTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String?> introText = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTime = const Value.absent(),
+                Value<String?> warrantyTerms = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<String> vatMode = const Value.absent(),
+                Value<int> vatRate = const Value.absent(),
+                Value<DateTime?> validUntil = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -18544,6 +20235,14 @@ class $$QuotesTableTableManager
                 status: status,
                 notes: notes,
                 totalMinor: totalMinor,
+                introText: introText,
+                paymentTerms: paymentTerms,
+                deliveryTime: deliveryTime,
+                warrantyTerms: warrantyTerms,
+                currency: currency,
+                vatMode: vatMode,
+                vatRate: vatRate,
+                validUntil: validUntil,
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,
@@ -18558,6 +20257,14 @@ class $$QuotesTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String?> introText = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTime = const Value.absent(),
+                Value<String?> warrantyTerms = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<String> vatMode = const Value.absent(),
+                Value<int> vatRate = const Value.absent(),
+                Value<DateTime?> validUntil = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -18570,6 +20277,14 @@ class $$QuotesTableTableManager
                 status: status,
                 notes: notes,
                 totalMinor: totalMinor,
+                introText: introText,
+                paymentTerms: paymentTerms,
+                deliveryTime: deliveryTime,
+                warrantyTerms: warrantyTerms,
+                currency: currency,
+                vatMode: vatMode,
+                vatRate: vatRate,
+                validUntil: validUntil,
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,
@@ -19073,6 +20788,13 @@ typedef $$ProformasTableCreateCompanionBuilder =
       Value<DateTime?> validUntil,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String?> introText,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTime,
+      Value<String?> warrantyTerms,
+      Value<String> currency,
+      Value<String> vatMode,
+      Value<int> vatRate,
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
@@ -19087,6 +20809,13 @@ typedef $$ProformasTableUpdateCompanionBuilder =
       Value<DateTime?> validUntil,
       Value<String?> notes,
       Value<int> totalMinor,
+      Value<String?> introText,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTime,
+      Value<String?> warrantyTerms,
+      Value<String> currency,
+      Value<String> vatMode,
+      Value<int> vatRate,
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
@@ -19181,6 +20910,41 @@ class $$ProformasTableFilterComposer
 
   ColumnFilters<int> get totalMinor => $composableBuilder(
     column: $table.totalMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get introText => $composableBuilder(
+    column: $table.introText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vatMode => $composableBuilder(
+    column: $table.vatMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get vatRate => $composableBuilder(
+    column: $table.vatRate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19305,6 +21069,41 @@ class $$ProformasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get introText => $composableBuilder(
+    column: $table.introText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vatMode => $composableBuilder(
+    column: $table.vatMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get vatRate => $composableBuilder(
+    column: $table.vatRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -19394,6 +21193,33 @@ class $$ProformasTableAnnotationComposer
     column: $table.totalMinor,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get introText =>
+      $composableBuilder(column: $table.introText, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deliveryTime => $composableBuilder(
+    column: $table.deliveryTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get warrantyTerms => $composableBuilder(
+    column: $table.warrantyTerms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get vatMode =>
+      $composableBuilder(column: $table.vatMode, builder: (column) => column);
+
+  GeneratedColumn<int> get vatRate =>
+      $composableBuilder(column: $table.vatRate, builder: (column) => column);
 
   GeneratedColumn<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
@@ -19517,6 +21343,13 @@ class $$ProformasTableTableManager
                 Value<DateTime?> validUntil = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String?> introText = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTime = const Value.absent(),
+                Value<String?> warrantyTerms = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<String> vatMode = const Value.absent(),
+                Value<int> vatRate = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -19529,6 +21362,13 @@ class $$ProformasTableTableManager
                 validUntil: validUntil,
                 notes: notes,
                 totalMinor: totalMinor,
+                introText: introText,
+                paymentTerms: paymentTerms,
+                deliveryTime: deliveryTime,
+                warrantyTerms: warrantyTerms,
+                currency: currency,
+                vatMode: vatMode,
+                vatRate: vatRate,
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,
@@ -19543,6 +21383,13 @@ class $$ProformasTableTableManager
                 Value<DateTime?> validUntil = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<int> totalMinor = const Value.absent(),
+                Value<String?> introText = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTime = const Value.absent(),
+                Value<String?> warrantyTerms = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<String> vatMode = const Value.absent(),
+                Value<int> vatRate = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -19555,6 +21402,13 @@ class $$ProformasTableTableManager
                 validUntil: validUntil,
                 notes: notes,
                 totalMinor: totalMinor,
+                introText: introText,
+                paymentTerms: paymentTerms,
+                deliveryTime: deliveryTime,
+                warrantyTerms: warrantyTerms,
+                currency: currency,
+                vatMode: vatMode,
+                vatRate: vatRate,
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,

@@ -18,6 +18,7 @@ class Proforma extends Model
 
     protected $fillable = ['id', 'company_id', 'code', 'customer_id', 'valid_until', 'notes', 'total_minor',
         'currency', 'vat_mode', 'vat_rate',
+        'intro_text', 'payment_terms', 'delivery_time', 'warranty_terms',
     ];
 
     protected function casts(): array

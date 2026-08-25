@@ -17,6 +17,17 @@ Kurallar:
 
 ---
 
+## v0.7.0
+
+Yenilikler:
+• Profesyonel teklif formu: logolu antet, müşteri bilgileri, kalem tablosu ve kaşe/imza alanlarıyla tek sayfalık kurumsal belge.
+• Aynı formdan proforma fatura da düzenleyin; belge numarası kaldığı yerden devam eder.
+• TL, dolar veya euro; "+KDV" ya da "KDV dahil" seçin, oranı siz belirleyin.
+• Ödeme, teslim ve garanti için hazır ifadeler.
+• Belgeyi WhatsApp veya e-postayla gönderin.
+• Firma ve müşteri logonuzu ekleyip kırpın.
+• Tamamlanan işin ücreti listede görünüyor.
+
 ## v0.6.1
 
 Yenilikler:

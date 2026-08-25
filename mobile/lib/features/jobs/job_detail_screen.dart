@@ -8,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants/job_constants.dart';
 import '../../core/database/app_database.dart';
-import '../../core/providers/company_provider.dart';
+import '../settings/data/company_repository.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/pdf_service.dart';
 import '../../core/utils/customer_display.dart';

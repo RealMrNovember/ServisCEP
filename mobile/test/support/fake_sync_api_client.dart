@@ -35,6 +35,13 @@ class FakeSyncApiClient implements SyncApiClient {
 
   final List<(String, String)> uploadTaxCertificateCalls = [];
   final List<Map<String, dynamic>> updateCompanyCalls = [];
+  final List<String> uploadCompanyLogoCalls = [];
+  Map<String, dynamic>? companyRecord;
+  List<int>? companyLogoBytes;
+  final Map<String, List<int>> customerLogoBytes = {};
+  var deleteCompanyLogoCalls = 0;
+  final List<(String, String)> uploadCustomerLogoCalls = [];
+  final List<String> deleteCustomerLogoCalls = [];
   final List<Map<String, dynamic>> updateProfileCalls = [];
   final List<(String, String)> updatePasswordCalls = [];
   final List<Map<String, dynamic>> createPersonnelCalls = [];
@@ -97,6 +104,36 @@ class FakeSyncApiClient implements SyncApiClient {
   @override
   Future<void> updateCompany(Map<String, dynamic> payload) async {
     updateCompanyCalls.add(payload);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> showCompany() async => companyRecord;
+
+  @override
+  Future<List<int>?> downloadCompanyLogo() async => companyLogoBytes;
+
+  @override
+  Future<List<int>?> downloadCustomerLogo(String customerId) async =>
+      customerLogoBytes[customerId];
+
+  @override
+  Future<void> uploadCompanyLogo(String filePath) async {
+    uploadCompanyLogoCalls.add(filePath);
+  }
+
+  @override
+  Future<void> deleteCompanyLogo() async {
+    deleteCompanyLogoCalls++;
+  }
+
+  @override
+  Future<void> uploadCustomerLogo(String customerId, String filePath) async {
+    uploadCustomerLogoCalls.add((customerId, filePath));
+  }
+
+  @override
+  Future<void> deleteCustomerLogo(String customerId) async {
+    deleteCustomerLogoCalls.add(customerId);
   }
 
   @override

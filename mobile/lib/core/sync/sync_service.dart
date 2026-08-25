@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
+import '../services/media_storage.dart';
 import '../network/api_client.dart';
 import '../network/sync_api_client.dart';
 import '../network/token_store.dart';
@@ -43,6 +44,7 @@ class SyncService {
 
     await _drainOutbox();
     try {
+      await _pullCompany(companyId);
       await _pullCustomers(companyId);
       await _pullJobs(companyId);
       await _pullServiceRequests(companyId);
@@ -148,6 +150,32 @@ class SyncService {
                 );
           case ('company', 'UPDATE'):
             await _api.updateCompany(payload);
+          case ('company', 'LOGO'):
+            final path = payload['file_path'] as String?;
+            if (path == null) {
+              await _api.deleteCompanyLogo();
+            } else if (!File(path).existsSync()) {
+              await _markFailed(
+                op,
+                ApiException(422, 'Logo dosyası artık cihazda yok.'),
+              );
+              continue;
+            } else {
+              await _api.uploadCompanyLogo(path);
+            }
+          case ('customer', 'LOGO'):
+            final path = payload['file_path'] as String?;
+            if (path == null) {
+              await _api.deleteCustomerLogo(op.entityId);
+            } else if (!File(path).existsSync()) {
+              await _markFailed(
+                op,
+                ApiException(422, 'Logo dosyası artık cihazda yok.'),
+              );
+              continue;
+            } else {
+              await _api.uploadCustomerLogo(op.entityId, path);
+            }
           case ('job_note', 'CREATE'):
             await _api.createJobNote(payload['job_id'] as String, {
               'id': payload['id'],
@@ -303,6 +331,80 @@ class SyncService {
     return row != null;
   }
 
+  /// Şirket antedi ve logosu.
+  ///
+  /// Sürüm tabanlı çakışma kontrolü yok (bkz. CompanyRepository) — bu kayıt
+  /// yalnızca işletme sahibi tarafından seyrek düzenlenir. Bekleyen bir
+  /// yerel değişiklik varsa sunucudakine dokunulmaz, aksi halde kullanıcının
+  /// az önce yazdığı ünvan geri alınmış olurdu.
+  Future<void> _pullCompany(String companyId) async {
+    if (await _hasPendingOutboxFor(companyId)) return;
+
+    final remote = await _api.showCompany();
+    if (remote == null) return;
+
+    final local = await (_db.select(
+      _db.companies,
+    )..where((c) => c.id.equals(companyId))).getSingleOrNull();
+
+    await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
+        .write(
+          CompaniesCompanion(
+            name: Value(remote['name'] as String? ?? local?.name ?? ''),
+            businessTypes: Value(
+              remote['business_types'] as String? ?? local?.businessTypes ?? '',
+            ),
+            iban: Value(remote['iban'] as String?),
+            address: Value(remote['address'] as String?),
+            phone: Value(remote['phone'] as String?),
+            email: Value(remote['email'] as String?),
+            taxInfo: Value(remote['tax_info'] as String?),
+            introText: Value(remote['intro_text'] as String?),
+            paymentTerms: Value(remote['payment_terms'] as String?),
+            deliveryTime: Value(remote['delivery_time'] as String?),
+            warrantyTerms: Value(remote['warranty_terms'] as String?),
+            hasLogo: Value(remote['has_logo'] as bool? ?? false),
+          ),
+        );
+
+    await _syncCompanyLogoFile(
+      companyId: companyId,
+      hasRemoteLogo: remote['has_logo'] as bool? ?? false,
+      localPath: local?.logoPath,
+    );
+  }
+
+  /// Logonun ikili içeriğini yerelde tutar. PDF üretimi çevrimdışı da
+  /// çalışmak zorunda olduğu için logo her cihazda dosya olarak bulunmalı.
+  Future<void> _syncCompanyLogoFile({
+    required String companyId,
+    required bool hasRemoteLogo,
+    required String? localPath,
+  }) async {
+    if (!hasRemoteLogo) {
+      if (localPath != null) {
+        await MediaStorage.deleteIfExists(localPath);
+        await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
+            .write(const CompaniesCompanion(logoPath: Value(null)));
+      }
+      return;
+    }
+
+    if (localPath != null && File(localPath).existsSync()) return;
+
+    final bytes = await _api.downloadCompanyLogo();
+    if (bytes == null || bytes.isEmpty) return;
+
+    final path = await MediaStorage.writeLogo(
+      bucket: 'company_logos',
+      ownerId: companyId,
+      bytes: Uint8List.fromList(bytes),
+      stamp: DateTime.now().millisecondsSinceEpoch,
+    );
+    await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
+        .write(CompaniesCompanion(logoPath: Value(path)));
+  }
+
   Future<void> _pullCustomers(String companyId) async {
     final remoteRecords = await _api.listCustomers();
     for (final remote in remoteRecords) {
@@ -331,6 +433,7 @@ class SyncService {
         notes: Value(r['notes'] as String?),
         tags: Value(r['tags'] as String?),
         hasTaxCertificate: Value(r['has_tax_certificate'] as bool? ?? false),
+        hasLogo: Value(r['has_logo'] as bool? ?? false),
         version: Value(remote.version),
         syncStatus: const Value('SYNCED'),
       );
@@ -458,6 +561,18 @@ class SyncService {
             status: Value(r['status'] as String),
             notes: Value(r['notes'] as String?),
             totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
+            introText: Value(r['intro_text'] as String?),
+            paymentTerms: Value(r['payment_terms'] as String?),
+            deliveryTime: Value(r['delivery_time'] as String?),
+            warrantyTerms: Value(r['warranty_terms'] as String?),
+            currency: Value(r['currency'] as String? ?? 'TRY'),
+            vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
+            vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
+            validUntil: Value(
+              r['valid_until'] == null
+                  ? null
+                  : DateTime.parse(r['valid_until'] as String),
+            ),
             version: Value(remote.version),
             syncStatus: const Value('SYNCED'),
           ),
@@ -495,6 +610,13 @@ class SyncService {
             ),
             notes: Value(r['notes'] as String?),
             totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
+            introText: Value(r['intro_text'] as String?),
+            paymentTerms: Value(r['payment_terms'] as String?),
+            deliveryTime: Value(r['delivery_time'] as String?),
+            warrantyTerms: Value(r['warranty_terms'] as String?),
+            currency: Value(r['currency'] as String? ?? 'TRY'),
+            vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
+            vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
             version: Value(remote.version),
             syncStatus: const Value('SYNCED'),
           ),

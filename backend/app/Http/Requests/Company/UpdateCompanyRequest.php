@@ -14,6 +14,10 @@ class UpdateCompanyRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'intro_text' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'payment_terms' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'delivery_time' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'warranty_terms' => ['sometimes', 'nullable', 'string', 'max:255'],
             'name' => ['sometimes', 'string', 'max:255'],
             // Virgülle ayrılmış işletme türleri (Elektrik, Kamera, ...) —
             // mobil ve web aynı biçimi kullanır.

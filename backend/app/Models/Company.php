@@ -18,6 +18,7 @@ class Company extends Model
         'name', 'business_types', 'iban', 'logo_path',
         'address', 'phone', 'email', 'tax_info',
         'plan_id', 'subscription_expires_at', 'is_active', 'admin_note',
+        'intro_text', 'payment_terms', 'delivery_time', 'warranty_terms',
     ];
 
     protected function casts(): array

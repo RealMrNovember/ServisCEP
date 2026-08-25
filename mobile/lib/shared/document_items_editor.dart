@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
 
+import '../app/theme.dart';
 import '../core/database/app_database.dart';
 import '../core/models/doc_item_draft.dart';
 import '../core/utils/money.dart';
 import '../features/stock/products_list_screen.dart';
+import 'ui.dart';
 
 /// Teklif/Proforma kalemlerini düzenleme — hem Quote hem Proforma
 /// formlarında ortak kullanılır. Bkz. docs/16 § Teklif / Proforma Kalem
 /// Seçimi: kullanıcı stoktan seçebilir veya serbest metin girebilir.
+///
+/// Para birimi ve KDV kipi belgeye aittir, kaleme değil; editör bunları
+/// yalnızca doğru göstermek için alır — kullanıcı yalnızca birim fiyat
+/// girer, çarpımı ve KDV'yi sistem yapar.
 class DocumentItemsEditor extends StatefulWidget {
-  const DocumentItemsEditor({super.key, required this.items, required this.onChanged});
+  const DocumentItemsEditor({
+    super.key,
+    required this.items,
+    required this.onChanged,
+    this.currency = Currency.try_,
+    this.vatMode = VatMode.excluded,
+    this.defaultVatRate = 20,
+  });
 
   final List<DocItemDraft> items;
   final ValueChanged<List<DocItemDraft>> onChanged;
+  final Currency currency;
+  final VatMode vatMode;
+  final int defaultVatRate;
 
   @override
   State<DocumentItemsEditor> createState() => _DocumentItemsEditorState();
@@ -21,7 +37,9 @@ class DocumentItemsEditor extends StatefulWidget {
 class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
   Future<void> _addFromStock() async {
     final product = await Navigator.of(context).push<Product>(
-      MaterialPageRoute(builder: (_) => const ProductsListScreen(selectionMode: true)),
+      MaterialPageRoute(
+        builder: (_) => const ProductsListScreen(selectionMode: true),
+      ),
     );
     if (product == null) return;
     _addItem(
@@ -30,12 +48,13 @@ class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
         productId: product.id,
         unit: product.unit,
         unitPriceMinor: product.salePriceMinor,
+        taxRate: widget.defaultVatRate,
       ),
     );
   }
 
   Future<void> _addManual() async {
-    final draft = await _showItemDialog();
+    final draft = await _showItemSheet();
     if (draft != null) _addItem(draft);
   }
 
@@ -44,7 +63,7 @@ class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
   }
 
   Future<void> _editItem(int index) async {
-    final updated = await _showItemDialog(existing: widget.items[index]);
+    final updated = await _showItemSheet(existing: widget.items[index]);
     if (updated == null) return;
     final list = [...widget.items];
     list[index] = updated;
@@ -56,172 +75,523 @@ class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
     widget.onChanged(list);
   }
 
-  Future<DocItemDraft?> _showItemDialog({DocItemDraft? existing}) async {
-    final descController = TextEditingController(text: existing?.description ?? '');
-    final qtyController = TextEditingController(text: (existing?.quantity ?? 1).toString());
-    final unitController = TextEditingController(text: existing?.unit ?? 'adet');
-    final priceController = TextEditingController(
-      text: existing != null ? (existing.unitPriceMinor / 100).toString() : '',
-    );
-    final taxController = TextEditingController(text: (existing?.taxRate ?? 20).toString());
-
-    return showDialog<DocItemDraft>(
+  Future<DocItemDraft?> _showItemSheet({DocItemDraft? existing}) {
+    return showModalBottomSheet<DocItemDraft>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(existing == null ? 'Kalem Ekle' : 'Kalemi Düzenle'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(labelText: 'Açıklama'),
-                autofocus: true,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: qtyController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Miktar'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: unitController,
-                      decoration: const InputDecoration(labelText: 'Birim'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: priceController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Birim fiyat (₺)'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: taxController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'KDV %'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
-          FilledButton(
-            onPressed: () {
-              if (descController.text.trim().isEmpty) return;
-              Navigator.pop(
-                context,
-                DocItemDraft(
-                  description: descController.text.trim(),
-                  productId: existing?.productId,
-                  quantity: int.tryParse(qtyController.text) ?? 1,
-                  unit: unitController.text.trim().isEmpty ? 'adet' : unitController.text.trim(),
-                  unitPriceMinor: Money.parseToMinor(priceController.text),
-                  taxRate: int.tryParse(taxController.text) ?? 20,
-                  discountMinor: existing?.discountMinor ?? 0,
-                ),
-              );
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
+      isScrollControlled: true,
+      builder: (context) => _ItemSheet(
+        existing: existing,
+        currency: widget.currency,
+        vatMode: widget.vatMode,
+        defaultVatRate: widget.defaultVatRate,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final total = widget.items.fold<int>(0, (sum, item) => sum + item.lineTotalMinor);
+    final totals = DocumentTotals.from(
+      widget.items.map((item) => item.amounts(widget.vatMode)),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SectionHeader(
+          'Kalemler',
+          subtitle: widget.items.isEmpty
+              ? 'Stoktan seç ya da serbest satır ekle.'
+              : '${widget.items.length} kalem',
+        ),
         Row(
           children: [
-            Text(
-              'Kalemler',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _addFromStock,
+                icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                label: const Text('Stoktan'),
+              ),
             ),
-            const Spacer(),
-            OutlinedButton.icon(
-              onPressed: _addFromStock,
-              icon: const Icon(Icons.inventory_2_outlined, size: 16),
-              label: const Text('Stoktan'),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
-              onPressed: _addManual,
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Serbest'),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _addManual,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Serbest satır'),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.lg),
+
         if (widget.items.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text('Henüz kalem eklenmedi', style: TextStyle(color: scheme.onSurfaceVariant)),
+          AppCard(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.playlist_add_outlined,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    'Henüz kalem yok. Eklediğin her satırın toplamı ve KDV\'si '
+                    'otomatik hesaplanır.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           )
         else
           for (var i = 0; i < widget.items.length; i++)
-            Card(
-              child: ListTile(
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _ItemTile(
+                index: i + 1,
+                item: widget.items[i],
+                currency: widget.currency,
+                vatMode: widget.vatMode,
                 onTap: () => _editItem(i),
-                title: Text(widget.items[i].description),
-                subtitle: Text(
-                  '${widget.items[i].quantity} ${widget.items[i].unit} × '
-                  '${Money.formatMinor(widget.items[i].unitPriceMinor)} '
-                  '(KDV %${widget.items[i].taxRate})',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      Money.formatMinor(widget.items[i].lineTotalMinor),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => _removeItem(i),
-                    ),
-                  ],
-                ),
+                onRemove: () => _removeItem(i),
               ),
             ),
-        const Divider(height: 24),
-        Row(
+
+        if (widget.items.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          DocumentTotalsCard(
+            totals: totals,
+            currency: widget.currency,
+            vatMode: widget.vatMode,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ItemTile extends StatelessWidget {
+  const _ItemTile({
+    required this.index,
+    required this.item,
+    required this.currency,
+    required this.vatMode,
+    required this.onTap,
+    required this.onRemove,
+  });
+
+  final int index;
+  final DocItemDraft item;
+  final Currency currency;
+  final VatMode vatMode;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final amounts = item.amounts(vatMode);
+
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+      ),
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Text(
+              '$index',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: scheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.description,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${item.quantity} ${item.unit} × '
+                  '${Money.formatMinor(item.unitPriceMinor, currency: currency)}'
+                  '  ·  KDV %${item.taxRate}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                Money.formatMinor(amounts.grossMinor, currency: currency),
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(
+                height: 28,
+                width: 28,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  iconSize: 18,
+                  tooltip: 'Kalemi sil',
+                  icon: const Icon(Icons.close),
+                  onPressed: onRemove,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Belge toplamları — form önizlemesinde ve detay ekranında aynı kutu.
+class DocumentTotalsCard extends StatelessWidget {
+  const DocumentTotalsCard({
+    super.key,
+    required this.totals,
+    required this.currency,
+    required this.vatMode,
+  });
+
+  final DocumentTotals totals;
+  final Currency currency;
+  final VatMode vatMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget row(String label, int amount, {bool strong = false}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Genel Toplam',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              label,
+              style: TextStyle(
+                fontSize: strong ? 15 : 13,
+                fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
+                color: strong ? scheme.onSurface : scheme.onSurfaceVariant,
+              ),
             ),
-            const Spacer(),
             Text(
-              Money.formatMinor(total),
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
+              Money.formatMinor(amount, currency: currency),
+              style: TextStyle(
+                fontSize: strong ? 19 : 13.5,
+                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+                color: strong ? scheme.primary : scheme.onSurface,
+                letterSpacing: strong ? -0.4 : 0,
+              ),
             ),
           ],
         ),
-      ],
+      );
+    }
+
+    return AppCard(
+      accent: true,
+      child: Column(
+        children: [
+          row('Ara toplam', totals.netMinor),
+          row('KDV', totals.vatMinor),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Divider(
+              height: 1,
+              color: scheme.primary.withValues(alpha: 0.25),
+            ),
+          ),
+          row('Genel toplam', totals.grossMinor, strong: true),
+          const SizedBox(height: 2),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${vatMode.label}  ·  ${currency.label}',
+              style: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kalem ekleme/düzenleme sayfası. Diyalog yerine alt sayfa: klavye
+/// açıldığında diyalog içerikleri kırpılıyordu ve saha kullanımında
+/// alt sayfa tek elle daha rahat.
+class _ItemSheet extends StatefulWidget {
+  const _ItemSheet({
+    required this.existing,
+    required this.currency,
+    required this.vatMode,
+    required this.defaultVatRate,
+  });
+
+  final DocItemDraft? existing;
+  final Currency currency;
+  final VatMode vatMode;
+  final int defaultVatRate;
+
+  @override
+  State<_ItemSheet> createState() => _ItemSheetState();
+}
+
+class _ItemSheetState extends State<_ItemSheet> {
+  late final _descController = TextEditingController(
+    text: widget.existing?.description ?? '',
+  );
+  late final _qtyController = TextEditingController(
+    text: (widget.existing?.quantity ?? 1).toString(),
+  );
+  late final _unitController = TextEditingController(
+    text: widget.existing?.unit ?? 'adet',
+  );
+  late final _priceController = TextEditingController(
+    text: widget.existing == null
+        ? ''
+        : (widget.existing!.unitPriceMinor / 100).toStringAsFixed(2),
+  );
+  late final _discountController = TextEditingController(
+    text: (widget.existing?.discountMinor ?? 0) == 0
+        ? ''
+        : (widget.existing!.discountMinor / 100).toStringAsFixed(2),
+  );
+  late int _vatRate = widget.existing?.taxRate ?? widget.defaultVatRate;
+
+  @override
+  void initState() {
+    super.initState();
+    // Canlı önizleme: kullanıcı fiyatı yazarken satır toplamını görsün.
+    for (final controller in [
+      _qtyController,
+      _priceController,
+      _discountController,
+    ]) {
+      controller.addListener(_refresh);
+    }
+  }
+
+  void _refresh() => setState(() {});
+
+  @override
+  void dispose() {
+    for (final controller in [
+      _descController,
+      _qtyController,
+      _unitController,
+      _priceController,
+      _discountController,
+    ]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  DocItemDraft _draft() => DocItemDraft(
+    description: _descController.text.trim(),
+    productId: widget.existing?.productId,
+    quantity: int.tryParse(_qtyController.text.trim()) ?? 1,
+    unit: _unitController.text.trim().isEmpty
+        ? 'adet'
+        : _unitController.text.trim(),
+    unitPriceMinor: Money.parseToMinor(_priceController.text),
+    taxRate: _vatRate,
+    discountMinor: Money.parseToMinor(_discountController.text),
+  );
+
+  void _save() {
+    if (_descController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Açıklama boş olamaz.')),
+      );
+      return;
+    }
+    Navigator.pop(context, _draft());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = _draft().amounts(widget.vatMode);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.xl,
+        right: AppSpacing.xl,
+        top: AppSpacing.sm,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.existing == null ? 'Kalem ekle' : 'Kalemi düzenle',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            TextField(
+              controller: _descController,
+              autofocus: widget.existing == null,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Açıklama',
+                hintText: 'Ürün veya hizmet adı',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _qtyController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Miktar'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    controller: _unitController,
+                    decoration: const InputDecoration(labelText: 'Birim'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _priceController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Birim fiyat',
+                      prefixText: '${widget.currency.symbol} ',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    controller: _discountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'İskonto',
+                      prefixText: '${widget.currency.symbol} ',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'KDV oranı',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              children: [
+                for (final rate in const [0, 1, 10, 20])
+                  ChoiceChip(
+                    label: Text('%$rate'),
+                    selected: _vatRate == rate,
+                    onSelected: (_) => setState(() => _vatRate = rate),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppCard(
+              accent: true,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Satır toplamı (${widget.vatMode.label})',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  Text(
+                    Money.formatMinor(
+                      preview.grossMinor,
+                      currency: widget.currency,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Vazgeç'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    onPressed: _save,
+                    child: const Text('Kaydet'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

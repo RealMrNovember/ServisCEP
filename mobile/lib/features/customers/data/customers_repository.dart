@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../../core/services/media_storage.dart';
 import '../../../core/utils/code_generator.dart';
 import '../../auth/data/session_controller.dart';
 
@@ -169,6 +170,60 @@ class CustomersRepository {
     });
   }
 
+  /// Müşteri logosu — belgede karşı tarafın markası.
+  ///
+  /// Kırpılmış PNG doğrudan bayt olarak gelir (bkz. LogoCropperScreen);
+  /// vergi levhasından farklı olarak burada kaynak dosya kopyalanmaz,
+  /// çünkü kırpma zaten yeni bir görsel üretmiştir.
+  Future<void> setLogo({
+    required String customerId,
+    required Uint8List bytes,
+  }) async {
+    final path = await MediaStorage.writeLogo(
+      bucket: 'customer_logos',
+      ownerId: customerId,
+      bytes: bytes,
+      stamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await _db.transaction(() async {
+      await (_db.update(_db.customers)..where((c) => c.id.equals(customerId)))
+          .write(
+            CustomersCompanion(
+              logoPath: Value(path),
+              hasLogo: const Value(true),
+            ),
+          );
+      await _enqueue(
+        entityId: customerId,
+        operation: 'LOGO',
+        payload: {'file_path': path},
+      );
+    });
+  }
+
+  Future<void> removeLogo(String customerId) async {
+    final customer = await byId(customerId);
+
+    await _db.transaction(() async {
+      await (_db.update(_db.customers)..where((c) => c.id.equals(customerId)))
+          .write(
+            const CustomersCompanion(
+              logoPath: Value(null),
+              hasLogo: Value(false),
+            ),
+          );
+      // `file_path: null` senkron motoruna "sunucudaki logoyu sil" der.
+      await _enqueue(
+        entityId: customerId,
+        operation: 'LOGO',
+        payload: const {'file_path': null},
+      );
+    });
+
+    await MediaStorage.deleteIfExists(customer?.logoPath);
+  }
+
   Future<void> _enqueue({
     required String entityId,
     required String operation,
@@ -198,4 +253,15 @@ final customersListProvider = StreamProvider<List<Customer>>((ref) {
   final session = ref.watch(sessionControllerProvider).valueOrNull;
   if (session == null) return const Stream.empty();
   return ref.watch(customersRepositoryProvider).watchAll(session.companyId);
+});
+
+/// Tek müşteri — belge formlarında seçilen müşterinin bilgileri canlı
+/// izlenir ki müşteri düzenlendiğinde form da tazelensin.
+final customerByIdProvider = StreamProvider.family<Customer?, String>((
+  ref,
+  id,
+) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.customers)
+        ..where((c) => c.id.equals(id))).watchSingleOrNull();
 });

@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -94,6 +94,49 @@ class AppDatabase extends _$AppDatabase {
           customerLedgerEntries,
           customerLedgerEntries.syncStatus,
         );
+      }
+      if (from < 8) {
+        // Kurumsal belge alanları: antet bilgileri, logolar, para birimi
+        // ve KDV kipi (bkz. docs/03 § PDF Motoru).
+        await m.addColumn(companies, companies.address);
+        await m.addColumn(companies, companies.phone);
+        await m.addColumn(companies, companies.email);
+        await m.addColumn(companies, companies.taxInfo);
+        await m.addColumn(companies, companies.hasLogo);
+        await m.addColumn(customers, customers.logoPath);
+        await m.addColumn(customers, customers.hasLogo);
+        for (final column in [
+          quotes.currency, quotes.vatMode, quotes.vatRate, quotes.validUntil,
+        ]) {
+          await m.addColumn(quotes, column);
+        }
+        for (final column in [
+          proformas.currency, proformas.vatMode, proformas.vatRate,
+        ]) {
+          await m.addColumn(proformas, column);
+        }
+      }
+      if (from < 9) {
+        // Belge metinleri: giris yazisi ve sartlar. Hem sirket
+        // varsayilani hem belge kopyasi olarak tutulur.
+        for (final column in [
+          companies.introText, companies.paymentTerms,
+          companies.deliveryTime, companies.warrantyTerms,
+        ]) {
+          await m.addColumn(companies, column);
+        }
+        for (final column in [
+          quotes.introText, quotes.paymentTerms,
+          quotes.deliveryTime, quotes.warrantyTerms,
+        ]) {
+          await m.addColumn(quotes, column);
+        }
+        for (final column in [
+          proformas.introText, proformas.paymentTerms,
+          proformas.deliveryTime, proformas.warrantyTerms,
+        ]) {
+          await m.addColumn(proformas, column);
+        }
       }
     },
   );

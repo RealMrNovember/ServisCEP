@@ -16,6 +16,7 @@ import '../../core/utils/money.dart';
 import '../auth/data/session_controller.dart';
 import '../finance/data/finance_repository.dart';
 import '../jobs/data/jobs_repository.dart';
+import '../../shared/logo_picker.dart';
 import 'data/customer_ledger_repository.dart';
 import 'data/customers_repository.dart';
 
@@ -426,6 +427,23 @@ class _DocumentsTabState extends ConsumerState<_DocumentsTab> {
           'Belge cihazında güvenli şekilde saklanır ve yalnızca senin '
           'işletmene ait alana yüklenir.',
           style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+        ),
+
+        const SizedBox(height: 32),
+        const Divider(),
+        const SizedBox(height: 20),
+        LogoPickerField(
+          currentPath: widget.customer.logoPath,
+          label: 'Müşteri logosu',
+          helper:
+              'Bu müşteriye düzenlediğin teklif ve proformaların sağ üst '
+              'köşesinde görünür. Zorunlu değil.',
+          onPicked: (bytes) => ref
+              .read(customersRepositoryProvider)
+              .setLogo(customerId: widget.customer.id, bytes: bytes),
+          onRemoved: () => ref
+              .read(customersRepositoryProvider)
+              .removeLogo(widget.customer.id),
         ),
       ],
     );

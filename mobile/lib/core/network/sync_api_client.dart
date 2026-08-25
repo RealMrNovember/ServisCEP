@@ -167,6 +167,20 @@ abstract interface class SyncApiClient {
   /// Şirket ayarları güncellemesi (bkz. CompanyController).
   Future<void> updateCompany(Map<String, dynamic> payload);
 
+  /// Şirket kaydını sunucudan okur — yeni bir cihaza giriş yapıldığında
+  /// antet bilgileri (adres, telefon, vergi dairesi) yalnızca burada.
+  Future<Map<String, dynamic>?> showCompany();
+
+  /// Logonun ikili içeriği; sunucuda logo yoksa null.
+  Future<List<int>?> downloadCompanyLogo();
+  Future<List<int>?> downloadCustomerLogo(String customerId);
+
+  /// Belge antedinde kullanılan logolar (bkz. LogoController).
+  Future<void> uploadCompanyLogo(String filePath);
+  Future<void> deleteCompanyLogo();
+  Future<void> uploadCustomerLogo(String customerId, String filePath);
+  Future<void> deleteCustomerLogo(String customerId);
+
   /// Kendi profili — ad/telefon.
   Future<void> updateProfile(Map<String, dynamic> payload);
 
@@ -425,6 +439,76 @@ class DioSyncApiClient implements SyncApiClient {
     try {
       await _dio.put('/company', data: payload);
     } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> showCompany() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>('/company');
+      final body = response.data;
+      if (body == null) return null;
+      final data = body['data'];
+      return data is Map<String, dynamic> ? data : body;
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<List<int>?> downloadCompanyLogo() => _downloadLogo('/company/logo');
+
+  @override
+  Future<List<int>?> downloadCustomerLogo(String customerId) =>
+      _downloadLogo('/customers/$customerId/logo');
+
+  Future<List<int>?> _downloadLogo(String path) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      // Sunucuda logo yok — hata değil, yalnızca "logo yok" bilgisi.
+      if (e.response?.statusCode == 404) return null;
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> uploadCompanyLogo(String filePath) =>
+      _uploadLogo('/company/logo', filePath);
+
+  @override
+  Future<void> deleteCompanyLogo() => _deleteLogo('/company/logo');
+
+  @override
+  Future<void> uploadCustomerLogo(String customerId, String filePath) =>
+      _uploadLogo('/customers/$customerId/logo', filePath);
+
+  @override
+  Future<void> deleteCustomerLogo(String customerId) =>
+      _deleteLogo('/customers/$customerId/logo');
+
+  Future<void> _uploadLogo(String path, String filePath) async {
+    try {
+      final form = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
+      await _dio.post(path, data: form);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  Future<void> _deleteLogo(String path) async {
+    try {
+      await _dio.delete(path);
+    } on DioException catch (e) {
+      // Sunucuda zaten logo yoksa silme isteği amacına ulaşmış sayılır.
+      if (e.response?.statusCode == 404) return;
       _client.throwApiException(e);
     }
   }

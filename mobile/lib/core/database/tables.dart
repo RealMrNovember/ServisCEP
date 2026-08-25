@@ -22,7 +22,23 @@ class Companies extends Table {
   /// Virgülle ayrılmış işletme türleri (Elektrik, Kamera, Bilgisayar, ...)
   TextColumn get businessTypes => text().withDefault(const Constant(''))();
   TextColumn get iban => text().nullable()();
+
+  /// Belge antedinde görünen bilgiler (bkz. PdfService).
+  TextColumn get address => text().nullable()();
+  TextColumn get phone => text().nullable()();
+  TextColumn get email => text().nullable()();
+  TextColumn get taxInfo => text().nullable()();
+
+  /// Belge metinleri için şirket varsayılanları — her teklifte yeniden
+  /// yazılmasın diye. Belge oluşturulurken kopyalanır.
+  TextColumn get introText => text().nullable()();
+  TextColumn get paymentTerms => text().nullable()();
+  TextColumn get deliveryTime => text().nullable()();
+  TextColumn get warrantyTerms => text().nullable()();
+
+  /// Logonun YEREL kopyasının yolu (kırpılmış hâli).
   TextColumn get logoPath => text().nullable()();
+  BoolColumn get hasLogo => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -73,6 +89,10 @@ class Customers extends Table {
   /// (web panelden yüklenen belgeler de böyle görünür).
   BoolColumn get hasTaxCertificate =>
       boolean().withDefault(const Constant(false))();
+
+  /// Müşteri logosu — belgede karşı tarafın markası (opsiyonel).
+  TextColumn get logoPath => text().nullable()();
+  BoolColumn get hasLogo => boolean().withDefault(const Constant(false))();
   TextColumn get notes => text().nullable()();
   TextColumn get tags => text().nullable()();
 
@@ -205,6 +225,27 @@ class Quotes extends Table {
   TextColumn get notes => text().nullable()();
   IntColumn get totalMinor => integer().withDefault(const Constant(0))();
 
+
+  /// Belgenin giriş yazısı ve şartları.
+  ///
+  /// Şirket ayarlarındaki varsayılanlar belge OLUŞTURULURKEN kopyalanır;
+  /// sonradan ayar değişse bile gönderilmiş bir teklifin şartları
+  /// kendiliğinden değişmez.
+  TextColumn get introText => text().nullable()();
+  TextColumn get paymentTerms => text().nullable()();
+  TextColumn get deliveryTime => text().nullable()();
+  TextColumn get warrantyTerms => text().nullable()();
+
+  /// TRY / USD / EUR — kur DÖNÜŞÜMÜ yapılmaz, bkz. core/utils/money.dart.
+  TextColumn get currency => text().withDefault(const Constant('TRY'))();
+
+  /// EXCLUDED ("+ KDV") / INCLUDED ("KDV dahil").
+  TextColumn get vatMode => text().withDefault(const Constant('EXCLUDED'))();
+
+  /// Belge geneli varsayılan KDV oranı; kalemler kendi oranını taşır.
+  IntColumn get vatRate => integer().withDefault(const Constant(20))();
+  DateTimeColumn get validUntil => dateTime().nullable()();
+
   /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
   TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
 
@@ -238,6 +279,22 @@ class Proformas extends Table {
   DateTimeColumn get validUntil => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   IntColumn get totalMinor => integer().withDefault(const Constant(0))();
+
+
+  /// Belgenin giriş yazısı ve şartları.
+  ///
+  /// Şirket ayarlarındaki varsayılanlar belge OLUŞTURULURKEN kopyalanır;
+  /// sonradan ayar değişse bile gönderilmiş bir teklifin şartları
+  /// kendiliğinden değişmez.
+  TextColumn get introText => text().nullable()();
+  TextColumn get paymentTerms => text().nullable()();
+  TextColumn get deliveryTime => text().nullable()();
+  TextColumn get warrantyTerms => text().nullable()();
+
+  /// TRY / USD / EUR — bkz. core/utils/money.dart.
+  TextColumn get currency => text().withDefault(const Constant('TRY'))();
+  TextColumn get vatMode => text().withDefault(const Constant('EXCLUDED'))();
+  IntColumn get vatRate => integer().withDefault(const Constant(20))();
 
   /// PENDING / SYNCED / CONFLICT / FAILED — bkz. `core/sync/sync_service.dart`.
   TextColumn get syncStatus => text().withDefault(const Constant('PENDING'))();
