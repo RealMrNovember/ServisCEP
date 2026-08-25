@@ -57,8 +57,31 @@ final failedSyncCountProvider = StreamProvider<int>((ref) {
 });
 
 /// Cihazın şu anki bağlantı durumu.
-final isOnlineProvider = StreamProvider<bool>((ref) {
-  return Connectivity().onConnectivityChanged.map(
-    (results) => !results.contains(ConnectivityResult.none),
-  );
+///
+/// `onConnectivityChanged` yalnızca DEĞİŞİM anında yayın yapar. Tek başına
+/// dinlemek, bağlantı durumu hiç değişmediğinde akışın hiç veri
+/// üretmemesi demekti; ekranda "Kontrol ediliyor…" sonsuza kadar asılı
+/// kalıyordu. Bu yüzden önce mevcut durum okunup yayınlanır.
+final isOnlineProvider = StreamProvider<bool>((ref) async* {
+  final connectivity = Connectivity();
+
+  bool cevrimici(List<ConnectivityResult> results) =>
+      !results.contains(ConnectivityResult.none);
+
+  try {
+    yield cevrimici(await connectivity.checkConnectivity());
+  } on Object {
+    // Platform kanalı cevap vermezse akış yine de dinlemeye devam eder.
+  }
+
+  yield* connectivity.onConnectivityChanged.map(cevrimici);
 });
+
+/// Son senkronun "taze" sayıldığı süre.
+///
+/// Bu eşiğin üstündeyse ekranda "eşitlendi" DENMEZ. Sebebi somut: cihazın
+/// internetinin olması sunucuya ulaşabildiği anlamına gelmiyor — bir
+/// sürümde uygulama saatlerce sunucuya hiç bağlanamadı ama ekran "her şey
+/// eşitlendi" yazmaya devam etti. Kuyruğun boş olması eşitlenmiş olmak
+/// değildir; yalnızca gönderilecek bir şey olmadığını gösterir.
+const syncFreshnessWindow = Duration(minutes: 30);

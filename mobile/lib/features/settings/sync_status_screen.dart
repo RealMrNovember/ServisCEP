@@ -33,7 +33,28 @@ class SyncStatusScreen extends ConsumerWidget {
     final conflicts = ref.watch(localConflictCountProvider).valueOrNull ?? 0;
     final online = ref.watch(isOnlineProvider).valueOrNull;
 
-    final allClear = pending == 0 && failed == 0 && conflicts == 0;
+    // "Eşitlendi" demek için kuyruğun boş olması YETMEZ.
+    //
+    // Kuyruk boş olması yalnızca gönderilecek bir şey olmadığını gösterir;
+    // sunucuya ulaşılıp ulaşılmadığını değil. Bir sürümde uygulama
+    // saatlerce sunucuya hiç bağlanamadı ve bu ekran boyunca "her şey
+    // eşitlendi" yazdı. Tek dürüst kanıt, son BAŞARILI senkronun ne kadar
+    // yakın olduğu.
+    final kuyrukTemiz = pending == 0 && failed == 0 && conflicts == 0;
+    final taze =
+        lastSync != null &&
+        DateTime.now().difference(lastSync).abs() < syncFreshnessWindow;
+    final allClear = kuyrukTemiz && taze;
+
+    final (String baslik, IconData ikon) = switch ((kuyrukTemiz, taze)) {
+      (true, true) => ('Her şey eşitlendi', Icons.cloud_done_rounded),
+      (true, false) when lastSync == null => (
+        'Henüz eşitlenmedi',
+        Icons.cloud_off_rounded,
+      ),
+      (true, false) => ('Bir süredir eşitlenemedi', Icons.cloud_off_rounded),
+      _ => ('Bekleyen değişiklikler var', Icons.cloud_sync_rounded),
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Senkron durumu')),
@@ -51,9 +72,7 @@ class SyncStatusScreen extends ConsumerWidget {
             child: Column(
               children: [
                 Icon(
-                  allClear
-                      ? Icons.cloud_done_rounded
-                      : Icons.cloud_sync_rounded,
+                  ikon,
                   size: 44,
                   color: allClear
                       ? scheme.onPrimaryContainer
@@ -61,9 +80,7 @@ class SyncStatusScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  allClear
-                      ? 'Her şey eşitlendi'
-                      : 'Bekleyen değişiklikler var',
+                  baslik,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -126,28 +143,25 @@ class SyncStatusScreen extends ConsumerWidget {
             ),
 
           const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: online == false
-                ? null
-                : () {
-                    ref.read(syncTriggerProvider).syncNow();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Senkron başlatıldı.')),
-                    );
-                  },
-            icon: const Icon(Icons.sync_rounded),
-            label: const Text('Şimdi senkronla'),
-          ),
+          const _SyncNowButton(),
 
           const SizedBox(height: 16),
           Text(
-            pending > 0
-                ? 'Bekleyen kayıtlar cihazında güvenle duruyor. Bağlantı '
-                      'kurulduğunda otomatik olarak gönderilecek — uygulamayı '
-                      'açık tutmana gerek yok.'
-                : 'Verilerin sunucuyla eşitlenmiş durumda. Uygulama '
-                      'bağlantı geldiğinde, öne alındığında ve birkaç '
-                      'dakikada bir otomatik senkronlanır.',
+            switch ((pending > 0, taze)) {
+              (true, _) =>
+                'Bekleyen kayıtlar cihazında güvenle duruyor. Bağlantı '
+                    'kurulduğunda otomatik olarak gönderilecek — uygulamayı '
+                    'açık tutmana gerek yok.',
+              (false, true) =>
+                'Verilerin sunucuyla eşitlenmiş durumda. Uygulama bağlantı '
+                    'geldiğinde, öne alındığında ve birkaç dakikada bir '
+                    'otomatik senkronlanır.',
+              (false, false) =>
+                'Gönderilmeyi bekleyen bir kayıt yok, ancak bir süredir '
+                    'sunucuya ulaşılamadı. Cihazın internete bağlı olması '
+                    'sunucuya erişebildiği anlamına gelmez; ofisteki '
+                    'değişiklikler bu telefona inmemiş olabilir.',
+            },
             style: TextStyle(
               fontSize: 12.5,
               color: scheme.onSurfaceVariant,
@@ -198,6 +212,57 @@ class _StatusRow extends StatelessWidget {
         ],
       ),
       onTap: onTap,
+    );
+  }
+}
+
+/// Elle senkron düğmesi.
+///
+/// Sonucu BEKLER ve gerçekten olanı bildirir. Önceden koşulsuz "Senkron
+/// başlatıldı" diyordu; sunucuya hiç ulaşılamadığında bile. Olmayan bir
+/// başarıyı bildirmek, ekranın tamamına olan güveni zedeliyor.
+class _SyncNowButton extends ConsumerStatefulWidget {
+  const _SyncNowButton();
+
+  @override
+  ConsumerState<_SyncNowButton> createState() => _SyncNowButtonState();
+}
+
+class _SyncNowButtonState extends ConsumerState<_SyncNowButton> {
+  bool _calisiyor = false;
+
+  Future<void> _senkronla() async {
+    setState(() => _calisiyor = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final basarili = await ref.read(syncTriggerProvider).syncNowAndWait();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            basarili
+                ? 'Senkron tamamlandı.'
+                : 'Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _calisiyor = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: _calisiyor ? null : _senkronla,
+      icon: _calisiyor
+          ? const SizedBox(
+              height: 18,
+              width: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.sync_rounded),
+      label: Text(_calisiyor ? 'Senkronlanıyor…' : 'Şimdi senkronla'),
     );
   }
 }

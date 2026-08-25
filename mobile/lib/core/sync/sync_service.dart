@@ -39,8 +39,15 @@ class SyncService {
   final SyncApiClient _api;
   final TokenStore _tokenStore;
 
-  Future<void> runOnce(String companyId) async {
-    if (await _tokenStore.read() == null) return;
+  /// Bir senkron turu çalıştırır ve BAŞARIYI döndürür.
+  ///
+  /// Dönüş değeri kritik: hatalar burada bilinçli olarak yutuluyor
+  /// (`unawaited` çağrıldığı için dışarı sızmamalı), ama yutulan hata
+  /// "başarılı" sayılınca "son senkron" zamanı sunucuya hiç ulaşılamadığı
+  /// hâlde güncelleniyordu. Ekran da bunu "az önce eşitlendi" diye
+  /// gösteriyordu — kullanıcıya söylenen düpedüz yanlış bir bilgi.
+  Future<bool> runOnce(String companyId) async {
+    if (await _tokenStore.read() == null) return false;
 
     await _drainOutbox();
     try {
@@ -59,15 +66,17 @@ class SyncService {
         () => _pullProformas(companyId),
         () => _pullLedgerEntries(companyId),
       ]) {
-        if (await _tokenStore.read() == null) return;
+        if (await _tokenStore.read() == null) return false;
         await pull();
       }
     } on ApiException {
       // Ağ hatası, süresi dolmuş abonelik (402) veya geçici sunucu hatası —
       // pull bir sonraki tetiklemede yeniden dener; `runOnce` unawaited
       // çağrıldığı için buradan exception SIZMAMALI (bkz. SyncTrigger).
-      return;
+      return false;
     }
+
+    return true;
   }
 
   Future<void> _drainOutbox() async {

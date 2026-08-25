@@ -250,11 +250,32 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
   }
 
   Future<void> _submit() async {
-    if (_customerId == null || _items.isEmpty) return;
-
     final messenger = ScaffoldMessenger.of(context);
+
+    // Eksikler tek tek ve adıyla bildirilir.
+    if (_customerId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Önce bir müşteri seç.')),
+      );
+      return;
+    }
+    if (_items.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('En az bir kalem ekle — "Serbest satır" ya da '
+              '"Stoktan" ile ekleyebilirsin.'),
+        ),
+      );
+      return;
+    }
+
     final session = ref.read(sessionControllerProvider).valueOrNull;
-    if (session == null) return;
+    if (session == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Oturum bulunamadı, yeniden giriş yap.')),
+      );
+      return;
+    }
 
     final code = _codeController.text.trim();
     final codeError = DocumentNumbering.validate(code);
@@ -593,7 +614,12 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
         currency: _currency,
         label: 'Belgeyi oluştur',
         isSubmitting: _isSubmitting,
-        enabled: _customerId != null && _items.isNotEmpty,
+        // Buton BİLİNÇLİ olarak hiç devre dışı bırakılmıyor.
+        //
+        // Sessizce sönük duran bir düğme, kullanıcıya neyin eksik
+        // olduğunu söylemiyor; ekranı baştan sona kontrol etmek zorunda
+        // kalıyor ve çoğu zaman da bulamıyor. Eksik varsa basıldığında
+        // tam olarak ne eksik olduğu yazılır (bkz. [_submit]).
         onSubmit: _submit,
       ),
     );
@@ -735,7 +761,6 @@ class _SubmitBar extends StatelessWidget {
     required this.currency,
     required this.label,
     required this.isSubmitting,
-    required this.enabled,
     required this.onSubmit,
   });
 
@@ -743,7 +768,6 @@ class _SubmitBar extends StatelessWidget {
   final Currency currency;
   final String label;
   final bool isSubmitting;
-  final bool enabled;
   final VoidCallback onSubmit;
 
   @override
@@ -786,7 +810,7 @@ class _SubmitBar extends StatelessWidget {
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: FilledButton(
-                onPressed: !enabled || isSubmitting ? null : onSubmit,
+                onPressed: isSubmitting ? null : onSubmit,
                 child: isSubmitting
                     ? const SizedBox(
                         height: 20,

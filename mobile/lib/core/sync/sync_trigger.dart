@@ -66,6 +66,31 @@ class SyncTrigger with WidgetsBindingObserver {
   /// sunucunun nihai hali hemen inmeli) — periyodik turu beklemeye gerek yok.
   void syncNow() => _trigger();
 
+  /// Elle senkron; SONUCU döner.
+  ///
+  /// Ekrandaki "Şimdi senkronla" düğmesi eskiden koşulsuz "Senkron
+  /// başlatıldı" diyordu — sunucuya hiç ulaşılamadığında bile. Kullanıcıya
+  /// olmayan bir başarıyı bildirmek, ekranın tamamına olan güveni
+  /// zedeliyor.
+  Future<bool> syncNowAndWait() async {
+    final session = _ref.read(sessionControllerProvider).valueOrNull;
+    if (session == null) return false;
+
+    final bool basarili;
+    try {
+      basarili = await _ref.read(syncServiceProvider).runOnce(session.companyId);
+    } on Object {
+      return false;
+    }
+
+    if (basarili) {
+      _lastSyncedUserId = session.userId;
+      _ref.read(lastSyncProvider.notifier).markSynced();
+      _ref.invalidate(subscriptionStatusProvider);
+    }
+    return basarili;
+  }
+
   void _trigger() {
     final session = _ref.read(sessionControllerProvider).valueOrNull;
     if (session == null) return;
@@ -75,10 +100,12 @@ class SyncTrigger with WidgetsBindingObserver {
     // yeniden başlatılmadan "sona erdi" kademesine geçebilsin.
     _ref.invalidate(subscriptionStatusProvider);
     unawaited(
-      _ref.read(syncServiceProvider).runOnce(session.companyId).then((_) {
-        // Yalnızca hatasız tamamlanan tur "son senkron" sayılır;
-        // kullanıcı ekranda gördüğü zamana güvenebilmeli.
-        _ref.read(lastSyncProvider.notifier).markSynced();
+      _ref.read(syncServiceProvider).runOnce(session.companyId).then((basarili) {
+        // Yalnızca GERÇEKTEN sunucuya ulaşan tur "son senkron" sayılır.
+        // Önceden `runOnce` hatayı yutup normal dönüyordu ve bu satır her
+        // koşulda çalışıyordu; ekran, sunucuya hiç ulaşılamamışken bile
+        // "az önce eşitlendi" yazıyordu.
+        if (basarili) _ref.read(lastSyncProvider.notifier).markSynced();
       }),
     );
   }

@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/app_config.dart';
@@ -31,6 +28,18 @@ class ApiConflictException extends ApiException {
 
 /// Paylaşılan Dio örneği — base URL, auth header'ı (TokenStore'dan) ve JSON
 /// header'ları tek yerde kurulur. `SyncApiClient` bunun üzerine yazılır.
+///
+/// TARİHÇE — burada `HttpClient.connectionFactory` ile IPv4'ü tercih eden
+/// bir katman vardı ve TÜM ağ trafiğini kırdı: Dart'ta bu geri çağrım
+/// kullanıldığında HTTPS için `SecureSocket` döndürülmesi gerekiyor, düz
+/// `Socket` döndürülünce uygulama 443 portuna şifresiz konuşmaya çalışıyor
+/// ve hiçbir istek kurulamıyor. Sunucu logları 11 saat boyunca tek bir
+/// istek görmedi.
+///
+/// Eklenme gerekçesi de zaten yanlıştı: bir cihazda giriş yapılamamasının
+/// sebebi IPv6 değil, bozulmuş güvenli depoydu (bkz. TokenStore).
+/// Kanıtlanmamış bir teori için ağ katmanına dokunulmamalı — burası birim
+/// testleriyle doğrulanamıyor.
 class ApiClient {
   ApiClient(this._tokenStore) {
     _dio = Dio(
@@ -43,9 +52,6 @@ class ApiClient {
         receiveTimeout: const Duration(seconds: 45),
         headers: {'Accept': 'application/json'},
       ),
-    );
-    _dio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: _createHttpClient,
     );
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -66,42 +72,6 @@ class ApiClient {
         },
       ),
     );
-  }
-
-  /// Bağlantıyı IPv4 üzerinden kurmayı dener.
-  ///
-  /// Sebep: sunucu Cloudflare arkasında ve hem A hem AAAA kaydı var. Bazı
-  /// mobil operatörlerde IPv6 yolu kopuk olabiliyor. Tarayıcılar bu durumu
-  /// "Happy Eyeballs" ile saniyeler içinde aşıyor; Dart'ın HttpClient'ı ise
-  /// çözümlenen ilk adrese bağlanmayı deneyip zaman aşımına kadar bekliyor.
-  /// Sonuç, kullanıcının ekranında "internet bağlantısı gerekli" olarak
-  /// görünüyordu — oysa telefonun interneti çalışıyordu.
-  ///
-  /// IPv4 çözümlemesi başarısız olursa varsayılan davranışa dönülür; bu
-  /// yüzden yalnızca IPv6 olan bir ağda da uygulama çalışmaya devam eder.
-  static HttpClient _createHttpClient() {
-    final client = HttpClient();
-
-    client.connectionFactory = (uri, proxyHost, proxyPort) async {
-      final host = proxyHost ?? uri.host;
-      final port = proxyPort ?? uri.port;
-
-      try {
-        final addresses = await InternetAddress.lookup(
-          host,
-          type: InternetAddressType.IPv4,
-        );
-        if (addresses.isNotEmpty) {
-          return Socket.startConnect(addresses.first, port);
-        }
-      } on Object {
-        // Çözümleme yapılamadı — aşağıdaki varsayılan yola düşülür.
-      }
-
-      return Socket.startConnect(host, port);
-    };
-
-    return client;
   }
 
   final TokenStore _tokenStore;

@@ -17,6 +17,13 @@ Kurallar:
 
 ---
 
+## v0.7.3
+
+Yenilikler:
+• 0.7.2'de uygulamanın sunucuya hiç bağlanamamasına yol açan hata giderildi. Abonelik, senkron ve tüm sunucu işlemleri yeniden çalışıyor.
+• Senkron durumu ekranı artık doğruyu söylüyor: sunucuya ulaşılamadığında "eşitlendi" yazmıyor.
+• Teklif oluştur düğmesi sessizce kapalı kalmıyor; eksik ne varsa adıyla söylüyor.
+
 ## v0.7.2
 
 Yenilikler:
