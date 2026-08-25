@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
@@ -84,9 +85,15 @@ class AuthService
      * Google ID token'ını doğrular — aynı OAuth client (GOOGLE_CLIENT_ID),
      * hem web'in yönlendirme akışında hem mobilin native SDK'sında
      * kullanılır (bkz. mobile/lib/features/auth/data/google_auth_service.dart
-     * serverClientId). Socialite'in `userFromToken` metodu imzayı Google'ın
-     * canlı JWKS'ine karşı doğrular, `iss`/`aud` kontrolü yapar — ek bir
-     * kütüphane (google/apiclient) gerekmez.
+     * serverClientId).
+     *
+     * Hata YUTULMAZ: asıl sebep loglanır. Kullanıcıya genel bir mesaj
+     * döner (Google yanıtındaki ayrıntılar son kullanıcıyı ilgilendirmez)
+     * ama destek tarafında "neden başarısız" sorusunun cevabı loglarda
+     * durur. Bu, bir cihazda saatlerce teşhis edilemeyen bir arızadan
+     * sonra eklendi.
+     *
+     * Token'ın KENDİSİ hiçbir zaman loglanmaz — o bir kimlik bilgisidir.
      *
      * @throws ValidationException Token geçersiz/süresi dolmuşsa.
      */
@@ -95,6 +102,21 @@ class AuthService
         try {
             return Socialite::driver('google')->userFromToken($idToken);
         } catch (\Throwable $e) {
+            $context = [
+                'exception' => $e::class,
+                'reason' => $e->getMessage(),
+                'token_length' => strlen($idToken),
+            ];
+
+            // Google HTTP ile reddettiyse durum kodu ve gövdesi asıl ipucu.
+            if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $context['google_status'] = $response->getStatusCode();
+                $context['google_body'] = substr((string) $response->getBody(), 0, 500);
+            }
+
+            Log::warning('Google id_token doğrulanamadı', $context);
+
             throw ValidationException::withMessages([
                 'id_token' => ['Google kimlik doğrulaması başarısız.'],
             ]);
