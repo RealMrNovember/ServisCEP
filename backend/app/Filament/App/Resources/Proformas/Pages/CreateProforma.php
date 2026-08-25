@@ -21,7 +21,7 @@ class CreateProforma extends CreateRecord
         unset($data['items']);
 
         $data['code'] = 'PRO-'.str_pad((string) (Proforma::count() + 1), 4, '0', STR_PAD_LEFT);
-        $data['total_minor'] = $this->calculateItemsTotal($items);
+        $data['total_minor'] = $this->calculateItemsTotal($items, $data['vat_mode'] ?? 'EXCLUDED');
 
         return DB::transaction(function () use ($data, $items) {
             $proforma = Proforma::create($data);

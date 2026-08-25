@@ -45,6 +45,7 @@ class StoreProformaRequest extends FormRequest
             'items.*.unit_price_minor' => ['required', 'integer', 'min:0'],
             'items.*.tax_rate' => ['nullable', 'integer', 'min:0', 'max:100'],
             'items.*.discount_minor' => ['nullable', 'integer', 'min:0'],
+            'items.*.discount_rate' => ['nullable', 'integer', 'min:0', 'max:100'],
         ];
     }
 }

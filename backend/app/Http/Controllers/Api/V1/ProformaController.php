@@ -58,7 +58,7 @@ class ProformaController extends Controller
         $data = $request->validated();
         $items = $data['items'];
         unset($data['items']);
-        $data['total_minor'] = $this->calculateItemsTotal($items);
+        $data['total_minor'] = $this->calculateItemsTotal($items, $data['vat_mode'] ?? 'EXCLUDED');
 
         $proforma = DB::transaction(function () use ($data, $items) {
             $proforma = Proforma::create($data);

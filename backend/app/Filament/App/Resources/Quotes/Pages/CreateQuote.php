@@ -21,7 +21,7 @@ class CreateQuote extends CreateRecord
         unset($data['items']);
 
         $data['code'] = 'TEK-'.str_pad((string) (Quote::count() + 1), 4, '0', STR_PAD_LEFT);
-        $data['total_minor'] = $this->calculateItemsTotal($items);
+        $data['total_minor'] = $this->calculateItemsTotal($items, $data['vat_mode'] ?? 'EXCLUDED');
 
         return DB::transaction(function () use ($data, $items) {
             $quote = Quote::create($data);

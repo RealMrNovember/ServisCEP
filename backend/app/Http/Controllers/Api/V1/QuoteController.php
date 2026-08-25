@@ -59,7 +59,7 @@ class QuoteController extends Controller
         $data = $request->validated();
         $items = $data['items'];
         unset($data['items']);
-        $data['total_minor'] = $this->calculateItemsTotal($items);
+        $data['total_minor'] = $this->calculateItemsTotal($items, $data['vat_mode'] ?? 'EXCLUDED');
 
         $quote = DB::transaction(function () use ($data, $items) {
             $quote = Quote::create($data);

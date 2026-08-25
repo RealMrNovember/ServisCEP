@@ -127,4 +127,75 @@ class QuoteTest extends TestCase
             ->getJson("/api/v1/quotes/{$foreignQuote->id}")
             ->assertNotFound();
     }
+
+    public function test_vat_included_document_does_not_add_vat_twice(): void
+    {
+        // "KDV dahil" belgede kalem fiyatinin ICINDE KDV zaten vardir.
+        //
+        // Bu kural sunucuda uygulanmadigi surece: mobil ₺1.200 hesapliyor,
+        // sunucu ayni belgeyi ₺1.440 yapiyor ve senkron sonrasi cihazdaki
+        // dogru tutarin uzerine yaziliyordu. Kullanici hicbir sey yapmadan
+        // belge tutari %20 sisiyordu.
+        $user = User::factory()->create();
+        $this->withToken($user->createToken('test')->plainTextToken);
+        $customer = Customer::factory()->create(['company_id' => $user->company_id]);
+
+        $response = $this->postJson('/api/v1/quotes', [
+            'code' => 'TEK-KDV-DAHIL',
+            'customer_id' => $customer->id,
+            'vat_mode' => 'INCLUDED',
+            'items' => [
+                // 1 * 120000 = 120000. KDV zaten icinde; uzerine EKLENMEZ.
+                ['description' => 'Bakim paketi', 'quantity' => 1, 'unit_price_minor' => 120000, 'tax_rate' => 20],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.total_minor', 120000);
+
+        $this->assertNotSame(144000, $response->json('data.total_minor'));
+    }
+
+    public function test_vat_excluded_document_still_adds_vat(): void
+    {
+        $user = User::factory()->create();
+        $this->withToken($user->createToken('test')->plainTextToken);
+        $customer = Customer::factory()->create(['company_id' => $user->company_id]);
+
+        $response = $this->postJson('/api/v1/quotes', [
+            'code' => 'TEK-KDV-HARIC',
+            'customer_id' => $customer->id,
+            'vat_mode' => 'EXCLUDED',
+            'items' => [
+                ['description' => 'Bakim paketi', 'quantity' => 1, 'unit_price_minor' => 120000, 'tax_rate' => 20],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.total_minor', 144000);
+    }
+
+    public function test_item_discount_rate_round_trips(): void
+    {
+        // Kullanici iskontoyu YUZDE olarak girdiginde oranin kendisi de
+        // saklanmali; yoksa belge yeniden acildiginda "%10" degil "200"
+        // gorunuyor ve miktar degisince iskonto guncellenmiyor.
+        $user = User::factory()->create();
+        $this->withToken($user->createToken('test')->plainTextToken);
+        $customer = Customer::factory()->create(['company_id' => $user->company_id]);
+
+        $response = $this->postJson('/api/v1/quotes', [
+            'code' => 'TEK-ISKONTO',
+            'customer_id' => $customer->id,
+            'items' => [
+                ['description' => 'Kurulum', 'quantity' => 1, 'unit_price_minor' => 100000, 'tax_rate' => 20, 'discount_minor' => 10000, 'discount_rate' => 10],
+                ['description' => 'Kablo', 'quantity' => 1, 'unit_price_minor' => 5000, 'tax_rate' => 20, 'discount_minor' => 500],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.items.0.discount_rate', 10)
+            // Tutar olarak girilen iskontoda oran NULL kalir.
+            ->assertJsonPath('data.items.1.discount_rate', null);
+    }
 }

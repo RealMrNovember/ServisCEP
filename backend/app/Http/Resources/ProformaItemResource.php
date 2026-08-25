@@ -25,6 +25,9 @@ class ProformaItemResource extends JsonResource
             'unit_price_minor' => $this->unit_price_minor,
             'tax_rate' => $this->tax_rate,
             'discount_minor' => $this->discount_minor,
+            // null: tutar olarak girildi. Dolu: yuzde olarak girildi
+            // ve discount_minor ondan turetildi.
+            'discount_rate' => $this->discount_rate,
         ];
     }
 }

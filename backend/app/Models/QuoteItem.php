@@ -15,7 +15,7 @@ class QuoteItem extends Model
 
     protected $fillable = [
         'id', 'quote_id', 'description', 'quantity', 'unit',
-        'unit_price_minor', 'tax_rate', 'discount_minor',
+        'unit_price_minor', 'tax_rate', 'discount_minor', 'discount_rate',
     ];
 
     protected function casts(): array
@@ -25,6 +25,7 @@ class QuoteItem extends Model
             'unit_price_minor' => 'integer',
             'tax_rate' => 'integer',
             'discount_minor' => 'integer',
+            'discount_rate' => 'integer',
         ];
     }
 

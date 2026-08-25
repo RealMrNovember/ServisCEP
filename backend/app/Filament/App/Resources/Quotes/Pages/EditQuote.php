@@ -34,7 +34,7 @@ class EditQuote extends EditRecord
         $items = $data['items'] ?? [];
         unset($data['items']);
 
-        $data['total_minor'] = $this->calculateItemsTotal($items);
+        $data['total_minor'] = $this->calculateItemsTotal($items, $data['vat_mode'] ?? 'EXCLUDED');
 
         DB::transaction(function () use ($record, $data, $items) {
             $record->update($data);
