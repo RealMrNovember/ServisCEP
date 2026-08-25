@@ -35,6 +35,18 @@ class LogApiRequests
     /** Bu sureyi asan basarili istekler de kaydedilir (ms). */
     private const SLOW_MS = 3000;
 
+    /** Istemci kunyesi basliklari - bkz. mobile/lib/core/network/client_headers.dart */
+    private const HEADER_VERSION = 'X-App-Version';
+
+    private const HEADER_BUILD = 'X-App-Build';
+
+    private const HEADER_PLATFORM = 'X-Platform';
+
+    private const HEADER_DEVICE = 'X-Device-Model';
+
+    /** Kunye bu dakikadan eskiyse tazelenir. */
+    private const SEEN_TTL_MIN = 15;
+
     private float $startedAt = 0.0;
 
     public function handle(Request $request, Closure $next): Response
@@ -51,6 +63,11 @@ class LogApiRequests
             : 0;
 
         $status = $response->getStatusCode();
+
+        // Istemci kunyesi gunluk kosullarindan BAGIMSIZ kaydedilir:
+        // basarili bir istek gunluge yazilmiyor ama kullanicinin hangi
+        // surumde oldugu tam da o istekten ogreniliyor.
+        $this->recordClientInfo($request);
 
         if ($status < 400 && $durationMs < self::SLOW_MS) {
             return;
@@ -182,5 +199,52 @@ class LogApiRequests
             $agent === '' => null,
             default => 'web',
         };
+    }
+
+    /**
+     * Kullanicinin en son hangi istemciyle baglandigini kaydeder.
+     *
+     * Destek tarafi "hangi surumu kullaniyorsunuz" sorusunu sormadan
+     * cevaplayabilsin diye. app_logs tablosuna da yaziliyor ama oraya
+     * guvenilemez: gunlukler duzenli budaniyor ve bir sure sessiz kalan
+     * kullanicinin surumu kayboluyor.
+     *
+     * Yazma KISILIR: yalnizca surum degistiyse ya da kayit bayatladiysa.
+     * Aksi halde her istek bir UPDATE uretirdi.
+     */
+    private function recordClientInfo(Request $request): void
+    {
+        try {
+            $user = $request->user('sanctum') ?? $request->user();
+            if ($user === null) {
+                return;
+            }
+
+            $surum = Str::limit((string) $request->header(self::HEADER_VERSION), 30, '') ?: null;
+            if ($surum === null) {
+                return;
+            }
+
+            $build = (int) $request->header(self::HEADER_BUILD);
+            $bayat = $user->last_seen_at === null
+                || $user->last_seen_at->lt(now()->subMinutes(self::SEEN_TTL_MIN));
+
+            if (! $bayat && $user->app_version === $surum && (int) $user->app_build === $build) {
+                return;
+            }
+
+            $user->forceFill([
+                'app_version' => $surum,
+                'app_build' => $build > 0 ? $build : null,
+                'client_platform' => Str::limit((string) $request->header(self::HEADER_PLATFORM), 20, '') ?: null,
+                'device_info' => Str::limit((string) $request->header(self::HEADER_DEVICE), 120, '') ?: null,
+                'last_seen_at' => now(),
+            ])->saveQuietly();
+        } catch (Throwable $e) {
+            // Kunye kaydedilememesi istegi bozmamali.
+            if (app()->runningUnitTests()) {
+                throw $e;
+            }
+        }
     }
 }

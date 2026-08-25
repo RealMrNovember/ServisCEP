@@ -30,6 +30,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
             'email_verified_at' => 'datetime',
             'created_at' => 'datetime',
             'password' => 'hashed',
+            // Istemci kunyesi - bkz. LogApiRequests::recordClientInfo().
+            'app_build' => 'integer',
+            'last_seen_at' => 'datetime',
         ];
     }
 

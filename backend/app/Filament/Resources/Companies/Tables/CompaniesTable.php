@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Companies\Tables;
 
+use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Models\Company;
 use App\Models\Plan;
 use App\Services\SubscriptionService;
@@ -117,6 +118,38 @@ class CompaniesTable
                 TextColumn::make('users_count')
                     ->label('Kullanıcı')
                     ->counts('users'),
+                // Şirketteki en düşük sürüm. Bir şirket sorun bildirdiğinde
+                // "hepsi güncel mi, yoksa biri geride mi kalmış" sorusunun
+                // tek bakışta cevabı. En düşüğü göstermek bilinçli: bir kişi
+                // bile eskideyse şirket için risk var demektir.
+                TextColumn::make('en_dusuk_surum')
+                    ->label('En eski sürüm')
+                    ->badge()
+                    ->placeholder('bilinmiyor')
+                    ->state(function (Company $record): ?string {
+                        $kullanicilar = $record->users()
+                            ->whereNotNull('app_build')
+                            ->orderBy('app_build')
+                            ->get(['app_version', 'app_build']);
+
+                        if ($kullanicilar->isEmpty()) {
+                            return null;
+                        }
+
+                        $enDusuk = $kullanicilar->first();
+                        $geride = $kullanicilar
+                            ->where('app_build', '<', AppVersionController::currentBuild())
+                            ->count();
+
+                        return $geride > 0
+                            ? $enDusuk->app_version.' ('.$geride.' kişi geride)'
+                            : $enDusuk->app_version;
+                    })
+                    ->color(fn (?string $state) => match (true) {
+                        $state === null => 'gray',
+                        str_contains($state, 'geride') => 'warning',
+                        default => 'success',
+                    }),
                 TextColumn::make('created_at')
                     ->label('Kayıt Tarihi')
                     ->dateTime('d.m.Y')

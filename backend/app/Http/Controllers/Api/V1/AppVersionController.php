@@ -59,4 +59,16 @@ class AppVersionController extends Controller
             ],
         ]);
     }
+
+    /** Yayındaki sürüm adı — panelde "güncel mi" karşılaştırması için. */
+    public static function currentVersion(): ?string
+    {
+        return Setting::get(self::KEY_VERSION);
+    }
+
+    /** Yayındaki yapı numarası. Bilinmiyorsa 0. */
+    public static function currentBuild(): int
+    {
+        return (int) Setting::get(self::KEY_BUILD, '0');
+    }
 }

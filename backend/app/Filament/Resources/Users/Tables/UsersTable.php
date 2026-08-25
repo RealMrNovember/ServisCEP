@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\UserTransferService;
@@ -17,6 +18,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
@@ -61,12 +63,42 @@ class UsersTable
                     ->badge()
                     ->formatStateUsing(fn (?string $state) => RolePermissions::label((string) $state))
                     ->color(fn (?string $state) => $state === RolePermissions::OWNER ? 'success' : 'gray'),
+                // Destek senaryosu: kullanıcı sorun bildirdiğinde ilk
+                // bakılacak şey eski sürümde kalıp kalmadığı. Sürüm
+                // istemci başlığından geliyor (bkz. LogApiRequests).
+                TextColumn::make('app_version')
+                    ->label('Sürüm')
+                    ->badge()
+                    ->placeholder('bilinmiyor')
+                    ->sortable('app_build')
+                    ->color(fn (?string $state) => match (true) {
+                        $state === null => 'gray',
+                        $state === AppVersionController::currentVersion() => 'success',
+                        default => 'warning',
+                    })
+                    ->tooltip(fn (User $record) => $record->app_build === null
+                        ? null
+                        : 'Yapı '.$record->app_build.' · '.($record->device_info ?? 'cihaz bilinmiyor')),
+                TextColumn::make('last_seen_at')
+                    ->label('Son görülme')
+                    ->placeholder('—')
+                    ->since()
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Kayıt')
                     ->dateTime('d.m.Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                // "Kim eski sürümde kaldı" sorusunun tek tıkla cevabı.
+                Filter::make('eski_surum')
+                    ->label('Eski sürümde')
+                    ->query(fn ($query) => $query->where(function ($q) {
+                        $q->whereNull('app_build')
+                            ->orWhere('app_build', '<', AppVersionController::currentBuild());
+                    })),
                 SelectFilter::make('role')
                     ->label('Rol')
                     ->options(self::roleOptions()),
