@@ -64,12 +64,24 @@ jobs:
           PKG=com.cicibyte.serviscep
           API=https://androidpublisher.googleapis.com/androidpublisher/v3
 
-          EDIT=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Length: 0" \
-            "$API/applications/$PKG/edits" | jq -r .id)
+          EDIT_RAW=$(curl -sS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Length: 0" "$API/applications/$PKG/edits")
+          EDIT=$(echo "$EDIT_RAW" | jq -r '.id // empty')
 
-          TRACK=$(curl -sS -H "Authorization: Bearer $TOKEN" \
-            "$API/applications/$PKG/edits/$EDIT/tracks/alpha")
+          # Ham yanıt yazdırılmadan bu adımın neden düştüğü anlaşılmıyordu;
+          # iş sessizce başarısız olup haftalarca fark edilmeden kalabilir.
+          if [ -z "$EDIT" ]; then
+            echo "Play düzenlemesi açılamadı. Yanıt:"
+            echo "$EDIT_RAW" | head -c 800
+            exit 1
+          fi
+
+          TRACK=$(curl -sS -H "Authorization: Bearer $TOKEN" "$API/applications/$PKG/edits/$EDIT/tracks/alpha")
+
+          if ! echo "$TRACK" | jq -e 'has("releases")' >/dev/null 2>&1; then
+            echo "Kanal yanıtında 'releases' yok. Yanıt:"
+            echo "$TRACK" | head -c 800
+            exit 1
+          fi
 
           echo "--- alpha kanalı ---"
           echo "$TRACK" | jq -r '.releases[] | "sürüm=\(.name // "?") kod=\(.versionCodes // [] | join(",")) durum=\(.status)"'
