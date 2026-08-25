@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/services/push_service.dart';
 import 'auth_repository.dart';
 
 /// Uygulama genelinde geçerli oturum durumu.
@@ -9,11 +10,16 @@ import 'auth_repository.dart';
 /// - data(null): oturum yok (giriş/kayıt ekranına yönlendirilmeli)
 /// - data(session): giriş yapılmış
 class SessionController extends StateNotifier<AsyncValue<AuthSession?>> {
-  SessionController(this._repository) : super(const AsyncValue.loading()) {
+  SessionController(this._repository, {this.onBeforeLogout})
+    : super(const AsyncValue.loading()) {
     _restore();
   }
 
   final AuthRepository _repository;
+
+  /// Oturum kapanmadan ÖNCE, jeton hâlâ geçerliyken çalışması gereken iş
+  /// (bildirim kaydının silinmesi). Bkz. [logout].
+  final Future<void> Function()? onBeforeLogout;
 
   Future<void> _restore() async {
     try {
@@ -75,7 +81,15 @@ class SessionController extends StateNotifier<AsyncValue<AuthSession?>> {
     state = AsyncValue.data(session);
   }
 
+  /// Çıkış.
+  ///
+  /// Bildirim kaydı EN BAŞTA kaldırılır: silme isteği jetona ihtiyaç
+  /// duyuyor. Önceden bu iş, oturum kapandıktan SONRA bir dinleyici
+  /// üzerinden yapılıyordu ve elinde jeton olmadığı için hep 401 alıyordu.
+  /// Sonuç, çıkış yapılan cihazın sunucuda kayıtlı kalması ve o hesabın
+  /// bildirimlerini almaya devam etmesiydi.
   Future<void> logout() async {
+    await onBeforeLogout?.call();
     await _repository.logout();
     state = const AsyncValue.data(null);
   }
@@ -83,5 +97,11 @@ class SessionController extends StateNotifier<AsyncValue<AuthSession?>> {
 
 final sessionControllerProvider =
     StateNotifierProvider<SessionController, AsyncValue<AuthSession?>>((ref) {
-      return SessionController(ref.watch(authRepositoryProvider));
+      return SessionController(
+        ref.watch(authRepositoryProvider),
+        // `read` bilinçli: push servisi oturumu izlemiyor, yalnızca çıkış
+        // anında bir kez gerekiyor. `watch` kullanmak gereksiz yeniden
+        // oluşturmalara yol açardı.
+        onBeforeLogout: () => ref.read(pushServiceProvider).unregister(),
+      );
     });

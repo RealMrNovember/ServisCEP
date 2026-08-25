@@ -49,10 +49,10 @@ class SyncTrigger with WidgetsBindingObserver {
         // doğrulandıktan sonra yazılabilir (bkz. PushService).
         unawaited(_ref.read(pushServiceProvider).start());
       }
-      if (session == null && previous?.valueOrNull != null) {
-        // Çıkış yapıldı — bu cihaz eski hesabın bildirimlerini almamalı.
-        unawaited(_ref.read(pushServiceProvider).unregister());
-      }
+      // Çıkışta bildirim kaydını silme işi BİLİNÇLİ olarak burada değil:
+      // buraya gelindiğinde oturum jetonu çoktan silinmiş oluyor ve silme
+      // isteği 401 alıyordu. Artık SessionController.logout() içinde,
+      // jeton hâlâ geçerliyken yapılıyor.
     });
     _trigger();
   }

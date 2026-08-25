@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../core/services/play_update_service.dart';
+import '../../core/services/app_version_service.dart';
+import '../../core/services/update_prompt.dart';
 import '../../core/sync/sync_status.dart';
 import '../../shared/brand_footer.dart';
 import '../auth/data/session_controller.dart';
@@ -166,34 +167,33 @@ class _UpdateTileState extends ConsumerState<_UpdateTile> {
     });
   }
 
+  /// Güncelleme kontrolü sunucudan yapılır (bkz. AppVersionService):
+  /// Play'in kendi kontrolü, sürüm cihaza yayılana kadar "güncel" diyor
+  /// ve kullanıcı yeni sürümden haberdar olmuyordu.
   Future<void> _check() async {
     setState(() => _checking = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final result = await playUpdateService.checkForUpdate();
+      final info = await ref.read(appVersionServiceProvider).check();
+      if (!mounted) return;
 
-      if (result == UpdateCheckResult.available) {
-        // Bulunduysa indirmeyi de başlat; hazır olunca ana ekranda
-        // "yeniden başlat" şeridi çıkar (bkz. MainShell).
-        await playUpdateService.checkAndStartFlexibleUpdate(
-          onReadyToInstall: () =>
-              ref.read(playUpdateReadyProvider.notifier).markReady(),
+      if (info == null) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Şu an kontrol edilemedi, bağlantını kontrol et.'),
+          ),
         );
+        return;
       }
 
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(switch (result) {
-            UpdateCheckResult.available =>
-              'Güncelleme indiriliyor. Hazır olunca haber vereceğiz.',
-            UpdateCheckResult.upToDate => 'Uygulaman güncel.',
-            UpdateCheckResult.unavailable =>
-              'Şu an kontrol edilemedi. Play Store dışı bir kurulum '
-                  'olabilir ya da bağlantı yok.',
-          }),
-        ),
-      );
+      if (!info.hasUpdate) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Uygulaman güncel.')),
+        );
+        return;
+      }
+
+      await startUpdate(context, ref, info);
     } finally {
       if (mounted) setState(() => _checking = false);
     }

@@ -44,13 +44,24 @@ class SyncService {
 
     await _drainOutbox();
     try {
-      await _pullCompany(companyId);
-      await _pullCustomers(companyId);
-      await _pullJobs(companyId);
-      await _pullServiceRequests(companyId);
-      await _pullQuotes(companyId);
-      await _pullProformas(companyId);
-      await _pullLedgerEntries(companyId);
+      // Her adımdan önce oturum yeniden kontrol edilir.
+      //
+      // Sebep: bir senkron turu sürerken kullanıcı çıkış yapabiliyor.
+      // Yalnızca başlangıçta bakmak yetmiyordu; token silindikten sonra
+      // kalan adımlar yetkisiz gidip 401 üretiyor, admin panelindeki
+      // günlük de bunları gerçek bir arıza gibi gösteriyordu.
+      for (final pull in <Future<void> Function()>[
+        () => _pullCompany(companyId),
+        () => _pullCustomers(companyId),
+        () => _pullJobs(companyId),
+        () => _pullServiceRequests(companyId),
+        () => _pullQuotes(companyId),
+        () => _pullProformas(companyId),
+        () => _pullLedgerEntries(companyId),
+      ]) {
+        if (await _tokenStore.read() == null) return;
+        await pull();
+      }
     } on ApiException {
       // Ağ hatası, süresi dolmuş abonelik (402) veya geçici sunucu hatası —
       // pull bir sonraki tetiklemede yeniden dener; `runOnce` unawaited

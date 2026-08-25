@@ -181,6 +181,13 @@ abstract interface class SyncApiClient {
   Future<void> uploadCustomerLogo(String customerId, String filePath);
   Future<void> deleteCustomerLogo(String customerId);
 
+  /// Sunucudaki oturum jetonunu iptal eder.
+  ///
+  /// Mobil çıkış yalnızca yereli temizliyordu; jeton sunucuda geçerli
+  /// kalmaya devam ediyordu. Cihaz kaybolur ya da jeton ele geçerse
+  /// çıkış yapmış olmak hiçbir koruma sağlamıyordu.
+  Future<void> logout();
+
   /// Kendi profili — ad/telefon.
   Future<void> updateProfile(Map<String, dynamic> payload);
 
@@ -440,6 +447,17 @@ class DioSyncApiClient implements SyncApiClient {
       await _dio.put('/company', data: payload);
     } on DioException catch (e) {
       _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> logout() async {
+    try {
+      await _dio.post('/auth/logout');
+    } on DioException {
+      // Çıkış kullanıcı için her hâlükârda tamamlanmalı: sunucuya
+      // ulaşılamasa bile yerel oturum kapanır. Jeton sunucuda kalırsa
+      // süresi dolduğunda kendiliğinden geçersizleşir.
     }
   }
 

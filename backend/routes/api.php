@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\ServiceRequestController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SubscriptionPaymentRequestController;
 use App\Http\Controllers\Api\V1\SyncConflictController;
+use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Http\Controllers\Api\V1\DiagnosticsController;
 use App\Http\Middleware\LogApiRequests;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,10 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
         Route::post('/auth/google/login', [AuthController::class, 'googleLogin'])->name('auth.google.login');
         Route::post('/auth/google/register', [AuthController::class, 'googleRegister'])->name('auth.google.register');
     });
+
+    // Yayındaki sürüm — kimlik doğrulaması yok (bkz. AppVersionController).
+    // Uygulama güncel mi sorusu, giriş yapılamadığında da sorulabilmeli.
+    Route::get('/app/version', [AppVersionController::class, 'show'])->name('app.version');
 
     // Mobil tanılama — KİMLİK DOĞRULAMASI YOK.
     //

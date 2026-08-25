@@ -421,7 +421,14 @@ class AuthRepository {
     );
   }
 
+  /// Çıkış.
+  ///
+  /// Sıra önemli: sunucudaki jeton, YEREL jeton silinmeden önce iptal
+  /// edilmeli. Aksi halde iptal isteği kimliksiz gidiyor ve 401 alıyordu —
+  /// yani jeton sunucuda geçerli kalmaya devam ediyordu.
   Future<void> logout() async {
+    await _syncApiClient.logout();
+
     try {
       await _storage.delete(key: _sessionUserIdKey);
       await _storage.delete(key: _sessionCompanyIdKey);

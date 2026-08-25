@@ -17,6 +17,13 @@ Kurallar:
 
 ---
 
+## v0.7.2
+
+Yenilikler:
+• Yeni sürüm çıktığında artık beklemeden haberdar oluyorsunuz; güncelleme bildirimi Play'in yayılmasını beklemiyor.
+• Güncelleme penceresinde o sürümde nelerin değiştiği yazıyor.
+• Çıkış yaptığınızda cihaz gerçekten çıkış yapıyor: bildirimler kesiliyor, oturum sunucuda da kapanıyor.
+
 ## v0.7.1
 
 Yenilikler:

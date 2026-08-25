@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/theme.dart';
+import 'app_version_service.dart';
 import 'play_update_service.dart';
 
 /// Uygulama her açıldığında bir kez güncelleme kontrolü yapılmasını sağlar.
 ///
-/// Tasarım kararı: hatırlatma "her açılışta" gösterilir ama ASLA zorunlu
-/// değildir. Kullanıcının işi acil olabilir; "Sonra" diyebilmeli ve
-/// uygulamayı kullanmaya devam edebilmelidir. Zorunlu (immediate) güncelleme
-/// akışı bilerek kullanılmıyor — saha çalışanını iş başındayken kilitler.
+/// Kontrol KENDİ SUNUCUMUZA sorulur (bkz. [AppVersionService]). Play'in
+/// kendi kontrolü, sürüm o cihaza yayılana kadar sessiz kalıyordu ve bu
+/// saatler sürebiliyor; kullanıcı güncellemeden haberdar olmuyordu.
+///
+/// Tasarım kararı: hatırlatma "her açılışta" gösterilir ama normalde ASLA
+/// zorunlu değildir. Kullanıcının işi acil olabilir; "Sonra" diyebilmeli.
+/// Tek istisna, sunucunun `min_build` ile bildirdiği durumdur — o da
+/// yalnızca sunucu sözleşmesi kırıldığında kullanılır.
 ///
 /// "Sonra" seçimi KALICI OLARAK saklanmaz: kullanıcı güncellemeyi
 /// atladığında bir dahaki açılışta yeniden sorulur (kullanıcı isteği).
@@ -26,10 +33,11 @@ class UpdatePromptState extends StateNotifier<bool> {
   }
 }
 
-final updatePromptProvider =
-    StateNotifierProvider<UpdatePromptState, bool>((ref) {
-      return UpdatePromptState();
-    });
+final updatePromptProvider = StateNotifierProvider<UpdatePromptState, bool>((
+  ref,
+) {
+  return UpdatePromptState();
+});
 
 /// Alt ağacı sarar; ilk çizimden sonra bir kez güncelleme kontrolü yapıp
 /// gerekiyorsa kullanıcıya sorar.
@@ -56,27 +64,47 @@ class _UpdatePromptGateState extends ConsumerState<UpdatePromptGate> {
     if (!controller.shouldAsk) return;
     controller.markAsked();
 
-    final result = await playUpdateService.checkForUpdate();
-    if (result != UpdateCheckResult.available || !mounted) return;
+    final info = await ref.read(appVersionServiceProvider).check();
+    if (info == null || !info.hasUpdate || !mounted) return;
 
     final accepted = await showDialog<bool>(
       context: context,
-      barrierDismissible: true,
-      builder: (context) => const _UpdateDialog(),
+      // Zorunlu güncellemede pencere kapatılamaz.
+      barrierDismissible: !info.isMandatory,
+      builder: (context) => PopScope(
+        canPop: !info.isMandatory,
+        child: _UpdateDialog(info: info),
+      ),
     );
 
-    if (accepted != true) return;
+    if (accepted != true || !mounted) return;
+    await startUpdate(context, ref, info);
+  }
 
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+/// Güncellemeyi başlatır.
+///
+/// Önce Play'in arka planda indirme akışı denenir — kullanıcı uygulamadan
+/// çıkmadan güncellenebiliyorsa en iyisi budur. Play bunu sunamıyorsa
+/// (sürüm cihaza henüz yayılmamış olabilir; sunucu zaten yayında diyor)
+/// mağaza sayfası açılır. Android'de bir uygulamanın kendini güncellemesinin
+/// başka yolu yok.
+Future<void> startUpdate(
+  BuildContext context,
+  WidgetRef ref,
+  AppVersionInfo info,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+
+  final playResult = await playUpdateService.checkForUpdate();
+  if (playResult == UpdateCheckResult.available) {
     await playUpdateService.checkAndStartFlexibleUpdate(
-      onReadyToInstall: () {
-        if (mounted) {
-          ref.read(playUpdateReadyProvider.notifier).markReady();
-        }
-      },
+      onReadyToInstall: () => ref.read(playUpdateReadyProvider.notifier).markReady(),
     );
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       const SnackBar(
         content: Text(
           'Güncelleme arka planda indiriliyor. Uygulamayı kullanmaya '
@@ -84,18 +112,37 @@ class _UpdatePromptGateState extends ConsumerState<UpdatePromptGate> {
         ),
       ),
     );
+    return;
   }
 
-  @override
-  Widget build(BuildContext context) => widget.child;
+  final url = info.storeUrl;
+  if (url == null || url.isEmpty) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Mağaza bağlantısı bulunamadı.')),
+    );
+    return;
+  }
+
+  final opened = await launchUrl(
+    Uri.parse(url),
+    mode: LaunchMode.externalApplication,
+  );
+  if (!opened) {
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Mağaza açılamadı.')),
+    );
+  }
 }
 
 class _UpdateDialog extends StatelessWidget {
-  const _UpdateDialog();
+  const _UpdateDialog({required this.info});
+
+  final AppVersionInfo info;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final notes = info.notes?.trim();
 
     return AlertDialog(
       icon: Container(
@@ -110,18 +157,45 @@ class _UpdateDialog extends StatelessWidget {
           size: 28,
         ),
       ),
-      title: const Text('Yeni sürüm hazır'),
-      content: const Text(
-        'TeknikCEP\'in yeni bir sürümü var. Güncelleme arka planda iner, '
-        'çalışmana ara vermen gerekmez.',
+      title: Text(
+        info.latestVersion == null
+            ? 'Yeni sürüm hazır'
+            : 'Yeni sürüm hazır (${info.latestVersion})',
         textAlign: TextAlign.center,
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            info.isMandatory
+                ? 'Devam edebilmek için uygulamayı güncellemen gerekiyor.'
+                : 'TeknikCEP\'in yeni bir sürümü var.',
+            textAlign: TextAlign.center,
+          ),
+          if (notes != null && notes.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: AppRadius.field,
+              ),
+              child: Text(
+                notes,
+                style: const TextStyle(fontSize: 13, height: 1.45),
+              ),
+            ),
+          ],
+        ],
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Sonra'),
-        ),
+        if (!info.isMandatory)
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Sonra'),
+          ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
           child: const Text('Şimdi güncelle'),

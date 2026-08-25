@@ -106,6 +106,13 @@ class FakeSyncApiClient implements SyncApiClient {
     updateCompanyCalls.add(payload);
   }
 
+  var logoutCalls = 0;
+
+  @override
+  Future<void> logout() async {
+    logoutCalls++;
+  }
+
   @override
   Future<Map<String, dynamic>?> showCompany() async => companyRecord;
 
