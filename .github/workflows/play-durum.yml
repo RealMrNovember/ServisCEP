@@ -161,4 +161,11 @@ jobs:
           # ve tırnaklar bozulmaz.
           sed -i "s/SURUM_ADI/$SURUM/; s/SURUM_KODU/$KOD/" "$RUNNER_TEMP/govde.md"
 
-          gh issue create --title "$BASLIK" --body-file "$RUNNER_TEMP/govde.md"
+          # Depo AÇIKÇA verilir: bu iş checkout yapmıyor, dolayısıyla gh
+          # çalışma dizininden depoyu çıkaramıyor ve "not a git repository"
+          # ile düşüyordu. Sürüm gerçekten yayına girmişti ama haber
+          # verilemiyordu.
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$BASLIK" \
+            --body-file "$RUNNER_TEMP/govde.md"
