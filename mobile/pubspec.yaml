@@ -44,6 +44,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  # Tasarım sisteminin özel ikon seti SVG olarak geliyor; bkz.
+  # assets/icons/tc/ ve tool/split_icons.dart.
+  flutter_svg: ^2.0.17
   go_router: ^17.5.0
   dio: ^5.11.0
   drift: ^2.34.3
@@ -109,11 +112,69 @@ flutter:
 
   assets:
     - assets/icon/
+    # Tasarım sisteminin ikon seti. Tasarımcı tek bir SVG "sprite"
+    # teslim ediyor; tool/split_icons.dart onu tek tek dosyalara böler,
+    # çünkü flutter_svg sprite içindeki <use> başvurularını çözemez.
+    - assets/icons/tc/
     # PDF'e GÖMÜLEN font. Standart PDF fontları (Helvetica) WinAnsi
     # kodlamasıyla sınırlıdır ve ş/ğ/İ karakterlerini İÇERMEZ — Türkçe bir
     # teklif belgesi o fontla bozuk çıkar. Roboto (Apache-2.0) gömülüdür ki
     # belge internet olmadan da doğru üretilsin.
     - assets/fonts/
+
+  # Arayüz fontları — tasarım sistemi § 3.
+  #
+  # Üçü de OFL lisanslı ve GÖMÜLÜ; çalışma anında indirilmezler. Uygulama
+  # offline-first olduğu için bu şart: kullanıcı bodrum katında açtığında
+  # da yazı tipi doğru gelmeli.
+  #
+  # Kaynaklar: Barlow -> google/fonts, Archivo -> Omnibus-Type/Archivo,
+  # JetBrains Mono -> JetBrains/JetBrainsMono. Lisans metinleri
+  # assets/fonts/OFL-*.txt içinde.
+  fonts:
+    # Başlıklar.
+    - family: Archivo
+      fonts:
+        - asset: assets/fonts/Archivo-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Archivo-Bold.ttf
+          weight: 700
+
+    # Arayüz gövdesi.
+    - family: Barlow
+      fonts:
+        - asset: assets/fonts/Barlow-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Barlow-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Barlow-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Barlow-Bold.ttf
+          weight: 700
+
+    # Tutar ve belge numarası (tabular rakam hizası).
+    #
+    # DİKKAT: JetBrains Mono'da ₺ (U+20BA) glifi YOKTUR. Tutarlar bu fontla
+    # yazıldığı için, ₺ işareti yedek aileden alınır; bkz. AppTypography.mono
+    # içindeki fontFamilyFallback. Yedek kaldırılırsa her tutarda kutucuk
+    # çıkar.
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
+
+    # Yedek aile — yalnızca JetBrains Mono'nun kapsamadığı glifler için.
+    # Zaten PDF üretimi için gömülü olduğundan ek boyut getirmez.
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

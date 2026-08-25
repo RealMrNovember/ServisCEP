@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'palette.dart';
+import 'typography.dart';
+
 /// TeknikCEP marka renkleri.
 /// Kaynak: docs/14-marka-kimligi.md — bu dosyayla senkron tutulmalıdır.
+///
+/// NOT: Yeni tasarım sistemiyle birlikte renklerin tek kaynağı [AppPalette]
+/// oldu. Buradaki sabitler, palete geçişi tamamlanmamış birkaç çağrı yeri
+/// için duruyor; yeni kodda [AppPalette] kullanılmalıdır.
 abstract final class AppColors {
   static const accent = Color(0xFF3B82F6);
   static const darkBg = Color(0xFF131316);
@@ -27,6 +34,12 @@ abstract final class AppSpacing {
   static const xl = 20.0;
   static const xxl = 28.0;
 
+  /// Büyük bölüm arası — tasarım sistemi § 4.
+  static const x3l = 36.0;
+
+  /// Ekran alt payı — tasarım sistemi § 4.
+  static const x4l = 48.0;
+
   /// Ekran kenar boşluğu — liste ve form ekranlarında aynı olmalı.
   static const screenPadding = EdgeInsets.symmetric(horizontal: 20);
 }
@@ -40,77 +53,67 @@ abstract final class AppRadius {
   static BorderRadius get card => BorderRadius.circular(lg);
   static BorderRadius get field => BorderRadius.circular(md);
   static BorderRadius get pill => BorderRadius.circular(999);
+  static BorderRadius get dialog => BorderRadius.circular(xl);
+}
+
+/// Sabit ölçüler (dp) — tasarım sistemi § 4.
+///
+/// Bu değerler saha kullanımından türemiştir: eldivenli parmak için
+/// dokunma hedefi 48dp'nin altına inmez, ana eylemler tek elle
+/// erişilebilsin diye ekranın altında sabit yükseklikte durur.
+abstract final class AppSize {
+  /// Birincil buton yüksekliği.
+  static const btnPrimary = 52.0;
+
+  /// İkincil buton yüksekliği.
+  static const btnSecondary = 50.0;
+
+  /// Form alanı yüksekliği.
+  static const field = 56.0;
+
+  /// Liste satırı minimum yüksekliği.
+  static const rowMin = 72.0;
+
+  /// Dokunma hedefi minimumu — eldivenli parmak.
+  static const touch = 48.0;
+
+  /// Alt gezinme çubuğu (sistem payı hariç).
+  static const nav = 68.0;
+
+  /// Üst çubuk.
+  static const appBar = 60.0;
+
+  /// Uzatılmış FAB.
+  static const fab = 56.0;
 }
 
 /// Saha kullanımına uygun (büyük dokunma alanları, yüksek kontrast) ama
 /// modern ve şık bir Material 3 tema. Bkz. docs/06 § Mobil Tasarım
 /// Prensipleri.
 abstract final class AppTheme {
-  static ThemeData light() => _base(
-    ColorScheme.fromSeed(
-      seedColor: AppColors.accent,
-      brightness: Brightness.light,
-      // Yüzeyleri hafifçe soğutur; nötr griler mavi vurguyla daha uyumlu
-      // durur ve belge/liste ağırlıklı ekranlarda daha temiz görünür.
-      surface: const Color(0xFFFBFCFD),
-    ),
-  );
+  static ThemeData light() => _base(AppPalette.light);
 
-  static ThemeData dark() => _base(
-    ColorScheme.fromSeed(
-      seedColor: AppColors.accent,
-      brightness: Brightness.dark,
-      surface: const Color(0xFF121316),
-    ),
-  );
+  static ThemeData dark() => _base(AppPalette.dark);
 
-  /// Başlıklar için daha sıkı harf aralığı — büyük punto metinlerde
-  /// varsayılan aralık dağınık görünüyor.
-  static TextTheme _typography(ColorScheme scheme) {
-    final base = ThemeData(brightness: scheme.brightness).textTheme;
-
-    return base.copyWith(
-      displaySmall: base.displaySmall?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.8,
-      ),
-      headlineMedium: base.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.6,
-      ),
-      headlineSmall: base.headlineSmall?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
-      ),
-      titleLarge: base.titleLarge?.copyWith(
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
-      ),
-      titleMedium: base.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-      titleSmall: base.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-      bodyLarge: base.bodyLarge?.copyWith(height: 1.45),
-      bodyMedium: base.bodyMedium?.copyWith(height: 1.45),
-      bodySmall: base.bodySmall?.copyWith(
-        height: 1.4,
-        color: scheme.onSurfaceVariant,
-      ),
-      labelLarge: base.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-    );
-  }
-
-  static ThemeData _base(ColorScheme scheme) {
-    final isDark = scheme.brightness == Brightness.dark;
+  static ThemeData _base(AppPalette palette) {
+    final scheme = palette.toColorScheme();
+    final isDark = palette.isDark;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surface,
+      // Ekran zemini yüzeyden bir kademe koyudur; kartlar zeminden ayrışsın
+      // diye. Koyu temada bu merdiven gölgenin yerini tutar.
+      scaffoldBackgroundColor: palette.bg,
       visualDensity: VisualDensity.comfortable,
-      textTheme: _typography(scheme),
+      // Stil verilmeyen metinler de arayüz ailesine düşsün.
+      fontFamily: AppTypography.uiFamily,
+      textTheme: AppTypography.toTextTheme(scheme),
       splashFactory: InkSparkle.splashFactory,
+      extensions: [palette],
 
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
+        backgroundColor: palette.bg,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -122,29 +125,25 @@ abstract final class AppTheme {
         systemOverlayStyle: isDark
             ? SystemUiOverlayStyle.light
             : SystemUiOverlayStyle.dark,
-        titleTextStyle: TextStyle(
+        titleTextStyle: AppTypography.h1.copyWith(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
-          color: scheme.onSurface,
+          color: palette.text,
         ),
       ),
 
       cardTheme: CardThemeData(
         elevation: 0,
-        color: isDark ? scheme.surfaceContainerHigh : Colors.white,
+        color: palette.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
-          side: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: isDark ? 0.4 : 0.7),
-          ),
+          side: BorderSide(color: palette.border),
         ),
         margin: EdgeInsets.zero,
       ),
 
       dividerTheme: DividerThemeData(
-        color: scheme.outlineVariant.withValues(alpha: 0.6),
+        color: palette.border,
         thickness: 1,
         space: 1,
       ),
@@ -170,7 +169,11 @@ abstract final class AppTheme {
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size.fromHeight(AppSize.btnPrimary),
+          backgroundColor: palette.accentSolid,
+          foregroundColor: palette.onAccent,
+          disabledBackgroundColor: palette.surfaceHi,
+          disabledForegroundColor: palette.textFaint,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
           textStyle: const TextStyle(
             fontSize: 15.5,
@@ -181,9 +184,11 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: const Size.fromHeight(AppSize.btnSecondary),
+          backgroundColor: palette.surface,
+          foregroundColor: palette.text,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
-          side: BorderSide(color: scheme.outlineVariant),
+          side: BorderSide(color: palette.borderStrong),
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -198,9 +203,7 @@ abstract final class AppTheme {
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark
-            ? scheme.surfaceContainerHighest
-            : scheme.surfaceContainerLow,
+        fillColor: palette.surfaceAlt,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.lg,
@@ -211,48 +214,50 @@ abstract final class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadius.field,
-          borderSide: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.8),
-          ),
+          borderSide: BorderSide(color: palette.border),
         ),
         // Odaklanınca kenarlık markanın rengine döner — kullanıcının hangi
-        // alanda olduğunu gri tonlarından ayırt etmesi zordu.
+        // alanda olduğunu gri tonlarından ayırt etmesi zordu. Burada
+        // accentSolid değil accent kullanılır: kenarlık beyaz yazı taşımaz,
+        // 3:1 eşiğine tabidir.
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.field,
-          borderSide: BorderSide(color: scheme.primary, width: 1.6),
+          borderSide: BorderSide(color: palette.accent, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadius.field,
-          borderSide: BorderSide(color: scheme.error),
+          borderSide: BorderSide(color: palette.danger),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: AppRadius.field,
-          borderSide: BorderSide(color: scheme.error, width: 1.6),
+          borderSide: BorderSide(color: palette.danger, width: 1.6),
         ),
-        labelStyle: TextStyle(color: scheme.onSurfaceVariant),
-        helperStyle: TextStyle(fontSize: 11.5, color: scheme.onSurfaceVariant),
+        labelStyle: TextStyle(color: palette.textMuted),
+        hintStyle: TextStyle(color: palette.textFaint),
+        helperStyle: TextStyle(fontSize: 11.5, color: palette.textMuted),
+        errorStyle: TextStyle(fontSize: 12.5, color: palette.dangerText),
       ),
 
       chipTheme: ChipThemeData(
-        side: BorderSide(color: scheme.outlineVariant),
+        side: BorderSide(color: palette.border),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.pill),
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         showCheckmark: false,
-        selectedColor: scheme.primaryContainer,
-        backgroundColor: isDark ? scheme.surfaceContainerHigh : Colors.white,
+        selectedColor: palette.accentSolid,
+        backgroundColor: palette.surfaceAlt,
       ),
 
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: scheme.primary,
-        foregroundColor: scheme.onPrimary,
+        backgroundColor: palette.accentSolid,
+        foregroundColor: palette.onAccent,
         elevation: 3,
         highlightElevation: 6,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       ),
 
       dialogTheme: DialogThemeData(
-        backgroundColor: isDark ? scheme.surfaceContainerHigh : Colors.white,
+        backgroundColor: palette.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         shape: RoundedRectangleBorder(
@@ -261,17 +266,17 @@ abstract final class AppTheme {
         titleTextStyle: TextStyle(
           fontSize: 19,
           fontWeight: FontWeight.w700,
-          color: scheme.onSurface,
+          color: palette.text,
         ),
         contentTextStyle: TextStyle(
           fontSize: 14.5,
           height: 1.45,
-          color: scheme.onSurfaceVariant,
+          color: palette.textMuted,
         ),
       ),
 
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: isDark ? scheme.surfaceContainerHigh : Colors.white,
+        backgroundColor: palette.surface,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
         shape: const RoundedRectangleBorder(
@@ -285,8 +290,12 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
         insetPadding: const EdgeInsets.all(AppSpacing.lg),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
-        backgroundColor: isDark ? scheme.inverseSurface : const Color(0xFF1F2430),
+        // Her iki temada da koyu bir çip: beyaz yazı ikisinde de okunur.
+        // (Önceden koyu temada inverseSurface kullanılıyordu; M3'te bu
+        // AÇIK bir renk olduğu için beyaz yazı görünmez hâle geliyordu.)
+        backgroundColor: isDark ? palette.surfaceHi : const Color(0xFF1F2430),
         contentTextStyle: const TextStyle(fontSize: 14, color: Colors.white),
+        actionTextColor: AppPalette.dark.accentText,
       ),
 
       segmentedButtonTheme: SegmentedButtonThemeData(
@@ -298,14 +307,16 @@ abstract final class AppTheme {
       ),
 
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: scheme.primary,
-        linearTrackColor: scheme.surfaceContainerHighest,
+        color: palette.accent,
+        linearTrackColor: palette.surfaceHi,
       ),
 
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: scheme.surface,
+        backgroundColor: palette.navBg,
+        indicatorColor: palette.accentSoft,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        height: 68,
+        height: AppSize.nav,
         labelTextStyle: WidgetStateProperty.all(
           const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
