@@ -30,14 +30,30 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
   late final _companyNameController = TextEditingController(
     text: widget.existing?.companyName ?? '',
   );
-  late final _ibanController = TextEditingController(text: widget.existing?.iban ?? '');
-  late final _phoneController = TextEditingController(text: widget.existing?.phone ?? '');
-  late final _emailController = TextEditingController(text: widget.existing?.email ?? '');
-  late final _addressController = TextEditingController(text: widget.existing?.address ?? '');
-  late final _ilController = TextEditingController(text: widget.existing?.il ?? '');
-  late final _ilceController = TextEditingController(text: widget.existing?.ilce ?? '');
-  late final _taxController = TextEditingController(text: widget.existing?.taxInfo ?? '');
-  late final _notesController = TextEditingController(text: widget.existing?.notes ?? '');
+  late final _ibanController = TextEditingController(
+    text: widget.existing?.iban ?? '',
+  );
+  late final _phoneController = TextEditingController(
+    text: widget.existing?.phone ?? '',
+  );
+  late final _emailController = TextEditingController(
+    text: widget.existing?.email ?? '',
+  );
+  late final _addressController = TextEditingController(
+    text: widget.existing?.address ?? '',
+  );
+  late final _ilController = TextEditingController(
+    text: widget.existing?.il ?? '',
+  );
+  late final _ilceController = TextEditingController(
+    text: widget.existing?.ilce ?? '',
+  );
+  late final _taxController = TextEditingController(
+    text: widget.existing?.taxInfo ?? '',
+  );
+  late final _notesController = TextEditingController(
+    text: widget.existing?.notes ?? '',
+  );
 
   late String _type = widget.existing?.type ?? 'BIREYSEL';
   bool _showMore = false;
@@ -153,7 +169,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Müşteriyi Düzenle' : 'Yeni Müşteri')),
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Müşteriyi Düzenle' : 'Yeni Müşteri'),
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -174,7 +192,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
               TextFormField(
                 controller: _contactNameController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Yetkili adı soyadı'),
+                decoration: const InputDecoration(
+                  labelText: 'Yetkili adı soyadı',
+                ),
                 validator: _validateNameFields,
                 onChanged: (_) => _formKey.currentState?.validate(),
               ),
@@ -189,20 +209,28 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
               const SizedBox(height: 4),
               Text(
                 'İkisinden en az birini gir — aynı anda ikisini birden doldurman gerekmiyor.',
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _ibanController,
                 textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(labelText: 'IBAN (opsiyonel)'),
+                decoration: const InputDecoration(
+                  labelText: 'IBAN (opsiyonel)',
+                ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: _type,
                 decoration: const InputDecoration(labelText: 'Müşteri tipi'),
                 items: customerTypeLabels.entries
-                    .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _type = v ?? _type),
               ),
@@ -222,7 +250,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
               TextButton.icon(
                 onPressed: () => setState(() => _showMore = !_showMore),
                 icon: Icon(_showMore ? Icons.expand_less : Icons.expand_more),
-                label: Text(_showMore ? 'Daha az göster' : 'Daha fazla alan göster'),
+                label: Text(
+                  _showMore ? 'Daha az göster' : 'Daha fazla alan göster',
+                ),
               ),
               if (_showMore) ...[
                 const SizedBox(height: 8),
@@ -252,7 +282,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _taxController,
-                  decoration: const InputDecoration(labelText: 'Vergi bilgileri'),
+                  decoration: const InputDecoration(
+                    labelText: 'Vergi bilgileri',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

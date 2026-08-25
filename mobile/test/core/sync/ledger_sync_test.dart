@@ -145,23 +145,26 @@ void main() {
     expect(await balance(), 120000);
   });
 
-  test('referansı olmayan (manuel düzeltme) sunucu kaydı yerele eklenir', () async {
-    api.ledgerToPull = [
-      ledgerRecord(
-        id: 'server-adjust',
-        type: 'DEBIT',
-        amount: 5000,
-        referenceType: 'manual_adjustment',
-      ),
-    ];
+  test(
+    'referansı olmayan (manuel düzeltme) sunucu kaydı yerele eklenir',
+    () async {
+      api.ledgerToPull = [
+        ledgerRecord(
+          id: 'server-adjust',
+          type: 'DEBIT',
+          amount: 5000,
+          referenceType: 'manual_adjustment',
+        ),
+      ];
 
-    await buildService().runOnce(_companyId);
+      await buildService().runOnce(_companyId);
 
-    final rows = await db.select(db.customerLedgerEntries).get();
-    expect(rows, hasLength(1));
-    expect(rows.single.referenceType, 'manual_adjustment');
-    expect(rows.single.syncStatus, 'SYNCED');
-  });
+      final rows = await db.select(db.customerLedgerEntries).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.referenceType, 'manual_adjustment');
+      expect(rows.single.syncStatus, 'SYNCED');
+    },
+  );
 
   test('İLİŞKİSİZ bir iyimser kayıt, başka bir olayın pull edilmesiyle '
       'silinmez', () async {

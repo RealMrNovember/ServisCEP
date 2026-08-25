@@ -26,11 +26,11 @@ class QuotesRepository {
   Stream<List<QuoteWithCustomer>> watchAll(String companyId) {
     final query =
         _db.select(_db.quotes).join([
-          innerJoin(
-            _db.customers,
-            _db.customers.id.equalsExp(_db.quotes.customerId),
-          ),
-        ])
+            innerJoin(
+              _db.customers,
+              _db.customers.id.equalsExp(_db.quotes.customerId),
+            ),
+          ])
           ..where(_db.quotes.companyId.equals(companyId))
           ..orderBy([OrderingTerm.desc(_db.quotes.createdAt)]);
 
@@ -57,15 +57,13 @@ class QuotesRepository {
   /// Sıradaki belge numarası — son kullanılan numaradan devam eder
   /// (bkz. [DocumentNumbering]).
   Future<String> nextCode(String companyId) async {
-    final codes = await (_db.selectOnly(_db.quotes)
-          ..addColumns([_db.quotes.code])
-          ..where(_db.quotes.companyId.equals(companyId)))
-        .map((row) => row.read(_db.quotes.code)!)
-        .get();
-    return DocumentNumbering.next(
-      fallbackPrefix: 'TKF',
-      existingCodes: codes,
-    );
+    final codes =
+        await (_db.selectOnly(_db.quotes)
+              ..addColumns([_db.quotes.code])
+              ..where(_db.quotes.companyId.equals(companyId)))
+            .map((row) => row.read(_db.quotes.code)!)
+            .get();
+    return DocumentNumbering.next(fallbackPrefix: 'TKF', existingCodes: codes);
   }
 
   /// Numaranın bu işletmede zaten kullanılıp kullanılmadığı — aynı numaralı

@@ -125,7 +125,8 @@ class _PersonnelTile extends ConsumerWidget {
     await _run(
       messenger,
       ref,
-      () => ref.read(personnelRepositoryProvider).changeRole(person.id, selected),
+      () =>
+          ref.read(personnelRepositoryProvider).changeRole(person.id, selected),
       'Rol güncellendi.',
     );
   }
@@ -193,9 +194,7 @@ class _PersonnelTile extends ConsumerWidget {
         leading: CircleAvatar(
           backgroundColor: scheme.primary.withValues(alpha: 0.12),
           child: Text(
-            person.fullName.isNotEmpty
-                ? person.fullName[0].toUpperCase()
-                : '?',
+            person.fullName.isNotEmpty ? person.fullName[0].toUpperCase() : '?',
             style: TextStyle(
               color: scheme.primary,
               fontWeight: FontWeight.w700,
@@ -243,7 +242,10 @@ class _PersonnelTile extends ConsumerWidget {
                     ? _changeRole(context, ref)
                     : _remove(context, ref),
                 itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'role', child: Text('Rolü değiştir')),
+                  const PopupMenuItem(
+                    value: 'role',
+                    child: Text('Rolü değiştir'),
+                  ),
                   const PopupMenuItem(value: 'remove', child: Text('Sil')),
                 ],
               ),
@@ -324,9 +326,9 @@ class _AddPersonnelSheetState extends ConsumerState<_AddPersonnelSheet> {
             children: [
               Text(
                 'Personel ekle',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -371,9 +373,9 @@ class _AddPersonnelSheetState extends ConsumerState<_AddPersonnelSheet> {
 
               Text(
                 'Rol',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
               RadioGroup<String>(

@@ -157,10 +157,9 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
 
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.12),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.12),
                             child: Text(
                               customer.displayName.isEmpty
                                   ? '?'

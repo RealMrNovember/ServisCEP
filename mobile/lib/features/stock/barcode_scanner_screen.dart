@@ -13,14 +13,16 @@ class BarcodeScannerScreen extends StatefulWidget {
 }
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
-  final _controller = MobileScannerController(formats: const [
-    BarcodeFormat.ean13,
-    BarcodeFormat.ean8,
-    BarcodeFormat.upcA,
-    BarcodeFormat.upcE,
-    BarcodeFormat.code128,
-    BarcodeFormat.qrCode,
-  ]);
+  final _controller = MobileScannerController(
+    formats: const [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE,
+      BarcodeFormat.code128,
+      BarcodeFormat.qrCode,
+    ],
+  );
   bool _handled = false;
 
   @override

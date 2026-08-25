@@ -14,7 +14,10 @@ class SignatureCaptureScreen extends StatefulWidget {
 }
 
 class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
-  final _controller = SignatureController(penStrokeWidth: 3, penColor: Colors.black);
+  final _controller = SignatureController(
+    penStrokeWidth: 3,
+    penColor: Colors.black,
+  );
   final _nameController = TextEditingController();
 
   @override
@@ -48,7 +51,10 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
       appBar: AppBar(
         title: const Text('Müşteri İmzası'),
         actions: [
-          TextButton(onPressed: () => _controller.clear(), child: const Text('Temizle')),
+          TextButton(
+            onPressed: () => _controller.clear(),
+            child: const Text('Temizle'),
+          ),
         ],
       ),
       body: SafeArea(
@@ -59,28 +65,38 @@ class _SignatureCaptureScreenState extends State<SignatureCaptureScreen> {
               TextField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'İmza sahibinin adı soyadı'),
+                decoration: const InputDecoration(
+                  labelText: 'İmza sahibinin adı soyadı',
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Signature(controller: _controller, backgroundColor: Colors.white),
+                  child: Signature(
+                    controller: _controller,
+                    backgroundColor: Colors.white,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Bu imza resmi elektronik imza yerine geçmez; yalnızca servis kaydına bağlı bir onaydır.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              FilledButton(onPressed: _save, child: const Text('İmzayı Kaydet')),
+              FilledButton(
+                onPressed: _save,
+                child: const Text('İmzayı Kaydet'),
+              ),
             ],
           ),
         ),

@@ -19,13 +19,30 @@ const jobStatusColors = {
   'IPTAL': Colors.red,
 };
 
-const jobPriorityLabels = {'YUKSEK': 'Yüksek', 'NORMAL': 'Normal', 'DUSUK': 'Düşük'};
+const jobPriorityLabels = {
+  'YUKSEK': 'Yüksek',
+  'NORMAL': 'Normal',
+  'DUSUK': 'Düşük',
+};
 
-const jobPriorityColors = {'YUKSEK': Colors.red, 'NORMAL': Colors.blue, 'DUSUK': Colors.grey};
+const jobPriorityColors = {
+  'YUKSEK': Colors.red,
+  'NORMAL': Colors.blue,
+  'DUSUK': Colors.grey,
+};
 
 /// Hazır iş türü kataloğu — bkz. docs/02 § İş Türleri.
 const jobTypeCatalog = {
-  'Elektrik': ['Arıza', 'Tesisat', 'Aydınlatma', 'Priz', 'Sigorta', 'Kablo', 'Montaj', 'Bakım'],
+  'Elektrik': [
+    'Arıza',
+    'Tesisat',
+    'Aydınlatma',
+    'Priz',
+    'Sigorta',
+    'Kablo',
+    'Montaj',
+    'Bakım',
+  ],
   'Güvenlik Sistemleri': [
     'IP Kamera',
     'Analog Kamera',

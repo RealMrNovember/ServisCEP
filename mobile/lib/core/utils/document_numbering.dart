@@ -48,7 +48,9 @@ abstract final class DocumentNumbering {
     );
     final highest = sameSeries.isEmpty
         ? 0
-        : sameSeries.map((code) => code.sequence).reduce((a, b) => a > b ? a : b);
+        : sameSeries
+              .map((code) => code.sequence)
+              .reduce((a, b) => a > b ? a : b);
 
     var sequence = highest + 1;
     var candidate = _format(latest.prefix, year, sequence, latest.width);

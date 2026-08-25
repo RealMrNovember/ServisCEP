@@ -16,9 +16,7 @@ class SubscriptionRepository {
   Future<SubscriptionStatus> fetchStatus() async {
     try {
       final response = await _dio.get('/subscription');
-      return SubscriptionStatus.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      return SubscriptionStatus.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       _client.throwApiException(e);
     }
@@ -86,8 +84,6 @@ final plansProvider = FutureProvider<List<PlanInfo>>((ref) {
   return ref.watch(subscriptionRepositoryProvider).fetchPlans();
 });
 
-final paymentRequestsProvider = FutureProvider<List<PaymentRequestInfo>>((
-  ref,
-) {
+final paymentRequestsProvider = FutureProvider<List<PaymentRequestInfo>>((ref) {
   return ref.watch(subscriptionRepositoryProvider).fetchPaymentRequests();
 });

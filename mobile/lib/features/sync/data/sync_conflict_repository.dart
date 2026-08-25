@@ -155,20 +155,24 @@ class SyncConflictRepository {
     const synced = Value('SYNCED');
     switch (type) {
       case 'customer':
-        await (_db.update(_db.customers)..where((c) => c.id.equals(id)))
-            .write(const CustomersCompanion(syncStatus: synced));
+        await (_db.update(_db.customers)..where((c) => c.id.equals(id))).write(
+          const CustomersCompanion(syncStatus: synced),
+        );
       case 'job':
-        await (_db.update(_db.jobs)..where((j) => j.id.equals(id)))
-            .write(const JobsCompanion(syncStatus: synced));
+        await (_db.update(_db.jobs)..where((j) => j.id.equals(id))).write(
+          const JobsCompanion(syncStatus: synced),
+        );
       case 'service_request':
         await (_db.update(_db.serviceRequests)..where((r) => r.id.equals(id)))
             .write(const ServiceRequestsCompanion(syncStatus: synced));
       case 'quote':
-        await (_db.update(_db.quotes)..where((q) => q.id.equals(id)))
-            .write(const QuotesCompanion(syncStatus: synced));
+        await (_db.update(_db.quotes)..where((q) => q.id.equals(id))).write(
+          const QuotesCompanion(syncStatus: synced),
+        );
       case 'proforma':
-        await (_db.update(_db.proformas)..where((p) => p.id.equals(id)))
-            .write(const ProformasCompanion(syncStatus: synced));
+        await (_db.update(_db.proformas)..where((p) => p.id.equals(id))).write(
+          const ProformasCompanion(syncStatus: synced),
+        );
     }
   }
 }

@@ -123,7 +123,11 @@ class _LogoPickerFieldState extends State<LogoPickerField> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _LogoThumb(path: path, busy: _busy, onTap: _busy ? null : _openSourceSheet),
+        _LogoThumb(
+          path: path,
+          busy: _busy,
+          onTap: _busy ? null : _openSourceSheet,
+        ),
         const SizedBox(width: AppSpacing.lg),
         Expanded(
           child: Column(

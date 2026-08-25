@@ -122,10 +122,7 @@ abstract interface class SyncApiClient {
   /// Talep → iş dönüşümü — backend'in `/convert` endpoint'i, mobilin offline
   /// oluşturduğu işin UUID'sini (`job_id`) kabul eder; yanıt işin son hâli
   /// (JobResource). Replay idempotenttir (200 döner, duplicate iş oluşmaz).
-  Future<Map<String, dynamic>> convertServiceRequest(
-    String id,
-    String jobId,
-  );
+  Future<Map<String, dynamic>> convertServiceRequest(String id, String jobId);
   Future<List<RemoteRecord>> listServiceRequests();
 
   Future<SyncEntityResult> createQuote(Map<String, dynamic> payload);
@@ -546,11 +543,14 @@ class DioSyncApiClient implements SyncApiClient {
     required String newPassword,
   }) async {
     try {
-      await _dio.put('/auth/password', data: {
-        'current_password': currentPassword,
-        'password': newPassword,
-        'password_confirmation': newPassword,
-      });
+      await _dio.put(
+        '/auth/password',
+        data: {
+          'current_password': currentPassword,
+          'password': newPassword,
+          'password_confirmation': newPassword,
+        },
+      );
     } on DioException catch (e) {
       _client.throwApiException(e);
     }

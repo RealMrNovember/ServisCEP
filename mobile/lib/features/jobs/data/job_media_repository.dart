@@ -144,15 +144,17 @@ class JobMediaRepository {
     required String entityId,
     required Map<String, dynamic> payload,
   }) {
-    return _db.into(_db.syncOperations).insert(
-      SyncOperationsCompanion.insert(
-        id: _uuid.v4(),
-        entityType: entityType,
-        entityId: entityId,
-        operation: 'CREATE',
-        payload: jsonEncode(payload),
-      ),
-    );
+    return _db
+        .into(_db.syncOperations)
+        .insert(
+          SyncOperationsCompanion.insert(
+            id: _uuid.v4(),
+            entityType: entityType,
+            entityId: entityId,
+            operation: 'CREATE',
+            payload: jsonEncode(payload),
+          ),
+        );
   }
 }
 

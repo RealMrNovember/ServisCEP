@@ -247,14 +247,17 @@ class _ChangePasswordSheetState extends ConsumerState<_ChangePasswordSheet> {
               controller: _newController,
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Yeni parola'),
-              validator: (v) =>
-                  (v == null || v.length < 8) ? 'En az 8 karakter olmalı' : null,
+              validator: (v) => (v == null || v.length < 8)
+                  ? 'En az 8 karakter olmalı'
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _confirmController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Yeni parola (tekrar)'),
+              decoration: const InputDecoration(
+                labelText: 'Yeni parola (tekrar)',
+              ),
               validator: (v) =>
                   v != _newController.text ? 'Parolalar eşleşmiyor' : null,
             ),

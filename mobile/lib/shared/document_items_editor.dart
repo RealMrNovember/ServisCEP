@@ -437,9 +437,9 @@ class _ItemSheetState extends State<_ItemSheet> {
 
   void _save() {
     if (_descController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Açıklama boş olamaz.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Açıklama boş olamaz.')));
       return;
     }
     Navigator.pop(context, _draft());

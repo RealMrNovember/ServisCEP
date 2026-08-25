@@ -38,7 +38,9 @@ class PlayUpdateService {
     }
   }
 
-  Future<void> checkAndStartFlexibleUpdate({required VoidCallback onReadyToInstall}) async {
+  Future<void> checkAndStartFlexibleUpdate({
+    required VoidCallback onReadyToInstall,
+  }) async {
     try {
       final info = await InAppUpdate.checkForUpdate();
       if (info.updateAvailability != UpdateAvailability.updateAvailable) return;
@@ -84,6 +86,7 @@ class PlayUpdateReadyNotifier extends StateNotifier<bool> {
 }
 
 /// true olduğunda Play güncellemesi indirilmiş ve kurulum için hazırdır.
-final playUpdateReadyProvider = StateNotifierProvider<PlayUpdateReadyNotifier, bool>((ref) {
-  return PlayUpdateReadyNotifier();
-});
+final playUpdateReadyProvider =
+    StateNotifierProvider<PlayUpdateReadyNotifier, bool>((ref) {
+      return PlayUpdateReadyNotifier();
+    });

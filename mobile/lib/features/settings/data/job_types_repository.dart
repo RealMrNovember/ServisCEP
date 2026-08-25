@@ -22,7 +22,9 @@ class JobTypesRepository {
 
   Stream<List<JobType>> watchCustom(String companyId) {
     return (_db.select(_db.jobTypes)
-          ..where((t) => t.companyId.equals(companyId) & t.isCustom.equals(true))
+          ..where(
+            (t) => t.companyId.equals(companyId) & t.isCustom.equals(true),
+          )
           ..orderBy([(t) => OrderingTerm.asc(t.name)]))
         .watch();
   }

@@ -50,7 +50,8 @@ class _UpdateBannerState extends ConsumerState<UpdateBanner> {
       if (!mounted) return;
       setState(() {
         _state = _DownloadState.error;
-        _errorMessage = 'İndirme başarısız oldu. Bağlantını kontrol edip tekrar dene.';
+        _errorMessage =
+            'İndirme başarısız oldu. Bağlantını kontrol edip tekrar dene.';
       });
     }
   }
@@ -77,7 +78,10 @@ class _UpdateBannerState extends ConsumerState<UpdateBanner> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.system_update_alt_rounded, color: scheme.onPrimaryContainer),
+              Icon(
+                Icons.system_update_alt_rounded,
+                color: scheme.onPrimaryContainer,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -87,14 +91,22 @@ class _UpdateBannerState extends ConsumerState<UpdateBanner> {
                       'v${update.version} çıktı',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onPrimaryContainer,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isDownloading ? 'İndiriliyor…' : 'Yeni sürüm indirilebilir',
+                      isDownloading
+                          ? 'İndiriliyor…'
+                          : 'Yeni sürüm indirilebilir',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onPrimaryContainer,
+                      ),
                     ),
                   ],
                 ),
@@ -115,7 +127,9 @@ class _UpdateBannerState extends ConsumerState<UpdateBanner> {
               child: LinearProgressIndicator(
                 value: _progress > 0 ? _progress : null,
                 minHeight: 8,
-                backgroundColor: scheme.onPrimaryContainer.withValues(alpha: 0.15),
+                backgroundColor: scheme.onPrimaryContainer.withValues(
+                  alpha: 0.15,
+                ),
               ),
             )
           else
@@ -123,7 +137,9 @@ class _UpdateBannerState extends ConsumerState<UpdateBanner> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => _startUpdate(update),
-                child: Text(_state == _DownloadState.error ? 'Tekrar Dene' : 'Güncelle'),
+                child: Text(
+                  _state == _DownloadState.error ? 'Tekrar Dene' : 'Güncelle',
+                ),
               ),
             ),
         ],

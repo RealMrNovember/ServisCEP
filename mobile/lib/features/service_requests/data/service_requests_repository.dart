@@ -22,17 +22,23 @@ class ServiceRequestsRepository {
   final _uuid = const Uuid();
 
   Stream<List<RequestWithCustomer>> watchAll(String companyId) {
-    final query = _db.select(_db.serviceRequests).join([
-      innerJoin(_db.customers, _db.customers.id.equalsExp(_db.serviceRequests.customerId)),
-    ])
-      ..where(_db.serviceRequests.companyId.equals(companyId))
-      ..orderBy([OrderingTerm.desc(_db.serviceRequests.createdAt)]);
+    final query =
+        _db.select(_db.serviceRequests).join([
+            innerJoin(
+              _db.customers,
+              _db.customers.id.equalsExp(_db.serviceRequests.customerId),
+            ),
+          ])
+          ..where(_db.serviceRequests.companyId.equals(companyId))
+          ..orderBy([OrderingTerm.desc(_db.serviceRequests.createdAt)]);
 
     return query.watch().map(
       (rows) => rows
           .map(
-            (row) =>
-                RequestWithCustomer(row.readTable(_db.serviceRequests), row.readTable(_db.customers)),
+            (row) => RequestWithCustomer(
+              row.readTable(_db.serviceRequests),
+              row.readTable(_db.customers),
+            ),
           )
           .toList(),
     );
@@ -45,24 +51,28 @@ class ServiceRequestsRepository {
     required String priority,
     String? address,
   }) async {
-    final countThisYear = await (_db.select(
-      _db.serviceRequests,
-    )..where((r) => r.companyId.equals(companyId))).get().then((rows) => rows.length);
+    final countThisYear =
+        await (_db.select(_db.serviceRequests)
+              ..where((r) => r.companyId.equals(companyId)))
+            .get()
+            .then((rows) => rows.length);
     final code = CodeGenerator.next('REQ', countThisYear);
     final id = _uuid.v4();
 
     await _db.transaction(() async {
-      await _db.into(_db.serviceRequests).insert(
-        ServiceRequestsCompanion.insert(
-          id: id,
-          companyId: companyId,
-          code: code,
-          customerId: customerId,
-          description: description,
-          priority: Value(priority),
-          address: Value(address),
-        ),
-      );
+      await _db
+          .into(_db.serviceRequests)
+          .insert(
+            ServiceRequestsCompanion.insert(
+              id: id,
+              companyId: companyId,
+              code: code,
+              customerId: customerId,
+              description: description,
+              priority: Value(priority),
+              address: Value(address),
+            ),
+          );
       await _enqueue(
         entityId: id,
         operation: 'CREATE',
@@ -76,7 +86,9 @@ class ServiceRequestsRepository {
         },
       );
     });
-    return (_db.select(_db.serviceRequests)..where((r) => r.id.equals(id))).getSingle();
+    return (_db.select(
+      _db.serviceRequests,
+    )..where((r) => r.id.equals(id))).getSingle();
   }
 
   /// Talebi işe dönüştürür — tek transaction (bkz. docs/07 § Transaction
@@ -90,9 +102,11 @@ class ServiceRequestsRepository {
   /// güncellenir (bkz. sync_service.dart).
   Future<Job> convertToJob(ServiceRequest request) async {
     return _db.transaction(() async {
-      final countThisYear = await (_db.select(
-        _db.jobs,
-      )..where((j) => j.companyId.equals(request.companyId))).get().then((rows) => rows.length);
+      final countThisYear =
+          await (_db.select(_db.jobs)
+                ..where((j) => j.companyId.equals(request.companyId)))
+              .get()
+              .then((rows) => rows.length);
       final code = CodeGenerator.next('SRV', countThisYear);
       final jobId = _uuid.v4();
 
@@ -103,21 +117,28 @@ class ServiceRequestsRepository {
           ? request.description.substring(0, 80)
           : request.description;
 
-      await _db.into(_db.jobs).insert(
-        JobsCompanion.insert(
-          id: jobId,
-          companyId: request.companyId,
-          code: code,
-          customerId: request.customerId,
-          title: title,
-          description: Value(request.description),
-          address: Value(request.address),
-          priority: Value(request.priority),
-        ),
-      );
+      await _db
+          .into(_db.jobs)
+          .insert(
+            JobsCompanion.insert(
+              id: jobId,
+              companyId: request.companyId,
+              code: code,
+              customerId: request.customerId,
+              title: title,
+              description: Value(request.description),
+              address: Value(request.address),
+              priority: Value(request.priority),
+            ),
+          );
 
-      await (_db.update(_db.serviceRequests)..where((r) => r.id.equals(request.id))).write(
-        ServiceRequestsCompanion(status: const Value('ISE_DONUSTU'), convertedJobId: Value(jobId)),
+      await (_db.update(
+        _db.serviceRequests,
+      )..where((r) => r.id.equals(request.id))).write(
+        ServiceRequestsCompanion(
+          status: const Value('ISE_DONUSTU'),
+          convertedJobId: Value(jobId),
+        ),
       );
 
       await _enqueue(
@@ -126,7 +147,9 @@ class ServiceRequestsRepository {
         payload: {'job_id': jobId},
       );
 
-      return (_db.select(_db.jobs)..where((j) => j.id.equals(jobId))).getSingle();
+      return (_db.select(
+        _db.jobs,
+      )..where((j) => j.id.equals(jobId))).getSingle();
     });
   }
 
@@ -135,24 +158,32 @@ class ServiceRequestsRepository {
     required String operation,
     required Map<String, dynamic> payload,
   }) {
-    return _db.into(_db.syncOperations).insert(
-      SyncOperationsCompanion.insert(
-        id: _uuid.v4(),
-        entityType: 'service_request',
-        entityId: entityId,
-        operation: operation,
-        payload: jsonEncode(payload),
-      ),
-    );
+    return _db
+        .into(_db.syncOperations)
+        .insert(
+          SyncOperationsCompanion.insert(
+            id: _uuid.v4(),
+            entityType: 'service_request',
+            entityId: entityId,
+            operation: operation,
+            payload: jsonEncode(payload),
+          ),
+        );
   }
 }
 
-final serviceRequestsRepositoryProvider = Provider<ServiceRequestsRepository>((ref) {
+final serviceRequestsRepositoryProvider = Provider<ServiceRequestsRepository>((
+  ref,
+) {
   return ServiceRequestsRepository(ref.watch(databaseProvider));
 });
 
-final serviceRequestsListProvider = StreamProvider<List<RequestWithCustomer>>((ref) {
+final serviceRequestsListProvider = StreamProvider<List<RequestWithCustomer>>((
+  ref,
+) {
   final session = ref.watch(sessionControllerProvider).valueOrNull;
   if (session == null) return const Stream.empty();
-  return ref.watch(serviceRequestsRepositoryProvider).watchAll(session.companyId);
+  return ref
+      .watch(serviceRequestsRepositoryProvider)
+      .watchAll(session.companyId);
 });

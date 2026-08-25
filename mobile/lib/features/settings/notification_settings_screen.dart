@@ -24,7 +24,8 @@ class ReminderLeadController extends StateNotifier<AsyncValue<int>> {
     final storage = _ref.read(secureStorageProvider);
     final raw = await storage.read(key: _leadKey);
     final minutes =
-        int.tryParse(raw ?? '') ?? NotificationService.defaultReminderLeadMinutes;
+        int.tryParse(raw ?? '') ??
+        NotificationService.defaultReminderLeadMinutes;
     NotificationService.reminderLeadMinutes = minutes;
     if (mounted) state = AsyncValue.data(minutes);
   }

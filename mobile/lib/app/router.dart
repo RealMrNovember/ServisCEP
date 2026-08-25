@@ -96,20 +96,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/jobs/:id',
-        builder: (context, state) => JobDetailScreen(jobId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            JobDetailScreen(jobId: state.pathParameters['id']!),
       ),
 
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => MainShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            MainShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
+              GoRoute(
+                path: '/dashboard',
+                builder: (context, state) => const DashboardScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/jobs', builder: (context, state) => const JobsListScreen()),
+              GoRoute(
+                path: '/jobs',
+                builder: (context, state) => const JobsListScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
@@ -122,11 +130,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/documents', builder: (context, state) => const DocumentsScreen()),
+              GoRoute(
+                path: '/documents',
+                builder: (context, state) => const DocumentsScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/more', builder: (context, state) => const MoreScreen())],
+            routes: [
+              GoRoute(
+                path: '/more',
+                builder: (context, state) => const MoreScreen(),
+              ),
+            ],
           ),
         ],
       ),

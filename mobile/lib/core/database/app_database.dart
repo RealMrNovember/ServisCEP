@@ -106,12 +106,17 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(customers, customers.logoPath);
         await m.addColumn(customers, customers.hasLogo);
         for (final column in [
-          quotes.currency, quotes.vatMode, quotes.vatRate, quotes.validUntil,
+          quotes.currency,
+          quotes.vatMode,
+          quotes.vatRate,
+          quotes.validUntil,
         ]) {
           await m.addColumn(quotes, column);
         }
         for (final column in [
-          proformas.currency, proformas.vatMode, proformas.vatRate,
+          proformas.currency,
+          proformas.vatMode,
+          proformas.vatRate,
         ]) {
           await m.addColumn(proformas, column);
         }
@@ -120,20 +125,26 @@ class AppDatabase extends _$AppDatabase {
         // Belge metinleri: giris yazisi ve sartlar. Hem sirket
         // varsayilani hem belge kopyasi olarak tutulur.
         for (final column in [
-          companies.introText, companies.paymentTerms,
-          companies.deliveryTime, companies.warrantyTerms,
+          companies.introText,
+          companies.paymentTerms,
+          companies.deliveryTime,
+          companies.warrantyTerms,
         ]) {
           await m.addColumn(companies, column);
         }
         for (final column in [
-          quotes.introText, quotes.paymentTerms,
-          quotes.deliveryTime, quotes.warrantyTerms,
+          quotes.introText,
+          quotes.paymentTerms,
+          quotes.deliveryTime,
+          quotes.warrantyTerms,
         ]) {
           await m.addColumn(quotes, column);
         }
         for (final column in [
-          proformas.introText, proformas.paymentTerms,
-          proformas.deliveryTime, proformas.warrantyTerms,
+          proformas.introText,
+          proformas.paymentTerms,
+          proformas.deliveryTime,
+          proformas.warrantyTerms,
         ]) {
           await m.addColumn(proformas, column);
         }

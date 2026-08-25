@@ -144,13 +144,11 @@ class SyncService {
               payload['job_id'] as String,
             );
             await _applyConvertedJob(job);
-            await (_db.update(_db.serviceRequests)
-                  ..where((r) => r.id.equals(op.entityId)))
-                .write(
-                  const ServiceRequestsCompanion(
-                    syncStatus: Value('SYNCED'),
-                  ),
-                );
+            await (_db.update(
+              _db.serviceRequests,
+            )..where((r) => r.id.equals(op.entityId))).write(
+              const ServiceRequestsCompanion(syncStatus: Value('SYNCED')),
+            );
           case ('quote', 'CREATE'):
             final result = await _api.createQuote(payload);
             await _markSynced('quote', result);
@@ -184,11 +182,11 @@ class SyncService {
               op.entityId,
               payload['file_path'] as String,
             );
-            await (_db.update(_db.customers)
-                  ..where((c) => c.id.equals(op.entityId)))
-                .write(
-                  const CustomersCompanion(hasTaxCertificate: Value(true)),
-                );
+            await (_db.update(
+              _db.customers,
+            )..where((c) => c.id.equals(op.entityId))).write(
+              const CustomersCompanion(hasTaxCertificate: Value(true)),
+            );
           case ('company', 'UPDATE'):
             await _api.updateCompany(payload);
           case ('company', 'LOGO'):
@@ -299,11 +297,11 @@ class SyncService {
         await (_db.update(_db.jobs)..where((j) => j.id.equals(result.id)))
             .write(JobsCompanion(version: version, syncStatus: synced));
       case 'service_request':
-        await (_db.update(_db.serviceRequests)
-              ..where((r) => r.id.equals(result.id)))
-            .write(
-              ServiceRequestsCompanion(version: version, syncStatus: synced),
-            );
+        await (_db.update(
+          _db.serviceRequests,
+        )..where((r) => r.id.equals(result.id))).write(
+          ServiceRequestsCompanion(version: version, syncStatus: synced),
+        );
       case 'quote':
         await (_db.update(_db.quotes)..where((q) => q.id.equals(result.id)))
             .write(QuotesCompanion(version: version, syncStatus: synced));
@@ -319,7 +317,8 @@ class SyncService {
     final value = Value(status);
     switch (op.entityType) {
       case 'customer':
-        await (_db.update(_db.customers)..where((c) => c.id.equals(op.entityId)))
+        await (_db.update(_db.customers)
+              ..where((c) => c.id.equals(op.entityId)))
             .write(CustomersCompanion(syncStatus: value));
       case 'job':
         await (_db.update(_db.jobs)..where((j) => j.id.equals(op.entityId)))
@@ -388,25 +387,26 @@ class SyncService {
       _db.companies,
     )..where((c) => c.id.equals(companyId))).getSingleOrNull();
 
-    await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
-        .write(
-          CompaniesCompanion(
-            name: Value(remote['name'] as String? ?? local?.name ?? ''),
-            businessTypes: Value(
-              remote['business_types'] as String? ?? local?.businessTypes ?? '',
-            ),
-            iban: Value(remote['iban'] as String?),
-            address: Value(remote['address'] as String?),
-            phone: Value(remote['phone'] as String?),
-            email: Value(remote['email'] as String?),
-            taxInfo: Value(remote['tax_info'] as String?),
-            introText: Value(remote['intro_text'] as String?),
-            paymentTerms: Value(remote['payment_terms'] as String?),
-            deliveryTime: Value(remote['delivery_time'] as String?),
-            warrantyTerms: Value(remote['warranty_terms'] as String?),
-            hasLogo: Value(remote['has_logo'] as bool? ?? false),
-          ),
-        );
+    await (_db.update(
+      _db.companies,
+    )..where((c) => c.id.equals(companyId))).write(
+      CompaniesCompanion(
+        name: Value(remote['name'] as String? ?? local?.name ?? ''),
+        businessTypes: Value(
+          remote['business_types'] as String? ?? local?.businessTypes ?? '',
+        ),
+        iban: Value(remote['iban'] as String?),
+        address: Value(remote['address'] as String?),
+        phone: Value(remote['phone'] as String?),
+        email: Value(remote['email'] as String?),
+        taxInfo: Value(remote['tax_info'] as String?),
+        introText: Value(remote['intro_text'] as String?),
+        paymentTerms: Value(remote['payment_terms'] as String?),
+        deliveryTime: Value(remote['delivery_time'] as String?),
+        warrantyTerms: Value(remote['warranty_terms'] as String?),
+        hasLogo: Value(remote['has_logo'] as bool? ?? false),
+      ),
+    );
 
     await _syncCompanyLogoFile(
       companyId: companyId,
@@ -501,13 +501,14 @@ class SyncService {
       )..where((c) => c.id.equals(remote.id))).getSingleOrNull();
       if (local == null || local.deletedAt != null) continue;
 
-      await (_db.update(_db.customers)..where((c) => c.id.equals(remote.id)))
-          .write(
-            CustomersCompanion(
-              deletedAt: Value(DateTime.now()),
-              syncStatus: const Value('SYNCED'),
-            ),
-          );
+      await (_db.update(
+        _db.customers,
+      )..where((c) => c.id.equals(remote.id))).write(
+        CustomersCompanion(
+          deletedAt: Value(DateTime.now()),
+          syncStatus: const Value('SYNCED'),
+        ),
+      );
     }
   }
 
@@ -593,31 +594,33 @@ class SyncService {
 
       final r = remote.raw;
       await _db.transaction(() async {
-        await _db.into(_db.quotes).insertOnConflictUpdate(
-          QuotesCompanion(
-            id: Value(remote.id),
-            companyId: Value(companyId),
-            code: Value(r['code'] as String),
-            customerId: Value(r['customer_id'] as String),
-            status: Value(r['status'] as String),
-            notes: Value(r['notes'] as String?),
-            totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
-            introText: Value(r['intro_text'] as String?),
-            paymentTerms: Value(r['payment_terms'] as String?),
-            deliveryTime: Value(r['delivery_time'] as String?),
-            warrantyTerms: Value(r['warranty_terms'] as String?),
-            currency: Value(r['currency'] as String? ?? 'TRY'),
-            vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
-            vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
-            validUntil: Value(
-              r['valid_until'] == null
-                  ? null
-                  : DateTime.parse(r['valid_until'] as String),
-            ),
-            version: Value(remote.version),
-            syncStatus: const Value('SYNCED'),
-          ),
-        );
+        await _db
+            .into(_db.quotes)
+            .insertOnConflictUpdate(
+              QuotesCompanion(
+                id: Value(remote.id),
+                companyId: Value(companyId),
+                code: Value(r['code'] as String),
+                customerId: Value(r['customer_id'] as String),
+                status: Value(r['status'] as String),
+                notes: Value(r['notes'] as String?),
+                totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
+                introText: Value(r['intro_text'] as String?),
+                paymentTerms: Value(r['payment_terms'] as String?),
+                deliveryTime: Value(r['delivery_time'] as String?),
+                warrantyTerms: Value(r['warranty_terms'] as String?),
+                currency: Value(r['currency'] as String? ?? 'TRY'),
+                vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
+                vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
+                validUntil: Value(
+                  r['valid_until'] == null
+                      ? null
+                      : DateTime.parse(r['valid_until'] as String),
+                ),
+                version: Value(remote.version),
+                syncStatus: const Value('SYNCED'),
+              ),
+            );
         await _replaceDocItems(
           quoteId: remote.id,
           items: (r['items'] as List<dynamic>?) ?? const [],
@@ -638,30 +641,32 @@ class SyncService {
 
       final r = remote.raw;
       await _db.transaction(() async {
-        await _db.into(_db.proformas).insertOnConflictUpdate(
-          ProformasCompanion(
-            id: Value(remote.id),
-            companyId: Value(companyId),
-            code: Value(r['code'] as String),
-            customerId: Value(r['customer_id'] as String),
-            validUntil: Value(
-              r['valid_until'] == null
-                  ? null
-                  : DateTime.parse(r['valid_until'] as String),
-            ),
-            notes: Value(r['notes'] as String?),
-            totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
-            introText: Value(r['intro_text'] as String?),
-            paymentTerms: Value(r['payment_terms'] as String?),
-            deliveryTime: Value(r['delivery_time'] as String?),
-            warrantyTerms: Value(r['warranty_terms'] as String?),
-            currency: Value(r['currency'] as String? ?? 'TRY'),
-            vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
-            vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
-            version: Value(remote.version),
-            syncStatus: const Value('SYNCED'),
-          ),
-        );
+        await _db
+            .into(_db.proformas)
+            .insertOnConflictUpdate(
+              ProformasCompanion(
+                id: Value(remote.id),
+                companyId: Value(companyId),
+                code: Value(r['code'] as String),
+                customerId: Value(r['customer_id'] as String),
+                validUntil: Value(
+                  r['valid_until'] == null
+                      ? null
+                      : DateTime.parse(r['valid_until'] as String),
+                ),
+                notes: Value(r['notes'] as String?),
+                totalMinor: Value((r['total_minor'] as num?)?.toInt() ?? 0),
+                introText: Value(r['intro_text'] as String?),
+                paymentTerms: Value(r['payment_terms'] as String?),
+                deliveryTime: Value(r['delivery_time'] as String?),
+                warrantyTerms: Value(r['warranty_terms'] as String?),
+                currency: Value(r['currency'] as String? ?? 'TRY'),
+                vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
+                vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
+                version: Value(remote.version),
+                syncStatus: const Value('SYNCED'),
+              ),
+            );
         await _replaceDocItems(
           proformaId: remote.id,
           items: (r['items'] as List<dynamic>?) ?? const [],
@@ -739,18 +744,24 @@ class SyncService {
       )..where((i) => i.quoteId.equals(quoteId))).go();
       for (final raw in items) {
         final item = raw as Map<String, dynamic>;
-        await _db.into(_db.quoteItems).insertOnConflictUpdate(
-          QuoteItemsCompanion(
-            id: Value(item['id'] as String),
-            quoteId: Value(quoteId),
-            description: Value(item['description'] as String),
-            quantity: Value((item['quantity'] as num).toInt()),
-            unit: Value(item['unit'] as String? ?? 'adet'),
-            unitPriceMinor: Value((item['unit_price_minor'] as num).toInt()),
-            taxRate: Value((item['tax_rate'] as num?)?.toInt() ?? 20),
-            discountMinor: Value((item['discount_minor'] as num?)?.toInt() ?? 0),
-          ),
-        );
+        await _db
+            .into(_db.quoteItems)
+            .insertOnConflictUpdate(
+              QuoteItemsCompanion(
+                id: Value(item['id'] as String),
+                quoteId: Value(quoteId),
+                description: Value(item['description'] as String),
+                quantity: Value((item['quantity'] as num).toInt()),
+                unit: Value(item['unit'] as String? ?? 'adet'),
+                unitPriceMinor: Value(
+                  (item['unit_price_minor'] as num).toInt(),
+                ),
+                taxRate: Value((item['tax_rate'] as num?)?.toInt() ?? 20),
+                discountMinor: Value(
+                  (item['discount_minor'] as num?)?.toInt() ?? 0,
+                ),
+              ),
+            );
       }
       return;
     }
@@ -759,18 +770,22 @@ class SyncService {
     )..where((i) => i.proformaId.equals(proformaId!))).go();
     for (final raw in items) {
       final item = raw as Map<String, dynamic>;
-      await _db.into(_db.proformaItems).insertOnConflictUpdate(
-        ProformaItemsCompanion(
-          id: Value(item['id'] as String),
-          proformaId: Value(proformaId!),
-          description: Value(item['description'] as String),
-          quantity: Value((item['quantity'] as num).toInt()),
-          unit: Value(item['unit'] as String? ?? 'adet'),
-          unitPriceMinor: Value((item['unit_price_minor'] as num).toInt()),
-          taxRate: Value((item['tax_rate'] as num?)?.toInt() ?? 20),
-          discountMinor: Value((item['discount_minor'] as num?)?.toInt() ?? 0),
-        ),
-      );
+      await _db
+          .into(_db.proformaItems)
+          .insertOnConflictUpdate(
+            ProformaItemsCompanion(
+              id: Value(item['id'] as String),
+              proformaId: Value(proformaId!),
+              description: Value(item['description'] as String),
+              quantity: Value((item['quantity'] as num).toInt()),
+              unit: Value(item['unit'] as String? ?? 'adet'),
+              unitPriceMinor: Value((item['unit_price_minor'] as num).toInt()),
+              taxRate: Value((item['tax_rate'] as num?)?.toInt() ?? 20),
+              discountMinor: Value(
+                (item['discount_minor'] as num?)?.toInt() ?? 0,
+              ),
+            ),
+          );
     }
   }
 }

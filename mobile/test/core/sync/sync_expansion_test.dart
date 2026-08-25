@@ -123,53 +123,56 @@ void main() {
     );
   });
 
-  test('talep dönüşümü TEK bir CONVERT operasyonu kuyruklar (ayrıca job '
-      'CREATE kuyruklanmaz) ve push, işi sunucu türetmesiyle hizalar', () async {
-    final repo = ServiceRequestsRepository(db);
-    final request = await repo.create(
-      companyId: _companyId,
-      customerId: _customerId,
-      description: 'Kombi arızalı, yanmıyor',
-      priority: 'YUKSEK',
-    );
-    await db.delete(db.syncOperations).go(); // CREATE satırını temizle
+  test(
+    'talep dönüşümü TEK bir CONVERT operasyonu kuyruklar (ayrıca job '
+    'CREATE kuyruklanmaz) ve push, işi sunucu türetmesiyle hizalar',
+    () async {
+      final repo = ServiceRequestsRepository(db);
+      final request = await repo.create(
+        companyId: _companyId,
+        customerId: _customerId,
+        description: 'Kombi arızalı, yanmıyor',
+        priority: 'YUKSEK',
+      );
+      await db.delete(db.syncOperations).go(); // CREATE satırını temizle
 
-    final job = await repo.convertToJob(
-      await (db.select(
+      final job = await repo.convertToJob(
+        await (db.select(
+          db.serviceRequests,
+        )..where((r) => r.id.equals(request.id))).getSingle(),
+      );
+
+      final ops = await db.select(db.syncOperations).get();
+      expect(ops, hasLength(1), reason: 'job CREATE kuyruklanmamalı');
+      expect(ops.single.entityType, 'service_request');
+      expect(ops.single.operation, 'CONVERT');
+      expect(
+        (jsonDecode(ops.single.payload) as Map<String, dynamic>)['job_id'],
+        job.id,
+      );
+
+      api.convertResponses.add({
+        'id': job.id,
+        'code': 'J-ABC12345',
+        'title': 'Kombi arızalı, yanmıyor',
+        'description': 'Kombi arızalı, yanmıyor',
+        'version': 1,
+      });
+      await buildService().runOnce(_companyId);
+
+      expect(api.convertCalls, [(request.id, job.id)]);
+      final syncedJob = await (db.select(
+        db.jobs,
+      )..where((j) => j.id.equals(job.id))).getSingle();
+      expect(syncedJob.code, 'J-ABC12345');
+      expect(syncedJob.syncStatus, 'SYNCED');
+      final syncedRequest = await (db.select(
         db.serviceRequests,
-      )..where((r) => r.id.equals(request.id))).getSingle(),
-    );
-
-    final ops = await db.select(db.syncOperations).get();
-    expect(ops, hasLength(1), reason: 'job CREATE kuyruklanmamalı');
-    expect(ops.single.entityType, 'service_request');
-    expect(ops.single.operation, 'CONVERT');
-    expect(
-      (jsonDecode(ops.single.payload) as Map<String, dynamic>)['job_id'],
-      job.id,
-    );
-
-    api.convertResponses.add({
-      'id': job.id,
-      'code': 'J-ABC12345',
-      'title': 'Kombi arızalı, yanmıyor',
-      'description': 'Kombi arızalı, yanmıyor',
-      'version': 1,
-    });
-    await buildService().runOnce(_companyId);
-
-    expect(api.convertCalls, [(request.id, job.id)]);
-    final syncedJob = await (db.select(
-      db.jobs,
-    )..where((j) => j.id.equals(job.id))).getSingle();
-    expect(syncedJob.code, 'J-ABC12345');
-    expect(syncedJob.syncStatus, 'SYNCED');
-    final syncedRequest = await (db.select(
-      db.serviceRequests,
-    )..where((r) => r.id.equals(request.id))).getSingle();
-    expect(syncedRequest.syncStatus, 'SYNCED');
-    expect(await db.select(db.syncOperations).get(), isEmpty);
-  });
+      )..where((r) => r.id.equals(request.id))).getSingle();
+      expect(syncedRequest.syncStatus, 'SYNCED');
+      expect(await db.select(db.syncOperations).get(), isEmpty);
+    },
+  );
 
   test('tahsilat push edilirken customer_id gövdeden ayıklanıp URL yoluna '
       'gider', () async {
@@ -264,9 +267,7 @@ void main() {
       customerId: _customerId,
       amountMinor: 50000,
     );
-    api.paymentResponses.add(
-      ApiException(402, 'Aboneliğinin süresi dolmuş.'),
-    );
+    api.paymentResponses.add(ApiException(402, 'Aboneliğinin süresi dolmuş.'));
 
     await buildService().runOnce(_companyId);
 
@@ -278,15 +279,17 @@ void main() {
 
   test('iş notu outbox üzerinden job path\'ine push edilir', () async {
     final mediaRepo = JobMediaRepository(db);
-    await db.into(db.jobs).insert(
-      JobsCompanion.insert(
-        id: 'job-1',
-        companyId: _companyId,
-        code: 'SRV-1',
-        customerId: _customerId,
-        title: 'Test iş',
-      ),
-    );
+    await db
+        .into(db.jobs)
+        .insert(
+          JobsCompanion.insert(
+            id: 'job-1',
+            companyId: _companyId,
+            code: 'SRV-1',
+            customerId: _customerId,
+            title: 'Test iş',
+          ),
+        );
     await mediaRepo.addNote(jobId: 'job-1', note: 'Panele gidecek not');
 
     await buildService().runOnce(_companyId);
@@ -300,26 +303,27 @@ void main() {
 
   test('fotoğraf push\'u dosyayı multipart yükler; dosya silinmişse satır '
       'FAILED olur', () async {
-    final tempFile = File(
-      '${Directory.systemTemp.path}/sync_test_photo.jpg',
-    )..writeAsBytesSync([1, 2, 3]);
+    final tempFile = File('${Directory.systemTemp.path}/sync_test_photo.jpg')
+      ..writeAsBytesSync([1, 2, 3]);
     addTearDown(() => tempFile.deleteSync());
 
     Future<void> enqueuePhoto(String id, String path) {
-      return db.into(db.syncOperations).insert(
-        SyncOperationsCompanion.insert(
-          id: 'op-$id',
-          entityType: 'job_photo',
-          entityId: id,
-          operation: 'CREATE',
-          payload: jsonEncode({
-            'id': id,
-            'job_id': 'job-1',
-            'category': 'ARIZA',
-            'file_path': path,
-          }),
-        ),
-      );
+      return db
+          .into(db.syncOperations)
+          .insert(
+            SyncOperationsCompanion.insert(
+              id: 'op-$id',
+              entityType: 'job_photo',
+              entityId: id,
+              operation: 'CREATE',
+              payload: jsonEncode({
+                'id': id,
+                'job_id': 'job-1',
+                'category': 'ARIZA',
+                'file_path': path,
+              }),
+            ),
+          );
     }
 
     await enqueuePhoto('ph-ok', tempFile.path);

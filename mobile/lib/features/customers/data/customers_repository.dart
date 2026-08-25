@@ -153,10 +153,7 @@ class CustomersRepository {
     );
     if (!await dir.exists()) await dir.create(recursive: true);
 
-    final destPath = p.join(
-      dir.path,
-      '$customerId${p.extension(sourcePath)}',
-    );
+    final destPath = p.join(dir.path, '$customerId${p.extension(sourcePath)}');
     await File(sourcePath).copy(destPath);
 
     await _db.transaction(() async {
@@ -187,13 +184,11 @@ class CustomersRepository {
     );
 
     await _db.transaction(() async {
-      await (_db.update(_db.customers)..where((c) => c.id.equals(customerId)))
-          .write(
-            CustomersCompanion(
-              logoPath: Value(path),
-              hasLogo: const Value(true),
-            ),
-          );
+      await (_db.update(
+        _db.customers,
+      )..where((c) => c.id.equals(customerId))).write(
+        CustomersCompanion(logoPath: Value(path), hasLogo: const Value(true)),
+      );
       await _enqueue(
         entityId: customerId,
         operation: 'LOGO',
@@ -206,13 +201,11 @@ class CustomersRepository {
     final customer = await byId(customerId);
 
     await _db.transaction(() async {
-      await (_db.update(_db.customers)..where((c) => c.id.equals(customerId)))
-          .write(
-            const CustomersCompanion(
-              logoPath: Value(null),
-              hasLogo: Value(false),
-            ),
-          );
+      await (_db.update(
+        _db.customers,
+      )..where((c) => c.id.equals(customerId))).write(
+        const CustomersCompanion(logoPath: Value(null), hasLogo: Value(false)),
+      );
       // `file_path: null` senkron motoruna "sunucudaki logoyu sil" der.
       await _enqueue(
         entityId: customerId,
@@ -262,6 +255,7 @@ final customerByIdProvider = StreamProvider.family<Customer?, String>((
   id,
 ) {
   final db = ref.watch(databaseProvider);
-  return (db.select(db.customers)
-        ..where((c) => c.id.equals(id))).watchSingleOrNull();
+  return (db.select(
+    db.customers,
+  )..where((c) => c.id.equals(id))).watchSingleOrNull();
 });

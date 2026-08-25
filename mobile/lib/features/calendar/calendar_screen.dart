@@ -58,7 +58,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 },
                 calendarStyle: CalendarStyle(
                   todayDecoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   selectedDecoration: BoxDecoration(
@@ -70,7 +72,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     shape: BoxShape.circle,
                   ),
                 ),
-                headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+                headerStyle: const HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                ),
               ),
               const Divider(height: 1),
               Expanded(
@@ -78,7 +83,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ? Center(
                         child: Text(
                           'Bu günde iş yok',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       )
                     : ListView.separated(
@@ -88,7 +97,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         itemBuilder: (context, index) {
                           final item = selectedJobs[index];
                           final job = item.job;
-                          final priorityColor = jobPriorityColors[job.priority] ?? Colors.grey;
+                          final priorityColor =
+                              jobPriorityColors[job.priority] ?? Colors.grey;
                           return Card(
                             child: ListTile(
                               onTap: () => context.push('/jobs/${job.id}'),
@@ -100,11 +110,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 ),
                               ),
                               title: Text(
-                                DateFormat('HH:mm').format(job.appointmentDate!),
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                DateFormat(
+                                  'HH:mm',
+                                ).format(job.appointmentDate!),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                              subtitle: Text('${item.customer.displayName} · ${job.title}'),
-                              trailing: Text(jobStatusLabels[job.status] ?? job.status),
+                              subtitle: Text(
+                                '${item.customer.displayName} · ${job.title}',
+                              ),
+                              trailing: Text(
+                                jobStatusLabels[job.status] ?? job.status,
+                              ),
                             ),
                           );
                         },

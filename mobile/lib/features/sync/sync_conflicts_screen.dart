@@ -98,9 +98,9 @@ class _ConflictCardState extends ConsumerState<_ConflictCard> {
       ref.invalidate(pendingConflictsProvider);
       // Sunucunun nihai hali hemen yerele insin.
       ref.read(syncTriggerProvider).syncNow();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Çakışma çözüldü.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Çakışma çözüldü.')));
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);

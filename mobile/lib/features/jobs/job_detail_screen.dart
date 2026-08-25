@@ -32,7 +32,8 @@ class JobDetailScreen extends ConsumerWidget {
     final jobAsync = ref.watch(_jobProvider(jobId));
 
     return jobAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Hata: $e'))),
       data: (job) {
         if (job == null) {
@@ -58,7 +59,9 @@ class _JobDetailContent extends ConsumerWidget {
             for (final entry in jobStatusLabels.entries)
               ListTile(
                 title: Text(entry.value),
-                trailing: job.status == entry.key ? const Icon(Icons.check) : null,
+                trailing: job.status == entry.key
+                    ? const Icon(Icons.check)
+                    : null,
                 onTap: () => Navigator.pop(context, entry.key),
               ),
           ],
@@ -75,11 +78,19 @@ class _JobDetailContent extends ConsumerWidget {
 
   Future<void> _shareServiceFormPdf(BuildContext context, WidgetRef ref) async {
     final company = await ref.read(currentCompanyProvider.future);
-    final customer = await ref.read(customersRepositoryProvider).byId(job.customerId);
+    final customer = await ref
+        .read(customersRepositoryProvider)
+        .byId(job.customerId);
     if (company == null || customer == null) return;
 
-    final notes = await ref.read(jobMediaRepositoryProvider).watchNotes(job.id).first;
-    final signatures = await ref.read(jobMediaRepositoryProvider).watchSignatures(job.id).first;
+    final notes = await ref
+        .read(jobMediaRepositoryProvider)
+        .watchNotes(job.id)
+        .first;
+    final signatures = await ref
+        .read(jobMediaRepositoryProvider)
+        .watchSignatures(job.id)
+        .first;
     final signature = signatures.isNotEmpty ? signatures.first : null;
 
     final file = await PdfService.buildServiceFormPdf(
@@ -92,14 +103,19 @@ class _JobDetailContent extends ConsumerWidget {
     );
     if (context.mounted) {
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path)], text: 'Servis Formu ${job.code}'),
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'Servis Formu ${job.code}',
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final customerAsync = ref.watch(customersRepositoryProvider).byId(job.customerId);
+    final customerAsync = ref
+        .watch(customersRepositoryProvider)
+        .byId(job.customerId);
     final statusColor = jobStatusColors[job.status] ?? Colors.grey;
 
     return Scaffold(
@@ -116,7 +132,12 @@ class _JobDetailContent extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text(job.title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            job.title,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -126,7 +147,9 @@ class _JobDetailContent extends ConsumerWidget {
                 label: Text(jobStatusLabels[job.status] ?? job.status),
                 onPressed: () => _changeStatus(context, ref),
               ),
-              Chip(label: Text(jobPriorityLabels[job.priority] ?? job.priority)),
+              Chip(
+                label: Text(jobPriorityLabels[job.priority] ?? job.priority),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -145,7 +168,10 @@ class _JobDetailContent extends ConsumerWidget {
             _InfoTile(
               icon: Icons.event_outlined,
               label: 'Randevu',
-              value: DateFormat('d MMMM y, EEEE HH:mm', 'tr_TR').format(job.appointmentDate!),
+              value: DateFormat(
+                'd MMMM y, EEEE HH:mm',
+                'tr_TR',
+              ).format(job.appointmentDate!),
             ),
           if (job.address?.isNotEmpty == true)
             _InfoTile(
@@ -159,7 +185,11 @@ class _JobDetailContent extends ConsumerWidget {
               ),
             ),
           if (job.description?.isNotEmpty == true)
-            _InfoTile(icon: Icons.description_outlined, label: 'Açıklama', value: job.description!),
+            _InfoTile(
+              icon: Icons.description_outlined,
+              label: 'Açıklama',
+              value: job.description!,
+            ),
           _InfoTile(
             icon: Icons.payments_outlined,
             label: 'Tahmini fiyat',
@@ -193,7 +223,9 @@ class _JobDetailContent extends ConsumerWidget {
 
   Future<void> _showSetPriceDialog(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController(
-      text: job.actualPriceMinor != null ? (job.actualPriceMinor! / 100).toString() : '',
+      text: job.actualPriceMinor != null
+          ? (job.actualPriceMinor! / 100).toString()
+          : '',
     );
     final result = await showDialog<String>(
       context: context,
@@ -206,7 +238,10 @@ class _JobDetailContent extends ConsumerWidget {
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text('Kaydet ve Tamamla'),
@@ -241,9 +276,16 @@ class _NotesSection extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Not Ekle'),
-        content: TextField(controller: controller, maxLines: 3, autofocus: true),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          autofocus: true,
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text),
             child: const Text('Ekle'),
@@ -252,7 +294,9 @@ class _NotesSection extends ConsumerWidget {
       ),
     );
     if (result != null && result.trim().isNotEmpty) {
-      await ref.read(jobMediaRepositoryProvider).addNote(jobId: jobId, note: result.trim());
+      await ref
+          .read(jobMediaRepositoryProvider)
+          .addNote(jobId: jobId, note: result.trim());
     }
   }
 
@@ -268,7 +312,9 @@ class _NotesSection extends ConsumerWidget {
           children: [
             Text(
               'Yapılan İşlemler / Notlar',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Spacer(),
             IconButton(
@@ -282,7 +328,10 @@ class _NotesSection extends ConsumerWidget {
           error: (e, _) => Text('Hata: $e'),
           data: (notes) {
             if (notes.isEmpty) {
-              return Text('Henüz not eklenmedi', style: TextStyle(color: scheme.onSurfaceVariant));
+              return Text(
+                'Henüz not eklenmedi',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              );
             }
             return Column(
               children: [
@@ -290,7 +339,12 @@ class _NotesSection extends ConsumerWidget {
                   Card(
                     child: ListTile(
                       title: Text(note.note),
-                      subtitle: Text(DateFormat('d MMM y, HH:mm', 'tr_TR').format(note.createdAt)),
+                      subtitle: Text(
+                        DateFormat(
+                          'd MMM y, HH:mm',
+                          'tr_TR',
+                        ).format(note.createdAt),
+                      ),
                     ),
                   ),
               ],
@@ -306,7 +360,10 @@ class _PhotosSection extends ConsumerWidget {
   const _PhotosSection({required this.jobId});
   final String jobId;
 
-  Future<void> _pickCategoryAndCapture(BuildContext context, WidgetRef ref) async {
+  Future<void> _pickCategoryAndCapture(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final category = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
@@ -325,7 +382,10 @@ class _PhotosSection extends ConsumerWidget {
     if (category == null) return;
 
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    final file = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+    );
     if (file == null) return;
 
     await ref
@@ -345,7 +405,9 @@ class _PhotosSection extends ConsumerWidget {
           children: [
             Text(
               'Fotoğraflar',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const Spacer(),
             IconButton(
@@ -359,7 +421,10 @@ class _PhotosSection extends ConsumerWidget {
           error: (e, _) => Text('Hata: $e'),
           data: (photos) {
             if (photos.isEmpty) {
-              return Text('Henüz fotoğraf eklenmedi', style: TextStyle(color: scheme.onSurfaceVariant));
+              return Text(
+                'Henüz fotoğraf eklenmedi',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              );
             }
             return SizedBox(
               height: 96,
@@ -383,14 +448,21 @@ class _PhotosSection extends ConsumerWidget {
                           left: 4,
                           bottom: 4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              _photoCategoryLabels[photo.category] ?? photo.category,
-                              style: const TextStyle(fontSize: 10, color: Colors.white),
+                              _photoCategoryLabels[photo.category] ??
+                                  photo.category,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -432,7 +504,9 @@ class _SignatureSection extends ConsumerWidget {
       children: [
         Text(
           'Müşteri İmzası',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         signaturesAsync.when(
@@ -455,12 +529,19 @@ class _SignatureSection extends ConsumerWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.file(File(signature.filePath), height: 120, fit: BoxFit.contain),
+                      child: Image.file(
+                        File(signature.filePath),
+                        height: 120,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '${signature.signerName} · ${DateFormat('d MMM y, HH:mm', 'tr_TR').format(signature.createdAt)}',
-                      style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -474,7 +555,12 @@ class _SignatureSection extends ConsumerWidget {
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.icon, required this.label, required this.value, this.trailing});
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.trailing,
+  });
   final IconData icon;
   final String label;
   final String value;
@@ -494,7 +580,13 @@ class _InfoTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(value, style: const TextStyle(fontSize: 15)),
               ],

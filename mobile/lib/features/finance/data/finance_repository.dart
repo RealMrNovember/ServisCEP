@@ -41,20 +41,22 @@ class FinanceRepository {
     final start = DateTime(now.year, now.month);
     final end = DateTime(now.year, now.month + 1);
 
-    final incomeStream = (_db.select(_db.incomeEntries)..where(
-          (i) =>
-              i.companyId.equals(companyId) &
-              i.date.isBiggerOrEqualValue(start) &
-              i.date.isSmallerThanValue(end),
-        ))
-        .watch();
-    final expenseStream = (_db.select(_db.expenseEntries)..where(
-          (e) =>
-              e.companyId.equals(companyId) &
-              e.date.isBiggerOrEqualValue(start) &
-              e.date.isSmallerThanValue(end),
-        ))
-        .watch();
+    final incomeStream =
+        (_db.select(_db.incomeEntries)..where(
+              (i) =>
+                  i.companyId.equals(companyId) &
+                  i.date.isBiggerOrEqualValue(start) &
+                  i.date.isSmallerThanValue(end),
+            ))
+            .watch();
+    final expenseStream =
+        (_db.select(_db.expenseEntries)..where(
+              (e) =>
+                  e.companyId.equals(companyId) &
+                  e.date.isBiggerOrEqualValue(start) &
+                  e.date.isSmallerThanValue(end),
+            ))
+            .watch();
 
     return incomeStream.asyncMap((incomes) async {
       final expenses = await expenseStream.first;
@@ -76,18 +78,20 @@ class FinanceRepository {
   }) async {
     final id = _uuid.v4();
     await _db.transaction(() async {
-      await _db.into(_db.incomeEntries).insert(
-        IncomeEntriesCompanion.insert(
-          id: id,
-          companyId: companyId,
-          description: description,
-          amountMinor: amountMinor,
-          category: Value(category),
-          customerId: Value(customerId),
-          method: Value(method ?? 'Nakit'),
-          note: Value(note),
-        ),
-      );
+      await _db
+          .into(_db.incomeEntries)
+          .insert(
+            IncomeEntriesCompanion.insert(
+              id: id,
+              companyId: companyId,
+              description: description,
+              amountMinor: amountMinor,
+              category: Value(category),
+              customerId: Value(customerId),
+              method: Value(method ?? 'Nakit'),
+              note: Value(note),
+            ),
+          );
       await _enqueue(
         entityType: 'income_entry',
         entityId: id,
@@ -115,18 +119,20 @@ class FinanceRepository {
   }) async {
     final id = _uuid.v4();
     await _db.transaction(() async {
-      await _db.into(_db.expenseEntries).insert(
-        ExpenseEntriesCompanion.insert(
-          id: id,
-          companyId: companyId,
-          description: description,
-          amountMinor: amountMinor,
-          category: Value(category),
-          vendorName: Value(vendorName),
-          method: Value(method ?? 'Nakit'),
-          note: Value(note),
-        ),
-      );
+      await _db
+          .into(_db.expenseEntries)
+          .insert(
+            ExpenseEntriesCompanion.insert(
+              id: id,
+              companyId: companyId,
+              description: description,
+              amountMinor: amountMinor,
+              category: Value(category),
+              vendorName: Value(vendorName),
+              method: Value(method ?? 'Nakit'),
+              note: Value(note),
+            ),
+          );
       await _enqueue(
         entityType: 'expense_entry',
         entityId: id,
@@ -160,34 +166,38 @@ class FinanceRepository {
   }) async {
     final id = _uuid.v4();
     await _db.transaction(() async {
-      await _db.into(_db.payments).insert(
-        PaymentsCompanion.insert(
-          id: id,
-          companyId: companyId,
-          customerId: customerId,
-          jobId: Value(jobId),
-          amountMinor: amountMinor,
-          method: Value(method ?? 'Nakit'),
-          note: Value(note),
-        ),
-      );
+      await _db
+          .into(_db.payments)
+          .insert(
+            PaymentsCompanion.insert(
+              id: id,
+              companyId: companyId,
+              customerId: customerId,
+              jobId: Value(jobId),
+              amountMinor: amountMinor,
+              method: Value(method ?? 'Nakit'),
+              note: Value(note),
+            ),
+          );
 
-      await _db.into(_db.customerLedgerEntries).insert(
-        CustomerLedgerEntriesCompanion.insert(
-          id: _uuid.v4(),
-          companyId: companyId,
-          customerId: customerId,
-          type: 'CREDIT',
-          amountMinor: amountMinor,
-          referenceType: 'payment',
-          // Referans TAHSİLATIN kendisidir (işin değil). Önceden buraya
-          // jobId yazılıyordu; sunucu ise payment.id yazıyor. Bu uyumsuzluk
-          // yüzünden senkronda aynı tahsilatın yerel ve sunucu kaydı
-          // eşleştirilemez, bakiye çift sayılırdı.
-          referenceId: Value(id),
-          description: note?.isNotEmpty == true ? note! : 'Tahsilat',
-        ),
-      );
+      await _db
+          .into(_db.customerLedgerEntries)
+          .insert(
+            CustomerLedgerEntriesCompanion.insert(
+              id: _uuid.v4(),
+              companyId: companyId,
+              customerId: customerId,
+              type: 'CREDIT',
+              amountMinor: amountMinor,
+              referenceType: 'payment',
+              // Referans TAHSİLATIN kendisidir (işin değil). Önceden buraya
+              // jobId yazılıyordu; sunucu ise payment.id yazıyor. Bu uyumsuzluk
+              // yüzünden senkronda aynı tahsilatın yerel ve sunucu kaydı
+              // eşleştirilemez, bakiye çift sayılırdı.
+              referenceId: Value(id),
+              description: note?.isNotEmpty == true ? note! : 'Tahsilat',
+            ),
+          );
 
       await _enqueue(
         entityType: 'payment',
@@ -211,15 +221,17 @@ class FinanceRepository {
     required String entityId,
     required Map<String, dynamic> payload,
   }) {
-    return _db.into(_db.syncOperations).insert(
-      SyncOperationsCompanion.insert(
-        id: _uuid.v4(),
-        entityType: entityType,
-        entityId: entityId,
-        operation: 'CREATE',
-        payload: jsonEncode(payload),
-      ),
-    );
+    return _db
+        .into(_db.syncOperations)
+        .insert(
+          SyncOperationsCompanion.insert(
+            id: _uuid.v4(),
+            entityType: entityType,
+            entityId: entityId,
+            operation: 'CREATE',
+            payload: jsonEncode(payload),
+          ),
+        );
   }
 }
 
@@ -242,5 +254,7 @@ final expenseListProvider = StreamProvider<List<ExpenseEntry>>((ref) {
 final monthlySummaryProvider = StreamProvider<MonthlySummary>((ref) {
   final session = ref.watch(sessionControllerProvider).valueOrNull;
   if (session == null) return const Stream.empty();
-  return ref.watch(financeRepositoryProvider).watchThisMonthSummary(session.companyId);
+  return ref
+      .watch(financeRepositoryProvider)
+      .watchThisMonthSummary(session.companyId);
 });

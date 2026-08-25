@@ -62,12 +62,16 @@ abstract final class NotificationService {
     // Tek renkli bildirim simgesi — launcher ikonu (renkli) verilirse
     // Android yalnızca alfa kanalını kullandığı için simge tanınmaz bir
     // leke olarak görünür. Bkz. res/drawable/ic_notification.xml.
-    const androidInit = AndroidInitializationSettings('@drawable/ic_notification');
+    const androidInit = AndroidInitializationSettings(
+      '@drawable/ic_notification',
+    );
     const initSettings = InitializationSettings(android: androidInit);
     await _plugin.initialize(settings: initSettings);
 
     await _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
 
     _initialized = true;
@@ -83,9 +87,7 @@ abstract final class NotificationService {
     if (appointment == null) return;
     if (reminderLeadMinutes <= 0) return; // kullanıcı kapatmış
 
-    final fireAt = appointment.subtract(
-      Duration(minutes: reminderLeadMinutes),
-    );
+    final fireAt = appointment.subtract(Duration(minutes: reminderLeadMinutes));
     if (fireAt.isBefore(DateTime.now())) return;
 
     await init();

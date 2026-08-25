@@ -78,7 +78,9 @@ class SyncTrigger with WidgetsBindingObserver {
 
     final bool basarili;
     try {
-      basarili = await _ref.read(syncServiceProvider).runOnce(session.companyId);
+      basarili = await _ref
+          .read(syncServiceProvider)
+          .runOnce(session.companyId);
     } on Object {
       return false;
     }
@@ -100,7 +102,9 @@ class SyncTrigger with WidgetsBindingObserver {
     // yeniden başlatılmadan "sona erdi" kademesine geçebilsin.
     _ref.invalidate(subscriptionStatusProvider);
     unawaited(
-      _ref.read(syncServiceProvider).runOnce(session.companyId).then((basarili) {
+      _ref.read(syncServiceProvider).runOnce(session.companyId).then((
+        basarili,
+      ) {
         // Yalnızca GERÇEKTEN sunucuya ulaşan tur "son senkron" sayılır.
         // Önceden `runOnce` hatayı yutup normal dönüyordu ve bu satır her
         // koşulda çalışıyordu; ekran, sunucuya hiç ulaşılamamışken bile

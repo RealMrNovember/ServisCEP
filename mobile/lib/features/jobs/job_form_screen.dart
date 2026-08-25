@@ -69,7 +69,13 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
     final session = ref.read(sessionControllerProvider).valueOrNull;
     if (session == null) return;
 
-    final appointment = DateTime(_date.year, _date.month, _date.day, _time.hour, _time.minute);
+    final appointment = DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      _time.hour,
+      _time.minute,
+    );
 
     try {
       final job = await ref
@@ -81,7 +87,9 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
             description: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
-            address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+            address: _addressController.text.trim().isEmpty
+                ? null
+                : _addressController.text.trim(),
             appointmentDate: appointment,
             startTime:
                 '${_time.hour.toString().padLeft(2, '0')}:${_time.minute.toString().padLeft(2, '0')}',
@@ -120,7 +128,10 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
                     decoration: const InputDecoration(labelText: 'Müşteri'),
                     items: [
                       for (final c in customers)
-                        DropdownMenuItem(value: c.id, child: Text(c.displayName)),
+                        DropdownMenuItem(
+                          value: c.id,
+                          child: Text(c.displayName),
+                        ),
                     ],
                     onChanged: (v) => setState(() => _customerId = v),
                     validator: (v) => v == null ? 'Müşteri seçmelisin' : null,
@@ -135,7 +146,9 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
                   }
                   final allTypes = ref.watch(allJobTypeNamesProvider);
                   return allTypes.where(
-                    (t) => t.toLowerCase().contains(textEditingValue.text.toLowerCase()),
+                    (t) => t.toLowerCase().contains(
+                      textEditingValue.text.toLowerCase(),
+                    ),
                   );
                 },
                 onSelected: (selection) => _titleController.text = selection,
@@ -148,7 +161,9 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
                       labelText: 'İş türü / başlık',
                       hintText: 'ör. Kamera arızası',
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Bu alan gerekli'
+                        : null,
                   );
                 },
               ),
@@ -156,19 +171,26 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Açıklama / talep'),
+                decoration: const InputDecoration(
+                  labelText: 'Açıklama / talep',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Adres (opsiyonel)'),
+                decoration: const InputDecoration(
+                  labelText: 'Adres (opsiyonel)',
+                ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: _priority,
                 decoration: const InputDecoration(labelText: 'Öncelik'),
                 items: jobPriorityLabels.entries
-                    .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _priority = v ?? _priority),
               ),
@@ -229,7 +251,10 @@ class _NoCustomersNotice extends StatelessWidget {
         children: [
           const Text('İş oluşturmak için önce bir müşteri eklemelisin.'),
           const SizedBox(height: 8),
-          FilledButton.tonal(onPressed: onCreateCustomer, child: const Text('Müşteri Ekle')),
+          FilledButton.tonal(
+            onPressed: onCreateCustomer,
+            child: const Text('Müşteri Ekle'),
+          ),
         ],
       ),
     );

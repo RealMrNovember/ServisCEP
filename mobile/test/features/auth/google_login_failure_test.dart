@@ -95,9 +95,7 @@ void main() {
   test('başka bir sunucu hatası kayıt akışını tetiklemez', () async {
     // Ör. abonelik/sunucu hatası — kullanıcı yeni hesap açmaya
     // yönlendirilmemeli.
-    final repository = _repository(
-      ApiException(500, 'Sunucu hatası'),
-    );
+    final repository = _repository(ApiException(500, 'Sunucu hatası'));
 
     await expectLater(
       repository.loginWithGoogle('token', email: 'a@b.com'),

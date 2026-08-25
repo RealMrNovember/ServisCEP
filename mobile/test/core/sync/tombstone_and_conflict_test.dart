@@ -72,35 +72,38 @@ void main() {
       expect(customer.syncStatus, 'SYNCED');
     });
 
-    test('bekleyen yerel yazması olan müşteri tombstone ile SİLİNMEZ', () async {
-      await insertCustomer('c2');
-      await db
-          .into(db.syncOperations)
-          .insert(
-            SyncOperationsCompanion.insert(
-              id: 'op-1',
-              entityType: 'customer',
-              entityId: 'c2',
-              operation: 'UPDATE',
-              payload: jsonEncode({'contact_name': 'Telefondaki hali'}),
-              baseVersion: const Value(1),
-            ),
-          );
-      api.trashedCustomersToPull = [trashedRecord('c2')];
-      // Push başarısız olsun ki outbox satırı PENDING kalsın (ağ hatası).
-      api.customerResponses.add(ApiException(null, 'Ağ hatası'));
+    test(
+      'bekleyen yerel yazması olan müşteri tombstone ile SİLİNMEZ',
+      () async {
+        await insertCustomer('c2');
+        await db
+            .into(db.syncOperations)
+            .insert(
+              SyncOperationsCompanion.insert(
+                id: 'op-1',
+                entityType: 'customer',
+                entityId: 'c2',
+                operation: 'UPDATE',
+                payload: jsonEncode({'contact_name': 'Telefondaki hali'}),
+                baseVersion: const Value(1),
+              ),
+            );
+        api.trashedCustomersToPull = [trashedRecord('c2')];
+        // Push başarısız olsun ki outbox satırı PENDING kalsın (ağ hatası).
+        api.customerResponses.add(ApiException(null, 'Ağ hatası'));
 
-      await buildService().runOnce(_companyId);
+        await buildService().runOnce(_companyId);
 
-      final customer = await (db.select(
-        db.customers,
-      )..where((c) => c.id.equals('c2'))).getSingle();
-      expect(
-        customer.deletedAt,
-        isNull,
-        reason: 'kullanıcının bekleyen yazması sessizce silinmemeli',
-      );
-    });
+        final customer = await (db.select(
+          db.customers,
+        )..where((c) => c.id.equals('c2'))).getSingle();
+        expect(
+          customer.deletedAt,
+          isNull,
+          reason: 'kullanıcının bekleyen yazması sessizce silinmemeli',
+        );
+      },
+    );
 
     test('zaten silinmiş kayıt tekrar işlenmez', () async {
       final deletedAt = DateTime(2026, 8, 1);

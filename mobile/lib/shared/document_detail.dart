@@ -84,7 +84,10 @@ class DocumentDetailScaffold extends ConsumerWidget {
               if (statusPill != null)
                 onChangeStatus == null
                     ? statusPill!
-                    : GestureDetector(onTap: onChangeStatus, child: statusPill!),
+                    : GestureDetector(
+                        onTap: onChangeStatus,
+                        child: statusPill!,
+                      ),
               StatusPill(
                 label: currency.code,
                 color: scheme.onSurfaceVariant,

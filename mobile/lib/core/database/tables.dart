@@ -225,7 +225,6 @@ class Quotes extends Table {
   TextColumn get notes => text().nullable()();
   IntColumn get totalMinor => integer().withDefault(const Constant(0))();
 
-
   /// Belgenin giriş yazısı ve şartları.
   ///
   /// Şirket ayarlarındaki varsayılanlar belge OLUŞTURULURKEN kopyalanır;
@@ -279,7 +278,6 @@ class Proformas extends Table {
   DateTimeColumn get validUntil => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   IntColumn get totalMinor => integer().withDefault(const Constant(0))();
-
 
   /// Belgenin giriş yazısı ve şartları.
   ///

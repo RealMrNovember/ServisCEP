@@ -25,7 +25,8 @@ class PlanInfo {
         .toList(),
     priceMonthlyMinor: (json['price_monthly_minor'] as num).toInt(),
     priceYearlyMinor: (json['price_yearly_minor'] as num?)?.toInt() ?? 0,
-    yearlySavingsPercent: (json['yearly_savings_percent'] as num?)?.toInt() ?? 0,
+    yearlySavingsPercent:
+        (json['yearly_savings_percent'] as num?)?.toInt() ?? 0,
     maxUsers: (json['max_users'] as num?)?.toInt(),
   );
 

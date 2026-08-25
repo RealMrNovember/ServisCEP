@@ -169,8 +169,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     if (_defaultsApplied) return;
     _defaultsApplied = true;
 
-    _introController.text =
-        company.introText?.trim().isNotEmpty == true
+    _introController.text = company.introText?.trim().isNotEmpty == true
         ? company.introText!
         : PdfService.defaultIntro(_kind.label);
     _paymentTermsController.text = company.paymentTerms ?? '';
@@ -262,8 +261,10 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     if (_items.isEmpty) {
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('En az bir kalem ekle — "Serbest satır" ya da '
-              '"Stoktan" ile ekleyebilirsin.'),
+          content: Text(
+            'En az bir kalem ekle — "Serbest satır" ya da '
+            '"Stoktan" ile ekleyebilirsin.',
+          ),
         ),
       );
       return;
@@ -287,12 +288,14 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     setState(() => _isSubmitting = true);
     try {
       final taken = switch (_kind) {
-        DocumentKind.quote => await ref
-            .read(quotesRepositoryProvider)
-            .isCodeTaken(session.companyId, code),
-        DocumentKind.proforma => await ref
-            .read(proformasRepositoryProvider)
-            .isCodeTaken(session.companyId, code),
+        DocumentKind.quote =>
+          await ref
+              .read(quotesRepositoryProvider)
+              .isCodeTaken(session.companyId, code),
+        DocumentKind.proforma =>
+          await ref
+              .read(proformasRepositoryProvider)
+              .isCodeTaken(session.companyId, code),
       };
       if (taken) {
         messenger.showSnackBar(

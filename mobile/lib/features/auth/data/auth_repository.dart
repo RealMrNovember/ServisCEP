@@ -36,11 +36,16 @@ class AuthSession {
   final String role;
 
   bool get isOwner => role == 'OWNER';
-  bool get canSeeFinance => role == 'OWNER' || role == 'ADMIN' || role == 'ACCOUNTING';
+  bool get canSeeFinance =>
+      role == 'OWNER' || role == 'ADMIN' || role == 'ACCOUNTING';
 }
 
 class AuthException implements Exception {
-  AuthException(this.message, {this.isNetworkFailure = false, this.accountMissing = false});
+  AuthException(
+    this.message, {
+    this.isNetworkFailure = false,
+    this.accountMissing = false,
+  });
 
   final String message;
 
@@ -141,10 +146,7 @@ class AuthRepository {
       result = await _syncApiClient.loginWithGoogle(idToken);
     } on ApiException catch (e) {
       if (e.statusCode == null) {
-        throw AuthException(
-          _networkMessage(e),
-          isNetworkFailure: true,
-        );
+        throw AuthException(_networkMessage(e), isNetworkFailure: true);
       }
       throw AuthException(e.message, accountMissing: _saysAccountMissing(e));
     }
@@ -174,10 +176,7 @@ class AuthRepository {
       );
     } on ApiException catch (e) {
       if (e.statusCode == null) {
-        throw AuthException(
-          _networkMessage(e),
-          isNetworkFailure: true,
-        );
+        throw AuthException(_networkMessage(e), isNetworkFailure: true);
       }
       throw AuthException(e.message);
     }
@@ -258,10 +257,7 @@ class AuthRepository {
       );
     } on ApiException catch (e) {
       if (e.statusCode == null) {
-        throw AuthException(
-          _networkMessage(e),
-          isNetworkFailure: true,
-        );
+        throw AuthException(_networkMessage(e), isNetworkFailure: true);
       }
       throw AuthException(e.message);
     }
@@ -324,10 +320,7 @@ class AuthRepository {
       result = await _syncApiClient.login(email: email, password: password);
     } on ApiException catch (e) {
       if (e.statusCode == null) {
-        throw AuthException(
-          _networkMessage(e),
-          isNetworkFailure: true,
-        );
+        throw AuthException(_networkMessage(e), isNetworkFailure: true);
       }
       throw AuthException('E-posta veya parola hatalı.');
     }

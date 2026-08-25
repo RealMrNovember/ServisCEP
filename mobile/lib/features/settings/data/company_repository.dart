@@ -57,22 +57,23 @@ class CompanyRepository {
   }) async {
     final joined = businessTypes.join(',');
     await _db.transaction(() async {
-      await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
-          .write(
-            CompaniesCompanion(
-              name: Value(name),
-              businessTypes: Value(joined),
-              iban: Value(iban),
-              address: Value(address),
-              phone: Value(phone),
-              email: Value(email),
-              taxInfo: Value(taxInfo),
-              introText: Value(introText),
-              paymentTerms: Value(paymentTerms),
-              deliveryTime: Value(deliveryTime),
-              warrantyTerms: Value(warrantyTerms),
-            ),
-          );
+      await (_db.update(
+        _db.companies,
+      )..where((c) => c.id.equals(companyId))).write(
+        CompaniesCompanion(
+          name: Value(name),
+          businessTypes: Value(joined),
+          iban: Value(iban),
+          address: Value(address),
+          phone: Value(phone),
+          email: Value(email),
+          taxInfo: Value(taxInfo),
+          introText: Value(introText),
+          paymentTerms: Value(paymentTerms),
+          deliveryTime: Value(deliveryTime),
+          warrantyTerms: Value(warrantyTerms),
+        ),
+      );
       await _enqueue(companyId, 'UPDATE', {
         'name': name,
         'business_types': joined,
@@ -103,13 +104,11 @@ class CompanyRepository {
     );
 
     await _db.transaction(() async {
-      await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
-          .write(
-            CompaniesCompanion(
-              logoPath: Value(path),
-              hasLogo: const Value(true),
-            ),
-          );
+      await (_db.update(
+        _db.companies,
+      )..where((c) => c.id.equals(companyId))).write(
+        CompaniesCompanion(logoPath: Value(path), hasLogo: const Value(true)),
+      );
       await _enqueue(companyId, 'LOGO', {'file_path': path});
     });
   }
@@ -118,13 +117,11 @@ class CompanyRepository {
     final company = await byId(companyId);
 
     await _db.transaction(() async {
-      await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
-          .write(
-            const CompaniesCompanion(
-              logoPath: Value(null),
-              hasLogo: Value(false),
-            ),
-          );
+      await (_db.update(
+        _db.companies,
+      )..where((c) => c.id.equals(companyId))).write(
+        const CompaniesCompanion(logoPath: Value(null), hasLogo: Value(false)),
+      );
       // `file_path: null` senkron motoruna "sunucudaki logoyu sil" der.
       await _enqueue(companyId, 'LOGO', const {'file_path': null});
     });

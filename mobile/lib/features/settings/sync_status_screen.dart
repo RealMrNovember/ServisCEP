@@ -107,9 +107,7 @@ class SyncStatusScreen extends ConsumerWidget {
 
           const SizedBox(height: 20),
           _StatusRow(
-            icon: online == false
-                ? Icons.wifi_off_rounded
-                : Icons.wifi_rounded,
+            icon: online == false ? Icons.wifi_off_rounded : Icons.wifi_rounded,
             label: 'Bağlantı',
             value: switch (online) {
               true => 'Çevrimiçi',

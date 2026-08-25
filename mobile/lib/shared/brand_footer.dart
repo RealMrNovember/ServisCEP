@@ -20,14 +20,15 @@ class BrandFooter extends StatelessWidget {
       child: Center(
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: () => launchUrl(_cicibyteUri, mode: LaunchMode.externalApplication),
+          onTap: () =>
+              launchUrl(_cicibyteUri, mode: LaunchMode.externalApplication),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Text.rich(
               TextSpan(
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 children: [
                   const TextSpan(text: 'TeknikCEP · '),
                   TextSpan(

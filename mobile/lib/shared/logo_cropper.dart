@@ -116,10 +116,8 @@ class _LogoCropperScreenState extends State<LogoCropperScreen> {
       _aspect.ratio ?? (image.width / image.height);
 
   /// Görselin pencereyi tam kaplaması için gereken taban ölçek.
-  double _baseScale(ui.Image image) => math.max(
-    _viewport.width / image.width,
-    _viewport.height / image.height,
-  );
+  double _baseScale(ui.Image image) =>
+      math.max(_viewport.width / image.width, _viewport.height / image.height);
 
   double _effectiveScale(ui.Image image) => _baseScale(image) * _userScale;
 

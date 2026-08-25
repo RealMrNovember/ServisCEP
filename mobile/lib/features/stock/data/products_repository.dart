@@ -34,13 +34,18 @@ class ProductsRepository {
 
   Future<Product?> findByBarcode(String companyId, String barcode) {
     return (_db.select(_db.products)..where(
-          (p) => p.companyId.equals(companyId) & p.barcode.equals(barcode) & p.deletedAt.isNull(),
+          (p) =>
+              p.companyId.equals(companyId) &
+              p.barcode.equals(barcode) &
+              p.deletedAt.isNull(),
         ))
         .getSingleOrNull();
   }
 
   Future<Product?> byId(String id) {
-    return (_db.select(_db.products)..where((p) => p.id.equals(id))).getSingleOrNull();
+    return (_db.select(
+      _db.products,
+    )..where((p) => p.id.equals(id))).getSingleOrNull();
   }
 
   Future<Product> create({
@@ -59,24 +64,26 @@ class ProductsRepository {
     String source = 'MANUAL',
   }) async {
     final id = _uuid.v4();
-    await _db.into(_db.products).insert(
-      ProductsCompanion.insert(
-        id: id,
-        companyId: companyId,
-        name: name,
-        barcode: Value(barcode),
-        sku: Value(sku),
-        brand: Value(brand),
-        model: Value(model),
-        category: Value(category),
-        unit: Value(unit),
-        purchasePriceMinor: Value(purchasePriceMinor),
-        salePriceMinor: Value(salePriceMinor),
-        currentStock: Value(currentStock),
-        minStock: Value(minStock),
-        source: Value(source),
-      ),
-    );
+    await _db
+        .into(_db.products)
+        .insert(
+          ProductsCompanion.insert(
+            id: id,
+            companyId: companyId,
+            name: name,
+            barcode: Value(barcode),
+            sku: Value(sku),
+            brand: Value(brand),
+            model: Value(model),
+            category: Value(category),
+            unit: Value(unit),
+            purchasePriceMinor: Value(purchasePriceMinor),
+            salePriceMinor: Value(salePriceMinor),
+            currentStock: Value(currentStock),
+            minStock: Value(minStock),
+            source: Value(source),
+          ),
+        );
     return (await byId(id))!;
   }
 
@@ -99,18 +106,20 @@ class ProductsRepository {
           .update(_db.products)
           .replace(product.copyWith(currentStock: newStock));
 
-      await _db.into(_db.stockMovements).insert(
-        StockMovementsCompanion.insert(
-          id: _uuid.v4(),
-          companyId: product.companyId,
-          productId: product.id,
-          type: delta >= 0 ? 'IN' : 'OUT',
-          quantity: delta.abs(),
-          referenceType: referenceType,
-          referenceId: Value(referenceId),
-          note: Value(note),
-        ),
-      );
+      await _db
+          .into(_db.stockMovements)
+          .insert(
+            StockMovementsCompanion.insert(
+              id: _uuid.v4(),
+              companyId: product.companyId,
+              productId: product.id,
+              type: delta >= 0 ? 'IN' : 'OUT',
+              quantity: delta.abs(),
+              referenceType: referenceType,
+              referenceId: Value(referenceId),
+              note: Value(note),
+            ),
+          );
     });
   }
 
@@ -127,7 +136,11 @@ class ProductsRepository {
 }
 
 class GlobalProductLookupResult {
-  const GlobalProductLookupResult({required this.name, this.brand, this.category});
+  const GlobalProductLookupResult({
+    required this.name,
+    this.brand,
+    this.category,
+  });
   final String name;
   final String? brand;
   final String? category;

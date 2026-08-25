@@ -319,9 +319,10 @@ class _StatusCard extends StatelessWidget {
                 child: _StatusMetric(
                   label: 'Bitiş Tarihi',
                   value: status.expiresAt != null
-                      ? DateFormat('d MMM y', 'tr_TR').format(
-                          status.expiresAt!.toLocal(),
-                        )
+                      ? DateFormat(
+                          'd MMM y',
+                          'tr_TR',
+                        ).format(status.expiresAt!.toLocal())
                       : 'Süresiz',
                 ),
               ),
@@ -343,9 +344,9 @@ class _StatusCard extends StatelessWidget {
             Text(
               'Deneme sürümünü kullanıyorsun — tüm özellikler açık. '
               'Süre bitmeden bir paket seçersen kesinti yaşamazsın.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ],
@@ -454,7 +455,9 @@ class _PlanCard extends StatelessWidget {
         color: scheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected || isCurrent ? scheme.primary : scheme.outlineVariant,
+          color: isSelected || isCurrent
+              ? scheme.primary
+              : scheme.outlineVariant,
           width: isSelected || isCurrent ? 1.6 : 1,
         ),
       ),
@@ -465,9 +468,9 @@ class _PlanCard extends StatelessWidget {
             children: [
               Text(
                 plan.name,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: 8),
               if (isCurrent)
@@ -502,9 +505,9 @@ class _PlanCard extends StatelessWidget {
             children: [
               Text(
                 'veya yıllık ${Money.formatMinor(plan.priceYearlyMinor, decimals: false)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
               if (plan.yearlySavingsPercent > 0) ...[
                 const SizedBox(width: 6),
@@ -520,9 +523,9 @@ class _PlanCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               '${plan.audience}.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
           const SizedBox(height: 8),
@@ -557,9 +560,9 @@ class _PlanCard extends StatelessWidget {
                   plan.maxUsers != null
                       ? 'Maksimum ${plan.maxUsers} kullanıcı'
                       : 'Sınırsız kullanıcı',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -656,9 +659,9 @@ class _BankInfoCard extends StatelessWidget {
                 info.accountHolder,
                 info.bankName,
               ].where((s) => s != null && s.isNotEmpty).join(' — '),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           if (info.note != null && info.note!.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -742,9 +745,9 @@ class _RequestHistory extends ConsumerWidget {
         if (requests.isEmpty) {
           return Text(
             'Henüz bir ödeme bildirimin yok.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           );
         }
         return Column(
@@ -818,9 +821,9 @@ class _RequestTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     request.adminNote!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.error,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: scheme.error),
                   ),
                 ],
               ],

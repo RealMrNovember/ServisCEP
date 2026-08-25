@@ -42,9 +42,9 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Profilim'),
             subtitle: const Text('Ad, telefon, parola'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            ),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
           ),
 
           if (isOwner) ...[
@@ -55,7 +55,9 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: const Text('Ünvan, işletme türü, IBAN'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CompanySettingsScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const CompanySettingsScreen(),
+                ),
               ),
             ),
             ListTile(
@@ -106,9 +108,9 @@ class SettingsScreen extends ConsumerWidget {
                   : 'Her şey eşitlendi',
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SyncStatusScreen()),
-            ),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SyncStatusScreen())),
           ),
           const _UpdateTile(),
 

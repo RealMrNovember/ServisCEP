@@ -11,10 +11,12 @@ class ServiceRequestFormScreen extends ConsumerStatefulWidget {
   const ServiceRequestFormScreen({super.key});
 
   @override
-  ConsumerState<ServiceRequestFormScreen> createState() => _ServiceRequestFormScreenState();
+  ConsumerState<ServiceRequestFormScreen> createState() =>
+      _ServiceRequestFormScreenState();
 }
 
-class _ServiceRequestFormScreenState extends ConsumerState<ServiceRequestFormScreen> {
+class _ServiceRequestFormScreenState
+    extends ConsumerState<ServiceRequestFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
@@ -43,7 +45,9 @@ class _ServiceRequestFormScreenState extends ConsumerState<ServiceRequestFormScr
             customerId: _customerId!,
             description: _descriptionController.text.trim(),
             priority: _priority,
-            address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
+            address: _addressController.text.trim().isEmpty
+                ? null
+                : _addressController.text.trim(),
           );
       if (mounted) Navigator.of(context).pop();
     } finally {
@@ -69,7 +73,8 @@ class _ServiceRequestFormScreenState extends ConsumerState<ServiceRequestFormScr
                 initialValue: _customerId,
                 decoration: const InputDecoration(labelText: 'Müşteri'),
                 items: [
-                  for (final c in customers) DropdownMenuItem(value: c.id, child: Text(c.displayName)),
+                  for (final c in customers)
+                    DropdownMenuItem(value: c.id, child: Text(c.displayName)),
                 ],
                 onChanged: (v) => setState(() => _customerId = v),
                 validator: (v) => v == null ? 'Müşteri seçmelisin' : null,
@@ -79,8 +84,12 @@ class _ServiceRequestFormScreenState extends ConsumerState<ServiceRequestFormScr
             TextFormField(
               controller: _descriptionController,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Talep', hintText: 'ör. 3 kamera görüntü vermiyor'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
+              decoration: const InputDecoration(
+                labelText: 'Talep',
+                hintText: 'ör. 3 kamera görüntü vermiyor',
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -92,7 +101,9 @@ class _ServiceRequestFormScreenState extends ConsumerState<ServiceRequestFormScr
               initialValue: _priority,
               decoration: const InputDecoration(labelText: 'Öncelik'),
               items: jobPriorityLabels.entries
-                  .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                  .map(
+                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  )
                   .toList(),
               onChanged: (v) => setState(() => _priority = v ?? _priority),
             ),

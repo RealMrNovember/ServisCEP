@@ -17,8 +17,10 @@ const roleLabels = <String, String>{
 const assignableRoles = ['ADMIN', 'TECHNICIAN', 'ACCOUNTING', 'VIEWER'];
 
 const roleDescriptions = <String, String>{
-  'ADMIN': 'Finans dahil her şeyi yönetir; personel ve şirket ayarlarına dokunamaz.',
-  'TECHNICIAN': 'Müşteri ve işleri yönetir. İşletmenin finansal verilerini GÖREMEZ.',
+  'ADMIN':
+      'Finans dahil her şeyi yönetir; personel ve şirket ayarlarına dokunamaz.',
+  'TECHNICIAN':
+      'Müşteri ve işleri yönetir. İşletmenin finansal verilerini GÖREMEZ.',
   'ACCOUNTING': 'Finans, tahsilat, teklif ve cari hesabı yönetir. İş açamaz.',
   'VIEWER': 'Yalnızca görüntüler, hiçbir kayıt oluşturamaz veya değiştiremez.',
 };

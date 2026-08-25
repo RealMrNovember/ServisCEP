@@ -102,7 +102,8 @@ Future<void> startUpdate(
   final playResult = await playUpdateService.checkForUpdate();
   if (playResult == UpdateCheckResult.available) {
     await playUpdateService.checkAndStartFlexibleUpdate(
-      onReadyToInstall: () => ref.read(playUpdateReadyProvider.notifier).markReady(),
+      onReadyToInstall: () =>
+          ref.read(playUpdateReadyProvider.notifier).markReady(),
     );
     messenger.showSnackBar(
       const SnackBar(
@@ -128,9 +129,7 @@ Future<void> startUpdate(
     mode: LaunchMode.externalApplication,
   );
   if (!opened) {
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Mağaza açılamadı.')),
-    );
+    messenger.showSnackBar(const SnackBar(content: Text('Mağaza açılamadı.')));
   }
 }
 

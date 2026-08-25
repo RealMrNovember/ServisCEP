@@ -19,7 +19,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 /// sürüm var" tespiti sağlar. Backend hazır olduğunda bu, sunucu tabanlı
 /// `app/version` sorgusuna geçebilir; arayüz (UpdateBanner) değişmez.
 class UpdateInfo {
-  const UpdateInfo({required this.version, required this.downloadUrl, required this.releaseNotes});
+  const UpdateInfo({
+    required this.version,
+    required this.downloadUrl,
+    required this.releaseNotes,
+  });
   final String version;
   final String downloadUrl;
   final String releaseNotes;
@@ -45,7 +49,9 @@ class UpdateChecker {
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     final tagName = (json['tag_name'] as String?) ?? '';
-    final latestVersion = tagName.startsWith('v') ? tagName.substring(1) : tagName;
+    final latestVersion = tagName.startsWith('v')
+        ? tagName.substring(1)
+        : tagName;
     if (latestVersion.isEmpty) return null;
 
     if (!_isNewer(latestVersion, currentVersion)) return null;

@@ -154,7 +154,10 @@ class DocumentTotals {
   final int grossMinor;
   final int discountMinor;
 
-  static DocumentTotals from(Iterable<LineAmounts> lines, {int discountMinor = 0}) {
+  static DocumentTotals from(
+    Iterable<LineAmounts> lines, {
+    int discountMinor = 0,
+  }) {
     var net = 0;
     var vat = 0;
     var gross = 0;

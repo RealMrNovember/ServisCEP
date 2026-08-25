@@ -65,9 +65,18 @@ void main() {
         // success/warning/danger DOLGU renkleridir. Üstlerine yazı
         // yazıldığında on* karşılığı kullanılır; bu tokenların var olma
         // sebebi de bu. Sarı dolgu üstünde beyaz yazı okunmaz.
-        expect(_kontrast(palet.onSuccess, palet.success), greaterThanOrEqualTo(4.5));
-        expect(_kontrast(palet.onWarning, palet.warning), greaterThanOrEqualTo(4.5));
-        expect(_kontrast(palet.onDanger, palet.danger), greaterThanOrEqualTo(4.5));
+        expect(
+          _kontrast(palet.onSuccess, palet.success),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          _kontrast(palet.onWarning, palet.warning),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          _kontrast(palet.onDanger, palet.danger),
+          greaterThanOrEqualTo(4.5),
+        );
       });
 
       test('$ad tema: gölge kullanımı temaya uygun', () {
@@ -85,15 +94,24 @@ void main() {
 
       test('$ad tema: durum yazıları kendi rozet zemininde AA geçer', () {
         expect(
-          _kontrast(palet.successText, _uzerine(palet.successSoft, palet.surface)),
+          _kontrast(
+            palet.successText,
+            _uzerine(palet.successSoft, palet.surface),
+          ),
           greaterThanOrEqualTo(4.5),
         );
         expect(
-          _kontrast(palet.warningText, _uzerine(palet.warningSoft, palet.surface)),
+          _kontrast(
+            palet.warningText,
+            _uzerine(palet.warningSoft, palet.surface),
+          ),
           greaterThanOrEqualTo(4.5),
         );
         expect(
-          _kontrast(palet.dangerText, _uzerine(palet.dangerSoft, palet.surface)),
+          _kontrast(
+            palet.dangerText,
+            _uzerine(palet.dangerSoft, palet.surface),
+          ),
           greaterThanOrEqualTo(4.5),
         );
       });
@@ -242,10 +260,9 @@ void main() {
   group('Gömülü fontlar', () {
     test('pubspec içindeki font dosyaları diskte mevcut', () {
       final pubspec = File('pubspec.yaml').readAsStringSync();
-      final yollar = RegExp(r'asset:\s*(assets/fonts/[^\s]+\.ttf)')
-          .allMatches(pubspec)
-          .map((m) => m.group(1)!)
-          .toList();
+      final yollar = RegExp(
+        r'asset:\s*(assets/fonts/[^\s]+\.ttf)',
+      ).allMatches(pubspec).map((m) => m.group(1)!).toList();
 
       expect(yollar, isNotEmpty, reason: 'pubspec içinde font tanımı yok');
       for (final yol in yollar) {

@@ -11,8 +11,6 @@ class QuoteFormScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DocumentFormScreen(
-      preselectedCustomerId: preselectedCustomerId,
-    );
+    return DocumentFormScreen(preselectedCustomerId: preselectedCustomerId);
   }
 }

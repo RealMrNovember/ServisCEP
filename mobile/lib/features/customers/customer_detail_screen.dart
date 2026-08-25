@@ -20,7 +20,11 @@ import '../../shared/logo_picker.dart';
 import 'data/customer_ledger_repository.dart';
 import 'data/customers_repository.dart';
 
-Future<void> _showRecordPaymentDialog(BuildContext context, WidgetRef ref, String customerId) async {
+Future<void> _showRecordPaymentDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String customerId,
+) async {
   final controller = TextEditingController();
   final result = await showDialog<String>(
     context: context,
@@ -33,7 +37,10 @@ Future<void> _showRecordPaymentDialog(BuildContext context, WidgetRef ref, Strin
         autofocus: true,
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Vazgeç'),
+        ),
         FilledButton(
           onPressed: () => Navigator.pop(context, controller.text),
           child: const Text('Kaydet'),
@@ -71,11 +78,14 @@ class CustomerDetailScreen extends ConsumerWidget {
     final customerAsync = ref.watch(_customerProvider(customerId));
 
     return customerAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Hata: $e'))),
       data: (customer) {
         if (customer == null) {
-          return const Scaffold(body: Center(child: Text('Müşteri bulunamadı')));
+          return const Scaffold(
+            body: Center(child: Text('Müşteri bulunamadı')),
+          );
         }
         return _CustomerDetailContent(customer: customer);
       },
@@ -97,7 +107,10 @@ class _CustomerDetailContent extends StatelessWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.edit_outlined),
-              onPressed: () => context.push('/customers/${customer.id}/edit', extra: customer),
+              onPressed: () => context.push(
+                '/customers/${customer.id}/edit',
+                extra: customer,
+              ),
             ),
           ],
           bottom: const TabBar(
@@ -134,22 +147,46 @@ class _GeneralTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _InfoRow(icon: Icons.badge_outlined, label: 'Müşteri no', value: customer.code),
+        _InfoRow(
+          icon: Icons.badge_outlined,
+          label: 'Müşteri no',
+          value: customer.code,
+        ),
         _InfoRow(
           icon: Icons.category_outlined,
           label: 'Tip',
           value: customerTypeLabels[customer.type] ?? customer.type,
         ),
         if (customer.contactName?.isNotEmpty == true)
-          _InfoRow(icon: Icons.person_outline, label: 'Yetkili adı soyadı', value: customer.contactName!),
+          _InfoRow(
+            icon: Icons.person_outline,
+            label: 'Yetkili adı soyadı',
+            value: customer.contactName!,
+          ),
         if (customer.companyName?.isNotEmpty == true)
-          _InfoRow(icon: Icons.apartment_outlined, label: 'Firma adı', value: customer.companyName!),
+          _InfoRow(
+            icon: Icons.apartment_outlined,
+            label: 'Firma adı',
+            value: customer.companyName!,
+          ),
         if (customer.iban?.isNotEmpty == true)
-          _InfoRow(icon: Icons.account_balance_outlined, label: 'IBAN', value: customer.iban!),
+          _InfoRow(
+            icon: Icons.account_balance_outlined,
+            label: 'IBAN',
+            value: customer.iban!,
+          ),
         if (customer.phone?.isNotEmpty == true)
-          _InfoRow(icon: Icons.phone_outlined, label: 'Telefon', value: customer.phone!),
+          _InfoRow(
+            icon: Icons.phone_outlined,
+            label: 'Telefon',
+            value: customer.phone!,
+          ),
         if (customer.email?.isNotEmpty == true)
-          _InfoRow(icon: Icons.email_outlined, label: 'E-posta', value: customer.email!),
+          _InfoRow(
+            icon: Icons.email_outlined,
+            label: 'E-posta',
+            value: customer.email!,
+          ),
         if (customer.address?.isNotEmpty == true)
           _InfoRow(
             icon: Icons.location_on_outlined,
@@ -162,9 +199,17 @@ class _GeneralTab extends StatelessWidget {
             ),
           ),
         if (customer.taxInfo?.isNotEmpty == true)
-          _InfoRow(icon: Icons.receipt_long_outlined, label: 'Vergi bilgisi', value: customer.taxInfo!),
+          _InfoRow(
+            icon: Icons.receipt_long_outlined,
+            label: 'Vergi bilgisi',
+            value: customer.taxInfo!,
+          ),
         if (customer.notes?.isNotEmpty == true)
-          _InfoRow(icon: Icons.notes_outlined, label: 'Notlar', value: customer.notes!),
+          _InfoRow(
+            icon: Icons.notes_outlined,
+            label: 'Notlar',
+            value: customer.notes!,
+          ),
       ],
     );
   }
@@ -189,17 +234,21 @@ class _FinanceTab extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Cari bakiye (borç)', style: TextStyle(color: scheme.onSurfaceVariant)),
+                Text(
+                  'Cari bakiye (borç)',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   Money.formatMinor(balanceAsync.valueOrNull ?? 0),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  onPressed: () => _showRecordPaymentDialog(context, ref, customerId),
+                  onPressed: () =>
+                      _showRecordPaymentDialog(context, ref, customerId),
                   icon: const Icon(Icons.payments_outlined, size: 18),
                   label: const Text('Tahsilat Ekle'),
                 ),
@@ -208,7 +257,12 @@ class _FinanceTab extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Text('Hareketler', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          'Hareketler',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 12),
         entriesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -226,16 +280,24 @@ class _FinanceTab extends ConsumerWidget {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(
-                      entry.type == 'DEBIT' ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: entry.type == 'DEBIT' ? scheme.error : Colors.green,
+                      entry.type == 'DEBIT'
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
+                      color: entry.type == 'DEBIT'
+                          ? scheme.error
+                          : Colors.green,
                     ),
                     title: Text(entry.description),
-                    subtitle: Text(DateFormat('d MMM y', 'tr_TR').format(entry.entryDate)),
+                    subtitle: Text(
+                      DateFormat('d MMM y', 'tr_TR').format(entry.entryDate),
+                    ),
                     trailing: Text(
                       Money.formatMinor(entry.amountMinor),
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: entry.type == 'DEBIT' ? scheme.error : Colors.green,
+                        color: entry.type == 'DEBIT'
+                            ? scheme.error
+                            : Colors.green,
                       ),
                     ),
                   ),
@@ -279,19 +341,29 @@ class _JobHistoryTab extends ConsumerWidget {
             return Card(
               child: ListTile(
                 onTap: () => context.push('/jobs/${job.id}'),
-                title: Text(job.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(
+                  job.title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(
                   '${job.code} · ${DateFormat('d MMM y', 'tr_TR').format(job.createdAt)}',
                 ),
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     jobStatusLabels[job.status] ?? job.status,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                    ),
                   ),
                 ),
               ),
@@ -457,13 +529,21 @@ class _EmptyTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      child: Text(
+        text,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
     );
   }
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.label, required this.value, this.trailing});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.trailing,
+  });
   final IconData icon;
   final String label;
   final String value;
@@ -483,7 +563,13 @@ class _InfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(value, style: const TextStyle(fontSize: 15)),
               ],

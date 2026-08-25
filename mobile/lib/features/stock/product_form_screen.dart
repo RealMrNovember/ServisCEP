@@ -43,12 +43,18 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late final _categoryController = TextEditingController(
     text: widget.existing?.category ?? widget.prefilledCategory ?? '',
   );
-  late final _unitController = TextEditingController(text: widget.existing?.unit ?? 'adet');
+  late final _unitController = TextEditingController(
+    text: widget.existing?.unit ?? 'adet',
+  );
   late final _salePriceController = TextEditingController(
-    text: widget.existing != null ? (widget.existing!.salePriceMinor / 100).toString() : '',
+    text: widget.existing != null
+        ? (widget.existing!.salePriceMinor / 100).toString()
+        : '',
   );
   late final _purchasePriceController = TextEditingController(
-    text: widget.existing != null ? (widget.existing!.purchasePriceMinor / 100).toString() : '',
+    text: widget.existing != null
+        ? (widget.existing!.purchasePriceMinor / 100).toString()
+        : '',
   );
   late final _stockController = TextEditingController(
     text: widget.existing?.currentStock.toString() ?? '0',
@@ -76,9 +82,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   }
 
   Future<void> _scanBarcode() async {
-    final code = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()));
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
     if (code != null) setState(() => _barcodeController.text = code);
   }
 
@@ -94,7 +100,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           barcode: Value(_emptyToNull(_barcodeController.text)),
           brand: Value(_emptyToNull(_brandController.text)),
           category: Value(_emptyToNull(_categoryController.text)),
-          unit: _unitController.text.trim().isEmpty ? 'adet' : _unitController.text.trim(),
+          unit: _unitController.text.trim().isEmpty
+              ? 'adet'
+              : _unitController.text.trim(),
           salePriceMinor: Money.parseToMinor(_salePriceController.text),
           purchasePriceMinor: Money.parseToMinor(_purchasePriceController.text),
           currentStock: int.tryParse(_stockController.text) ?? 0,
@@ -110,7 +118,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           barcode: _emptyToNull(_barcodeController.text),
           brand: _emptyToNull(_brandController.text),
           category: _emptyToNull(_categoryController.text),
-          unit: _unitController.text.trim().isEmpty ? 'adet' : _unitController.text.trim(),
+          unit: _unitController.text.trim().isEmpty
+              ? 'adet'
+              : _unitController.text.trim(),
           salePriceMinor: Money.parseToMinor(_salePriceController.text),
           purchasePriceMinor: Money.parseToMinor(_purchasePriceController.text),
           currentStock: int.tryParse(_stockController.text) ?? 0,
@@ -139,7 +149,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               controller: _nameController,
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(labelText: 'Ürün adı'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -176,16 +187,24 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _purchasePriceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Alış fiyatı (₺)'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Alış fiyatı (₺)',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextFormField(
                     controller: _salePriceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Satış fiyatı (₺)'),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Satış fiyatı (₺)',
+                    ),
                   ),
                 ),
               ],
@@ -205,7 +224,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   child: TextFormField(
                     controller: _minStockController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Minimum stok'),
+                    decoration: const InputDecoration(
+                      labelText: 'Minimum stok',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

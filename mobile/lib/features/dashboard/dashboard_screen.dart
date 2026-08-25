@@ -46,17 +46,21 @@ class DashboardScreen extends ConsumerWidget {
                     if (session != null)
                       Text(
                         session.companyName,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                   ],
                 ),
               ),
             ),
             const SliverToBoxAdapter(
-              child: Padding(padding: EdgeInsets.only(top: 8), child: UpdateBanner()),
+              child: Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: UpdateBanner(),
+              ),
             ),
             const SliverToBoxAdapter(child: SubscriptionBanner()),
             SliverToBoxAdapter(
@@ -66,10 +70,12 @@ class DashboardScreen extends ConsumerWidget {
                 data: (jobs) => Padding(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
                   child: Text(
-                    jobs.isEmpty ? 'Bugün planlanmış işin yok.' : 'Bugün ${jobs.length} işin var.',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                    jobs.isEmpty
+                        ? 'Bugün planlanmış işin yok.'
+                        : 'Bugün ${jobs.length} işin var.',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -81,7 +87,10 @@ class DashboardScreen extends ConsumerWidget {
                 data: (jobs) {
                   final expected = jobs
                       .where((j) => j.job.actualPriceMinor == null)
-                      .fold<int>(0, (sum, j) => sum + (j.job.estimatedPriceMinor ?? 0));
+                      .fold<int>(
+                        0,
+                        (sum, j) => sum + (j.job.estimatedPriceMinor ?? 0),
+                      );
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
                     child: _CollectionSummaryCard(amountMinor: expected),
@@ -97,14 +106,19 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
               error: (e, _) => SliverToBoxAdapter(
-                child: Padding(padding: const EdgeInsets.all(20), child: Text('Bir hata oluştu: $e')),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text('Bir hata oluştu: $e'),
+                ),
               ),
               data: (jobs) {
                 if (jobs.isEmpty) {
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                      child: _EmptyTodayState(onCreateJob: () => context.push('/jobs/new')),
+                      child: _EmptyTodayState(
+                        onCreateJob: () => context.push('/jobs/new'),
+                      ),
                     ),
                   );
                 }
@@ -113,13 +127,17 @@ class DashboardScreen extends ConsumerWidget {
                   sliver: SliverList.separated(
                     itemCount: jobs.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) => _JobCard(item: jobs[index]),
+                    itemBuilder: (context, index) =>
+                        _JobCard(item: jobs[index]),
                   ),
                 );
               },
             ),
             const SliverToBoxAdapter(
-              child: Padding(padding: EdgeInsets.only(bottom: 90), child: BrandFooter()),
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 90),
+                child: BrandFooter(),
+              ),
             ),
           ],
         ),
@@ -163,16 +181,16 @@ class _CollectionSummaryCard extends StatelessWidget {
                 children: [
                   Text(
                     'Bugün tahsil edilmesi beklenen',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     Money.formatMinor(amountMinor, decimals: false),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -208,7 +226,9 @@ class _JobCard extends StatelessWidget {
             children: [
               Text(
                 timeLabel,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -217,16 +237,16 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Text(
                       item.customer.displayName,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       job.title,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -256,7 +276,14 @@ class _PriorityChip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
     );
   }
 }
@@ -273,11 +300,17 @@ class _EmptyTodayState extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           children: [
-            Icon(Icons.wb_sunny_outlined, size: 48, color: scheme.onSurfaceVariant),
+            Icon(
+              Icons.wb_sunny_outlined,
+              size: 48,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 12),
             Text(
               'Bugün için planlanmış iş yok',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
