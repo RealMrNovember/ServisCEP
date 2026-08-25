@@ -173,6 +173,12 @@ class AppLogsTable
      * Bağlam JSON'u ham hâliyle gösterilir — teşhis sırasında aranan şey
      * çoğu zaman "Google ne dedi", "istisna hangi satırda" gibi ayrıntılar
      * oluyor ve bunları özetlemek bilgi kaybettiriyor.
+     *
+     * Biçimlendirme Tailwind sınıfları yerine satır içi stille yapılıyor:
+     * bu HTML bir PHP dizesi içinde üretildiği için derleyicinin sınıf
+     * taramasına girmiyor ve kullanılan sınıfların derlenmiş temada
+     * bulunacağının garantisi yok. Teşhis ekranının okunaklılığı, stil
+     * tercihine bağlı bırakılamayacak kadar önemli.
      */
     private static function detailHtml(AppLog $record): string
     {
@@ -191,17 +197,21 @@ class AppLogsTable
             'IP' => $record->ip,
         ];
 
-        $html = '<dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">';
+        $etiket = 'font-size:11px;letter-spacing:.02em;opacity:.6;margin-bottom:2px';
+        $deger = 'font-size:13.5px;font-weight:500;word-break:break-word';
+
+        $html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));'
+            .'gap:14px 24px">';
         foreach ($rows as $label => $value) {
             if (blank($value)) {
                 continue;
             }
-            $html .= '<div class="min-w-0">'
-                .'<dt class="text-xs font-medium text-gray-500 dark:text-gray-400">'.e($label).'</dt>'
-                .'<dd class="mt-0.5 text-sm break-words text-gray-950 dark:text-white">'.e((string) $value).'</dd>'
+            $html .= '<div style="min-width:0">'
+                .'<div style="'.$etiket.'">'.e($label).'</div>'
+                .'<div style="'.$deger.'">'.e((string) $value).'</div>'
                 .'</div>';
         }
-        $html .= '</dl>';
+        $html .= '</div>';
 
         if (filled($record->context)) {
             $json = json_encode(
@@ -209,10 +219,12 @@ class AppLogsTable
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             );
 
-            $html .= '<div class="mt-5">'
-                .'<div class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Ayrıntı</div>'
-                .'<pre class="max-h-96 overflow-auto rounded-lg bg-gray-950/5 p-3 text-xs leading-relaxed '
-                .'whitespace-pre-wrap break-words dark:bg-white/5">'.e((string) $json).'</pre>'
+            $html .= '<div style="margin-top:18px">'
+                .'<div style="'.$etiket.'">AYRINTI</div>'
+                .'<pre style="max-height:22rem;overflow:auto;border-radius:8px;'
+                .'background:rgba(127,127,127,.12);padding:12px;font-size:12px;'
+                .'line-height:1.55;white-space:pre-wrap;word-break:break-word;'
+                .'margin:0">'.e((string) $json).'</pre>'
                 .'</div>';
         }
 
