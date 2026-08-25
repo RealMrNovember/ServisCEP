@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../app/palette.dart';
 import '../app/theme.dart';
+import '../app/typography.dart';
+import 'tc_icon.dart';
 
 /// Ekranlar arası tutarlı, yeniden kullanılabilir parçalar.
 ///
@@ -63,6 +66,7 @@ class AppCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(AppSpacing.lg),
     this.onTap,
     this.accent = false,
+    this.pending = false,
   });
 
   final Widget child;
@@ -72,22 +76,32 @@ class AppCard extends StatelessWidget {
   /// Marka rengiyle vurgulanmış kart (özet/toplam kutuları için).
   final bool accent;
 
+  /// Kayıt cihaza yazıldı ama sunucuya gönderilmedi.
+  ///
+  /// Sol kenara 3dp uyarı çubuğu koyar. Tasarım sistemi § 6.3:
+  /// **eşitlenmiş kayda hiçbir işaret konmaz**, yalnızca bekleyen
+  /// işaretlenir. Her karta "eşitlendi" rozeti basmak, gerçekten
+  /// bekleyeni görünmez kılıyor.
+  final bool pending;
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
 
     final decorated = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: accent
-            ? scheme.primaryContainer.withValues(alpha: 0.45)
-            : Theme.of(context).cardTheme.color,
+        color: accent ? palet.accentSoft : palet.surface,
         borderRadius: AppRadius.card,
-        border: Border.all(
-          color: accent
-              ? scheme.primary.withValues(alpha: 0.35)
-              : scheme.outlineVariant.withValues(alpha: 0.7),
+        border: Border(
+          top: BorderSide(color: accent ? palet.accentLine : palet.border),
+          right: BorderSide(color: accent ? palet.accentLine : palet.border),
+          bottom: BorderSide(color: accent ? palet.accentLine : palet.border),
+          left: pending
+              ? BorderSide(color: palet.warning, width: 3)
+              : BorderSide(color: accent ? palet.accentLine : palet.border),
         ),
+        boxShadow: palet.shadowCard,
       ),
       child: child,
     );
@@ -212,6 +226,107 @@ class AppEmptyState extends StatelessWidget {
             if (action != null) ...[
               const SizedBox(height: AppSpacing.xl),
               action!,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Hata durumu — boş durumla AYNI ŞEY DEĞİLDİR.
+///
+/// Tasarım sistemi § 6.4 ikisini kesin ayırıyor:
+///
+/// - Boş durum "henüz yok" der; birincil eylemi İLERİdir ("Yeni İş Oluştur").
+/// - Hata durumu "bir şey ters gitti" der; birincil eylemi TEKRARdır.
+///
+/// İkisi aynı göründüğünde kullanıcı sunucuya ulaşılamadığını "kaydım yok"
+/// sanıyor. Bu ekran ayrıca cihazdaki verinin güvende olduğunu söylemek
+/// ZORUNDADIR — offline-first bir uygulamada asıl korku budur.
+///
+/// Teknik hata kodu kullanıcıya gösterilmez.
+class AppErrorState extends StatelessWidget {
+  const AppErrorState({
+    super.key,
+    this.title = 'Bir şey ters gitti',
+    this.message,
+    required this.onRetry,
+    this.onContinueOffline,
+  });
+
+  final String title;
+
+  /// Kullanıcının anlayacağı açıklama. Teknik kod veya yığın izi DEĞİL.
+  final String? message;
+
+  final VoidCallback onRetry;
+
+  /// Çevrimdışı devam etme seçeneği. Verilirse ikincil metin butonu çıkar.
+  final VoidCallback? onContinueOffline;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxl + AppSpacing.xs),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: palet.dangerSoft,
+                borderRadius: AppRadius.dialog,
+                border: Border.all(color: palet.dangerLine),
+              ),
+              child: Center(
+                child: TcIcon(
+                  TcIcons.alertCircle,
+                  size: 38,
+                  color: palet.dangerText,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTypography.h2.copyWith(color: palet.text),
+            ),
+            if (message != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: AppTypography.body.copyWith(color: palet.textMuted),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            // Zorunlu cümle: cihazdaki veri güvende.
+            Text(
+              'Cihazdaki kayıtların güvende — hiçbiri kaybolmadı.',
+              textAlign: TextAlign.center,
+              style: AppTypography.caption.copyWith(color: palet.textFaint),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onRetry,
+                icon: const TcIcon(TcIcons.refresh, size: 20),
+                label: const Text('Tekrar Dene'),
+              ),
+            ),
+            if (onContinueOffline != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              TextButton(
+                onPressed: onContinueOffline,
+                child: const Text('Çevrimdışı devam et'),
+              ),
             ],
           ],
         ),

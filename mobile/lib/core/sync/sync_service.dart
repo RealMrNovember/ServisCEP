@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+// ValueNotifier için; widget katmanı çekilmiyor ki senkron motoru
+// Flutter arayüzünden bağımsız kalsın.
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
@@ -39,6 +42,15 @@ class SyncService {
   final SyncApiClient _api;
   final TokenStore _tokenStore;
 
+  /// Şu anda bir senkron turu çalışıyor mu.
+  ///
+  /// Arayüzün "Eşitleniyor" diyebilmesi için GERÇEK bir sinyal gerekiyor.
+  /// Kuyrukta kayıt olması turun çalıştığı anlamına gelmez: cihazın
+  /// interneti varken bile sunucuya hiç ulaşılamayabiliyor. Bu ayrımı
+  /// yapmadan yazılan her "gönderiliyor" metni, kullanıcıya söylenmiş bir
+  /// yalan oluyor.
+  final ValueNotifier<bool> calisiyor = ValueNotifier<bool>(false);
+
   /// Bir senkron turu çalıştırır ve BAŞARIYI döndürür.
   ///
   /// Dönüş değeri kritik: hatalar burada bilinçli olarak yutuluyor
@@ -49,6 +61,15 @@ class SyncService {
   Future<bool> runOnce(String companyId) async {
     if (await _tokenStore.read() == null) return false;
 
+    calisiyor.value = true;
+    try {
+      return await _runOnce(companyId);
+    } finally {
+      calisiyor.value = false;
+    }
+  }
+
+  Future<bool> _runOnce(String companyId) async {
     await _drainOutbox();
     try {
       // Her adımdan önce oturum yeniden kontrol edilir.
