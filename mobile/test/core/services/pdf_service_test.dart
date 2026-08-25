@@ -146,7 +146,11 @@ void main() {
     expect(excluded.grossMinor, 14400);
 
     final included = line.amounts(VatMode.included);
-    expect(included.grossMinor, 12000, reason: 'girilen fiyat brüt kabul edilir');
+    expect(
+      included.grossMinor,
+      12000,
+      reason: 'girilen fiyat brüt kabul edilir',
+    );
     expect(included.netMinor, 10000);
     expect(included.vatMinor, 2000);
   });
@@ -175,17 +179,80 @@ void main() {
     if (!outDir.existsSync()) outDir.createSync(recursive: true);
 
     await File('$dir/ornek-teklif-kdv-haric.pdf').writeAsBytes(await render());
-    await File('$dir/ornek-teklif-kdv-dahil.pdf').writeAsBytes(
-      await render(vatMode: VatMode.included),
-    );
-    await File('$dir/ornek-teklif-usd.pdf').writeAsBytes(
-      await render(currency: Currency.usd),
-    );
+    await File(
+      '$dir/ornek-teklif-kdv-dahil.pdf',
+    ).writeAsBytes(await render(vatMode: VatMode.included));
+    await File(
+      '$dir/ornek-teklif-usd.pdf',
+    ).writeAsBytes(await render(currency: Currency.usd));
     await File('$dir/ornek-proforma-fatura.pdf').writeAsBytes(
-      await render(
-        documentTitle: 'Proforma Fatura',
-        code: 'PRF-2026-00043',
-      ),
+      await render(documentTitle: 'Proforma Fatura', code: 'PRF-2026-00043'),
     );
+  });
+
+  group('KDV metinleri', () {
+    // Kalem editörü satır BAŞINA oran seçtiriyor. Belge tek bir orandan
+    // söz ederse karma oranlı teklifte müşteriye yanlış bilgi gider.
+    PdfLineItem kalem(int oran) => PdfLineItem(
+      description: 'Kalem',
+      quantity: 1,
+      unit: 'adet',
+      unitPriceMinor: 100000,
+      taxRate: oran,
+      discountMinor: 0,
+    );
+
+    test('tüm satırlar aynı orandaysa oran yazılır', () {
+      final metin = PdfService.vatTexts(
+        items: [kalem(20), kalem(20)],
+        vatMode: VatMode.excluded,
+      );
+
+      expect(metin.rowLabel, 'KDV (%20)');
+      expect(metin.caption, contains('%20 KDV ilave edilecektir'));
+    });
+
+    test('karma oranlı belgede tek bir oran YAZILMAZ', () {
+      final metin = PdfService.vatTexts(
+        items: [kalem(20), kalem(10)],
+        vatMode: VatMode.excluded,
+      );
+
+      expect(metin.rowLabel, 'KDV');
+      expect(metin.rowLabel, isNot(contains('%')));
+      expect(metin.caption, contains('her satırda belirtilen oranda'));
+      expect(metin.caption, isNot(contains('%20')));
+      expect(metin.caption, isNot(contains('%10')));
+    });
+
+    test('tüm satırlar %0 ise anlamsız cümle kurulmaz', () {
+      final metin = PdfService.vatTexts(
+        items: [kalem(0), kalem(0)],
+        vatMode: VatMode.excluded,
+      );
+
+      expect(metin.rowLabel, 'KDV (%0)');
+      expect(metin.caption, 'Fiyatlarımıza KDV uygulanmamıştır.');
+      expect(metin.caption, isNot(contains('%0 KDV ilave')));
+    });
+
+    test('KDV dahil kipinde oran cümleye karışmaz', () {
+      final metin = PdfService.vatTexts(
+        items: [kalem(20), kalem(10)],
+        vatMode: VatMode.included,
+      );
+
+      expect(metin.caption, 'Fiyatlarımıza KDV dahildir.');
+    });
+
+    test('hiç kalem yoksa yedek orana düşer', () {
+      final metin = PdfService.vatTexts(
+        items: const [],
+        vatMode: VatMode.excluded,
+        fallbackRate: 20,
+      );
+
+      expect(metin.rowLabel, 'KDV (%20)');
+    });
   });
 }

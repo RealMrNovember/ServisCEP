@@ -23,7 +23,6 @@ import '../utils/money.dart';
 /// kullanılır (bkz. core/utils/money.dart). Form ekranındaki canlı
 /// önizleme ile PDF'in aynı sayıyı göstermesinin tek garantisi budur.
 abstract final class PdfService {
-  static final _dateFormat = DateFormat('d MMMM y', 'tr_TR');
   static final _shortDateFormat = DateFormat('dd.MM.yyyy');
 
   static const _accent = PdfColor.fromInt(0xFF1D4ED8);
@@ -54,12 +53,15 @@ abstract final class PdfService {
       final regular = await load('Roboto-Regular');
       final medium = await load('Roboto-Medium');
       final bold = await load('Roboto-Bold');
-      theme = pw.ThemeData.withFont(
-        base: regular,
-        bold: bold,
-        italic: regular,
-        boldItalic: bold,
-      ).copyWith(defaultTextStyle: pw.TextStyle(font: regular, color: _ink));
+      theme =
+          pw.ThemeData.withFont(
+            base: regular,
+            bold: bold,
+            italic: regular,
+            boldItalic: bold,
+          ).copyWith(
+            defaultTextStyle: pw.TextStyle(font: regular, color: _ink),
+          );
       _mediumFont = medium;
     } on Object {
       theme = pw.ThemeData.base();
@@ -147,12 +149,8 @@ abstract final class PdfService {
     );
   }
 
-  static pw.TextStyle get _capsLabel => _style(
-    size: 7.5,
-    color: _muted,
-    medium: true,
-    letterSpacing: 1.2,
-  );
+  static pw.TextStyle get _capsLabel =>
+      _style(size: 7.5, color: _muted, medium: true, letterSpacing: 1.2);
 
   // ---------------------------------------------------------------------
   // Antet
@@ -467,7 +465,10 @@ abstract final class PdfService {
                 align: pw.Alignment.center,
                 style: _style(size: 8.4, color: _muted),
               ),
-              cell(items[i].description, style: _style(size: 8.8, medium: true)),
+              cell(
+                items[i].description,
+                style: _style(size: 8.8, medium: true),
+              ),
               cell('${items[i].quantity}', align: pw.Alignment.center),
               cell(items[i].unit, align: pw.Alignment.center),
               cell(
@@ -503,11 +504,56 @@ abstract final class PdfService {
     );
   }
 
+  /// Belgede KDV'yi anlatan iki metin: toplam satırının etiketi ve toplam
+  /// kutusunun solundaki açıklama cümlesi.
+  ///
+  /// Oran satırlardan TÜRETİLİR, belge düzeyinde varsayılmaz. Kalem editörü
+  /// satır başına oran seçtiriyor (%0, %1, %10, %20 — Türkiye'nin gerçek
+  /// oranları); tek bir orandan söz eden bir belge, karma oranlı teklifte
+  /// müşteriye yanlış bilgi verir. "KDV (%20)" yazan satırın altında
+  /// gerçekte %10 ve %20 karışımı bir tutar durabiliyordu.
+  ///
+  /// [fallbackRate] yalnızca hiç kalem yokken kullanılır.
+  static ({String rowLabel, String caption}) vatTexts({
+    required List<PdfLineItem> items,
+    required VatMode vatMode,
+    int fallbackRate = 20,
+  }) {
+    final oranlar = items.map((item) => item.taxRate).toSet();
+
+    final int? tekOran = switch (oranlar.length) {
+      0 => fallbackRate,
+      1 => oranlar.first,
+      _ => null,
+    };
+    final tumuSifir = oranlar.isNotEmpty && oranlar.every((o) => o == 0);
+
+    final String caption;
+    if (vatMode == VatMode.included) {
+      caption = 'Fiyatlarımıza KDV dahildir.';
+    } else if (tumuSifir) {
+      // "%0 KDV ilave edilecektir" anlamsız bir cümle.
+      caption = 'Fiyatlarımıza KDV uygulanmamıştır.';
+    } else if (tekOran == null) {
+      caption =
+          'Fiyatlarımıza KDV dahil değildir; her satırda belirtilen '
+          'oranda KDV ilave edilecektir.';
+    } else {
+      caption =
+          'Fiyatlarımıza KDV dahil değildir; %$tekOran KDV ilave '
+          'edilecektir.';
+    }
+
+    return (
+      rowLabel: tekOran == null ? 'KDV' : 'KDV (%$tekOran)',
+      caption: caption,
+    );
+  }
+
   static pw.Widget _totalsPanel({
     required DocumentTotals totals,
     required Currency currency,
-    required VatMode vatMode,
-    required int vatRate,
+    required String vatRowLabel,
   }) {
     pw.Widget row(String label, int amount) {
       return pw.Container(
@@ -538,12 +584,9 @@ abstract final class PdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
           row('Ara Toplam (KDV hariç)', totals.netMinor),
-          row('KDV (%$vatRate)', totals.vatMinor),
+          row(vatRowLabel, totals.vatMinor),
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: const pw.BoxDecoration(color: _accent),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -574,14 +617,10 @@ abstract final class PdfService {
   /// yazıyla tutar. Boş kalan alanı bilgiyle doldurur.
   static pw.Widget _totalsCaption({
     required Currency currency,
-    required VatMode vatMode,
-    required int vatRate,
+    required String vatCaption,
   }) {
     final lines = <String>[
-      vatMode == VatMode.included
-          ? 'Fiyatlarımıza KDV dahildir.'
-          : 'Fiyatlarımıza KDV dahil değildir; %$vatRate KDV ilave '
-                'edilecektir.',
+      vatCaption,
       'Tutarlar ${currency.label} (${currency.code}) cinsindendir.',
     ];
 
@@ -613,7 +652,16 @@ abstract final class PdfService {
     required String? notes,
     required Company company,
   }) {
-    final hasPayment = company.iban?.trim().isNotEmpty == true;
+    // Ödeme bloğu HER ZAMAN çıkar.
+    //
+    // Önceden yalnızca IBAN doluysa çiziliyordu; kullanıcı IBAN'ı
+    // girmediğinde blok sessizce kayboluyor ve belge eksik olduğunu
+    // söylemiyordu. Blok sabit durunca boşluk görünür oluyor.
+    //
+    // Yine de tamamen boş bir kutu müşterinin gözünde baskı hatası gibi
+    // durur; IBAN yoksa elimizdeki iletişim bilgisiyle doldurulur.
+    final iban = company.iban?.trim() ?? '';
+    final hasIban = iban.isNotEmpty;
 
     pw.Widget panel({
       required String title,
@@ -675,7 +723,7 @@ abstract final class PdfService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Expanded(
-          flex: hasPayment ? 3 : 1,
+          flex: 3,
           child: panel(
             title: 'Şartlar ve Notlar',
             children: [
@@ -691,26 +739,47 @@ abstract final class PdfService {
             ],
           ),
         ),
-        if (hasPayment) ...[
-          pw.SizedBox(width: 12),
-          pw.Expanded(
-            flex: 2,
-            child: panel(
-              title: 'Ödeme Bilgisi',
-              children: [
-                pw.Text(company.name, style: _style(size: 8.4, medium: true)),
-                pw.SizedBox(height: 3),
+        pw.SizedBox(width: 12),
+        pw.Expanded(
+          flex: 2,
+          child: panel(
+            title: 'Ödeme Bilgisi',
+            children: [
+              pw.Text(company.name, style: _style(size: 8.4, medium: true)),
+              pw.SizedBox(height: 3),
+              if (hasIban) ...[
                 pw.Text('IBAN', style: _style(size: 7.6, color: _muted)),
                 pw.Text(
-                  company.iban!.trim(),
+                  iban,
                   style: _style(size: 9, medium: true, letterSpacing: 0.3),
                 ),
-              ],
-            ),
+              ] else
+                // IBAN girilmemiş. Kutuyu boş bırakmak yerine muhatabın
+                // ödeme için ulaşabileceği bilgi yazılır.
+                for (final satir in _paymentFallbackLines(company))
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 1.5),
+                    child: pw.Text(satir, style: _style(size: 8.2)),
+                  ),
+            ],
           ),
-        ],
+        ),
       ],
     );
+  }
+
+  /// IBAN yokken ödeme bloğunu dolduran iletişim satırları.
+  static List<String> _paymentFallbackLines(Company company) {
+    final satirlar = <String>[
+      if (company.phone?.trim().isNotEmpty == true) company.phone!.trim(),
+      if (company.email?.trim().isNotEmpty == true) company.email!.trim(),
+    ];
+
+    // Hiçbir iletişim bilgisi yoksa kutu tek satırla yine de anlamlı kalır.
+    if (satirlar.isEmpty) {
+      return const ['Ödeme bilgisi için lütfen bizimle iletişime geçin.'];
+    }
+    return satirlar;
   }
 
   static pw.Widget _noteBlock(String title, String body) {
@@ -748,11 +817,7 @@ abstract final class PdfService {
                 child: pw.Center(
                   child: pw.Text(
                     _upperTr(title),
-                    style: _style(
-                      size: 8.4,
-                      medium: true,
-                      letterSpacing: 0.8,
-                    ),
+                    style: _style(size: 8.4, medium: true, letterSpacing: 0.8),
                   ),
                 ),
               ),
@@ -901,6 +966,14 @@ abstract final class PdfService {
       discountMinor: items.fold(0, (sum, item) => sum + item.discountMinor),
     );
 
+    // KDV metinleri satırlardan türetilir; belge düzeyindeki [vatRate]
+    // yalnızca hiç kalem yokken kullanılacak bir yedektir.
+    final vatMetinleri = vatTexts(
+      items: items,
+      vatMode: vatMode,
+      fallbackRate: vatRate,
+    );
+
     final termRows = <(String, String)>[
       if (paymentTerms?.trim().isNotEmpty == true)
         ('Ödeme koşulları', paymentTerms!.trim()),
@@ -908,8 +981,10 @@ abstract final class PdfService {
         ('Teslim süresi', deliveryTime!.trim()),
       if (warrantyTerms?.trim().isNotEmpty == true)
         ('Garanti', warrantyTerms!.trim()),
-      if (validUntil != null)
-        ('Geçerlilik', _dateFormat.format(validUntil)),
+      // Geçerlilik tarihi BİLİNÇLİ olarak burada tekrarlanmaz: künyede
+      // zaten "Geçerlilik 09.09.2026" yazıyor. Aynı bilgiyi iki ayrı
+      // biçimde ("09.09.2026" ve "9 Eylül 2026") iki ayrı yerde yazmak,
+      // muhatapta hangisinin bağlayıcı olduğu sorusunu doğuruyordu.
     ];
 
     doc.addPage(
@@ -942,9 +1017,11 @@ abstract final class PdfService {
           pw.SizedBox(height: 10),
           _partyBox(customer: customer, logo: customerLogo),
           pw.SizedBox(height: 9),
-          _intro(introText?.trim().isNotEmpty == true
-              ? introText!.trim()
-              : defaultIntro(documentTitle)),
+          _intro(
+            introText?.trim().isNotEmpty == true
+                ? introText!.trim()
+                : defaultIntro(documentTitle),
+          ),
           pw.SizedBox(height: 10),
           _itemsTable(items: items, currency: currency, vatMode: vatMode),
           pw.SizedBox(height: 9),
@@ -954,16 +1031,14 @@ abstract final class PdfService {
               pw.Expanded(
                 child: _totalsCaption(
                   currency: currency,
-                  vatMode: vatMode,
-                  vatRate: vatRate,
+                  vatCaption: vatMetinleri.caption,
                 ),
               ),
               pw.SizedBox(width: 14),
               _totalsPanel(
                 totals: totals,
                 currency: currency,
-                vatMode: vatMode,
-                vatRate: vatRate,
+                vatRowLabel: vatMetinleri.rowLabel,
               ),
             ],
           ),

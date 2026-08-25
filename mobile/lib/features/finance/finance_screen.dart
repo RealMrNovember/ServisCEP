@@ -15,7 +15,8 @@ class FinanceScreen extends StatefulWidget {
   State<FinanceScreen> createState() => _FinanceScreenState();
 }
 
-class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProviderStateMixin {
+class _FinanceScreenState extends State<FinanceScreen>
+    with SingleTickerProviderStateMixin {
   late final _tabController = TabController(length: 3, vsync: this)
     ..addListener(() => setState(() {}));
 
@@ -32,7 +33,11 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
         title: const Text('Finans'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'Özet'), Tab(text: 'Gelir'), Tab(text: 'Gider')],
+          tabs: const [
+            Tab(text: 'Özet'),
+            Tab(text: 'Gelir'),
+            Tab(text: 'Gider'),
+          ],
         ),
       ),
       body: TabBarView(
@@ -46,7 +51,9 @@ class _FinanceScreenState extends State<FinanceScreen> with SingleTickerProvider
                   ? _showAddIncomeDialog(context)
                   : _showAddExpenseDialog(context),
               icon: const Icon(Icons.add),
-              label: Text(_tabController.index == 1 ? 'Gelir Ekle' : 'Gider Ekle'),
+              label: Text(
+                _tabController.index == 1 ? 'Gelir Ekle' : 'Gider Ekle',
+              ),
             ),
     );
   }
@@ -90,9 +97,17 @@ class _SummaryTab extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _SummaryRow(label: 'Gelir', amountMinor: summary.incomeMinor, color: Colors.green),
+                  _SummaryRow(
+                    label: 'Gelir',
+                    amountMinor: summary.incomeMinor,
+                    color: Colors.green,
+                  ),
                   const Divider(height: 24),
-                  _SummaryRow(label: 'Gider', amountMinor: summary.expenseMinor, color: Colors.red),
+                  _SummaryRow(
+                    label: 'Gider',
+                    amountMinor: summary.expenseMinor,
+                    color: Colors.red,
+                  ),
                   const Divider(height: 24),
                   _SummaryRow(
                     label: 'Net',
@@ -128,7 +143,10 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(fontWeight: bold ? FontWeight.w700 : FontWeight.w500, fontSize: bold ? 16 : 14),
+          style: TextStyle(
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+            fontSize: bold ? 16 : 14,
+          ),
         ),
         const Spacer(),
         Text(
@@ -155,7 +173,10 @@ class _IncomeTab extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Hata: $e')),
       data: (entries) {
         if (entries.isEmpty) {
-          return _EmptyFinanceState(text: 'Henüz gelir kaydı yok', icon: Icons.trending_up);
+          return _EmptyFinanceState(
+            text: 'Henüz gelir kaydı yok',
+            icon: Icons.trending_up,
+          );
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -167,10 +188,15 @@ class _IncomeTab extends ConsumerWidget {
               child: ListTile(
                 leading: const Icon(Icons.arrow_downward, color: Colors.green),
                 title: Text(e.description),
-                subtitle: Text('${e.category} · ${DateFormat('d MMM y', 'tr_TR').format(e.date)}'),
+                subtitle: Text(
+                  '${e.category} · ${DateFormat('d MMM y', 'tr_TR').format(e.date)}',
+                ),
                 trailing: Text(
                   Money.formatMinor(e.amountMinor),
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
+                  ),
                 ),
               ),
             );
@@ -192,7 +218,10 @@ class _ExpenseTab extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Hata: $e')),
       data: (entries) {
         if (entries.isEmpty) {
-          return _EmptyFinanceState(text: 'Henüz gider kaydı yok', icon: Icons.trending_down);
+          return _EmptyFinanceState(
+            text: 'Henüz gider kaydı yok',
+            icon: Icons.trending_down,
+          );
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -204,10 +233,15 @@ class _ExpenseTab extends ConsumerWidget {
               child: ListTile(
                 leading: const Icon(Icons.arrow_upward, color: Colors.red),
                 title: Text(e.description),
-                subtitle: Text('${e.category} · ${DateFormat('d MMM y', 'tr_TR').format(e.date)}'),
+                subtitle: Text(
+                  '${e.category} · ${DateFormat('d MMM y', 'tr_TR').format(e.date)}',
+                ),
                 trailing: Text(
                   Money.formatMinor(e.amountMinor),
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
                 ),
               ),
             );
@@ -234,7 +268,12 @@ class _EmptyFinanceState extends StatelessWidget {
           children: [
             Icon(icon, size: 56, color: scheme.onSurfaceVariant),
             const SizedBox(height: 16),
-            Text(text, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       ),
@@ -263,7 +302,10 @@ class _AddIncomeSheetState extends ConsumerState<_AddIncomeSheet> {
   }
 
   Future<void> _submit() async {
-    if (_descController.text.trim().isEmpty || _amountController.text.trim().isEmpty) return;
+    if (_descController.text.trim().isEmpty ||
+        _amountController.text.trim().isEmpty) {
+      return;
+    }
     setState(() => _isSubmitting = true);
     final session = ref.read(sessionControllerProvider).valueOrNull;
     if (session == null) return;
@@ -282,14 +324,22 @@ class _AddIncomeSheetState extends ConsumerState<_AddIncomeSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        20,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Gelir Ekle', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
-          TextField(controller: _descController, decoration: const InputDecoration(labelText: 'Açıklama')),
+          TextField(
+            controller: _descController,
+            decoration: const InputDecoration(labelText: 'Açıklama'),
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _amountController,
@@ -300,7 +350,9 @@ class _AddIncomeSheetState extends ConsumerState<_AddIncomeSheet> {
           DropdownButtonFormField<String>(
             initialValue: _category,
             decoration: const InputDecoration(labelText: 'Kategori'),
-            items: incomeCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: incomeCategories
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
             onChanged: (v) => setState(() => _category = v ?? _category),
           ),
           const SizedBox(height: 20),
@@ -335,7 +387,10 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   }
 
   Future<void> _submit() async {
-    if (_descController.text.trim().isEmpty || _amountController.text.trim().isEmpty) return;
+    if (_descController.text.trim().isEmpty ||
+        _amountController.text.trim().isEmpty) {
+      return;
+    }
     setState(() => _isSubmitting = true);
     final session = ref.read(sessionControllerProvider).valueOrNull;
     if (session == null) return;
@@ -354,14 +409,22 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        20,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Gider Ekle', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
-          TextField(controller: _descController, decoration: const InputDecoration(labelText: 'Açıklama')),
+          TextField(
+            controller: _descController,
+            decoration: const InputDecoration(labelText: 'Açıklama'),
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _amountController,
@@ -372,7 +435,9 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
           DropdownButtonFormField<String>(
             initialValue: _category,
             decoration: const InputDecoration(labelText: 'Kategori'),
-            items: expenseCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: expenseCategories
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
             onChanged: (v) => setState(() => _category = v ?? _category),
           ),
           const SizedBox(height: 20),
