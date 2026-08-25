@@ -9,6 +9,7 @@ import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
 import '../settings/settings_screen.dart';
 import '../stock/products_list_screen.dart';
+import '../subscription/payments_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../sync/data/sync_conflict_repository.dart';
 import '../sync/sync_conflicts_screen.dart';
@@ -87,10 +88,19 @@ class MoreScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
             title: const Text('Abonelik'),
-            subtitle: const Text('Paketin, ödeme bildirimi, geçmiş'),
+            subtitle: const Text('Paketin ve kalan süren'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.receipt_long_outlined),
+            title: const Text('Ödemelerim'),
+            subtitle: const Text('Geçmiş ödemeler, tarih ve tutarlar'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PaymentsScreen()),
             ),
           ),
 

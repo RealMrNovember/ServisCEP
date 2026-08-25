@@ -1,0 +1,3 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="64" viewBox="0 0 260 64" fill="none">
+  <g transform="translate(0,8) scale(0.75)"><path fill-rule="evenodd" clip-rule="evenodd" d="M14 2H44L62 20V50A12 12 0 0 1 50 62H14A12 12 0 0 1 2 50V14A12 12 0 0 1 14 2Z M16 22H48V31H36.5V50H27.5V31H16Z" fill="#3B82F6"/></g>
+  <text x="62" y="41" text-anchor="start" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="27" letter-spacing="-0.59" fill="#0C1016">Teknik<tspan fill="#3B82F6">CEP</tspan></text></svg>
