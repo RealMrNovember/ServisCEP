@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\AppLog;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +52,8 @@ class AuthService
 
             $token = $user->createToken('mobile')->plainTextToken;
 
+            AppLog::event('Yeni kayıt', ['sirket' => $company->name], $user);
+
             return ['user' => $user->load('company'), 'token' => $token];
         });
     }
@@ -66,6 +69,16 @@ class AuthService
         $user = User::where('email', $credentials['email'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            // Başarısız denemeler `warning`: tek tük olması normal, ama üst
+            // üste gelmesi ya kullanıcının sıkıştığını ya da deneme-yanılma
+            // saldırısını gösterir. İkisi de görülmeli.
+            AppLog::event(
+                'Giriş başarısız',
+                ['email' => $credentials['email'], 'sebep' => $user ? 'parola' : 'kullanıcı yok'],
+                $user,
+                'warning',
+            );
+
             throw ValidationException::withMessages([
                 'email' => ['Geçersiz e-posta veya parola.'],
             ]);
@@ -73,12 +86,16 @@ class AuthService
 
         $token = $user->createToken('mobile')->plainTextToken;
 
+        AppLog::event('Giriş yapıldı', ['yontem' => 'parola'], $user);
+
         return ['user' => $user->load('company'), 'token' => $token];
     }
 
     public function logout(User $user): void
     {
         $user->currentAccessToken()?->delete();
+
+        AppLog::event('Çıkış yapıldı', [], $user);
     }
 
     /**
@@ -191,6 +208,8 @@ class AuthService
 
         $token = $user->createToken('mobile')->plainTextToken;
 
+        AppLog::event('Giriş yapıldı', ['yontem' => 'google'], $user);
+
         return ['user' => $user->load('company'), 'token' => $token];
     }
 
@@ -238,6 +257,8 @@ class AuthService
         });
 
         $token = $user->createToken('mobile')->plainTextToken;
+
+        AppLog::event('Yeni kayıt', ['yontem' => 'google'], $user);
 
         return ['user' => $user->load('company'), 'token' => $token];
     }

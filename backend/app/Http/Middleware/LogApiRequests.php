@@ -60,6 +60,8 @@ class LogApiRequests
             // Sanctum ile gelen token, `auth:sanctum` uygulanmamis uclarda
             // varsayilan guard tarafindan cozulmez.
             $user = $request->user('sanctum') ?? $request->user();
+            $denenenEposta = $this->attemptedEmail($request);
+            $kim = $user?->email ?? $denenenEposta;
 
             AppLog::create([
                 'id' => (string) Str::uuid(),
@@ -69,12 +71,13 @@ class LogApiRequests
                     default => 'info',
                 },
                 'source' => AppLog::SOURCE_REQUEST,
-                'message' => $status >= 400
-                    ? "Istek $status ile sonuclandi"
-                    : 'Yavas istek',
+                'message' => $this->summary($kim, $status, $durationMs),
                 'context' => array_filter([
                     'query' => Str::limit((string) $request->getQueryString(), 200, '') ?: null,
                     'sunucu_mesaji' => $this->responseMessage($response),
+                    // Kimliği doğrulanamamış bir istekte "kim" sorusunun tek
+                    // cevabı denenen e-posta oluyor.
+                    'denenen_eposta' => $denenenEposta,
                 ]),
                 'user_id' => $user?->getKey() ? (string) $user->getKey() : null,
                 'company_id' => $user?->company_id ? (string) $user->company_id : null,
@@ -96,6 +99,50 @@ class LogApiRequests
                 throw $e;
             }
         }
+    }
+
+    /**
+     * Olay satırının özeti: KİM ve NE OLDU.
+     *
+     * "İstek 401 ile sonuçlandı" teknik olarak doğru ama panele bakan
+     * kişiye hiçbir şey anlatmıyor; asıl soru "kimin isteği". Kimlik
+     * bilinmiyorsa (401'de çoğu zaman böyle) en azından denenen e-posta
+     * yazılır.
+     */
+    private function summary(?string $kim, int $status, int $durationMs): string
+    {
+        $ne = match (true) {
+            $status === 401 => 'yetkisiz istek',
+            $status === 403 => 'erişim reddedildi',
+            $status === 404 => 'bulunamadı',
+            $status === 422 => 'doğrulama hatası',
+            $status === 429 => 'hız sınırı aşıldı',
+            $status >= 500 => 'sunucu hatası',
+            $status >= 400 => "istek reddedildi ($status)",
+            default => "yavaş yanıt ({$durationMs} ms)",
+        };
+
+        return $kim === null ? ucfirst($ne) : "$kim - $ne";
+    }
+
+    /**
+     * Kimlik uçlarında denenen e-posta.
+     *
+     * Yalnızca kimlik uçlarından ve yalnızca `email` alanı okunur: başka
+     * uçlarda gövde müşteri verisi taşıyor ve günlüğe girmemeli. Parola
+     * hiçbir koşulda okunmaz.
+     */
+    private function attemptedEmail(Request $request): ?string
+    {
+        if (! str_contains($request->path(), 'auth/')) {
+            return null;
+        }
+
+        $email = $request->input('email');
+
+        return is_string($email) && $email !== ''
+            ? Str::limit($email, 120, '')
+            : null;
     }
 
     /**

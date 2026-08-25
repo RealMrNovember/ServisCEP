@@ -105,12 +105,49 @@ class DiagnosticsTest extends TestCase
             'password' => 'yanlis',
         ])->assertUnprocessable();
 
+        // Aynı yola iki kayıt düşer: AuthService'in olay kaydı ve ara
+        // katmanın istek kaydı. Burada aranan ikincisi.
         $kayit = AppLog::query()
+            ->where('source', AppLog::SOURCE_REQUEST)
             ->where('path', '/api/v1/auth/login')
             ->firstOrFail();
 
         $this->assertSame(422, $kayit->status);
         $this->assertNotNull($kayit->context['sunucu_mesaji'] ?? null);
+
+        // Olay satırı KİMİN isteği olduğunu söylemeli: kimlik
+        // doğrulanamadığında bunun tek cevabı denenen e-posta.
+        $this->assertSame('yok@ornek.test', $kayit->context['denenen_eposta']);
+        $this->assertStringContainsString('yok@ornek.test', $kayit->message);
+    }
+
+    public function test_giris_ve_cikis_gunluge_yazilir(): void
+    {
+        $user = User::factory()->create(['password' => 'sifre1234']);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'sifre1234',
+        ])->assertOk();
+
+        $giris = AppLog::query()->where('message', 'Giriş yapıldı')->firstOrFail();
+        $this->assertSame($user->id, $giris->user_id);
+        $this->assertSame('parola', $giris->context['yontem']);
+    }
+
+    public function test_basarisiz_giris_denenen_eposta_ile_kaydedilir(): void
+    {
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'yok@ornek.test',
+            'password' => 'yanlis',
+        ])->assertUnprocessable();
+
+        $kayit = AppLog::query()
+            ->where('message', 'Giriş başarısız')
+            ->firstOrFail();
+
+        $this->assertSame('warning', $kayit->level);
+        $this->assertSame('yok@ornek.test', $kayit->context['email']);
     }
 
     public function test_basarili_istekler_gunlugu_sismez(): void

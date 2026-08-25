@@ -77,11 +77,16 @@ class AppLogsTable
                     ->sortable()
                     ->toggleable(),
 
-                TextColumn::make('user.full_name')
+                TextColumn::make('kim')
                     ->label('Kullanıcı')
+                    // Kimliği doğrulanmamış isteklerde ilişki boş kalıyor;
+                    // o durumda denenen e-posta gösterilir — "kim giremedi"
+                    // sorusunun tek cevabı çoğu zaman o.
+                    ->state(fn (AppLog $record) => $record->user?->email
+                        ?? ($record->context['denenen_eposta'] ?? null))
+                    ->description(fn (AppLog $record) => $record->user?->full_name
+                        ?? $record->company?->name)
                     ->placeholder('—')
-                    ->description(fn (AppLog $record) => $record->company?->name)
-                    ->searchable()
                     ->toggleable(),
 
                 TextColumn::make('app_version')
