@@ -17,6 +17,14 @@ Kurallar:
 
 ---
 
+## v0.7.7
+
+Yenilikler:
+• Uygulama simgesi yenilendi.
+• "Ödemelerim" ekranı eklendi: geçmiş ödemeleriniz tarih, tutar ve durumuyla listeleniyor. Onay bekleyenler en üstte ayrı duruyor.
+• Ödeme bildiriminiz onaylanmadığında artık haberdar oluyorsunuz; gerekçe hem bildirimde hem kaydın altında yazıyor.
+• Onay sırasında size yazılan not da uygulamada görünüyor.
+
 ## v0.7.6
 
 Yenilikler:
