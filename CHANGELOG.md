@@ -17,6 +17,15 @@ Kurallar:
 
 ---
 
+## v0.7.4
+
+Yenilikler:
+• Uygulamanın rengi ve yazı tipleri yenilendi; koyu tema bu kez baştan koyu için tasarlandı, güneş altında okunaklılık gözetildi.
+• Logo yükleme yenilendi: kırpma oranını ve zemini (şeffaf, beyaz, koyu) siz seçiyorsunuz. Beyaz logolar artık kaybolmuyor.
+• Teklif belgesinde logonuz kendi oranında basılıyor; yatay logolar küçücük çıkmıyor.
+• İskonto sütunu belgede yalnızca gerçekten iskonto varsa görünüyor.
+• Yeni müşteri oluşturduğunuzda listeye seçili olarak dönüyor.
+
 ## v0.7.3
 
 Yenilikler:
