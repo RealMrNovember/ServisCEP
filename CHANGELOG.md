@@ -17,6 +17,14 @@ Kurallar:
 
 ---
 
+## v0.7.6
+
+Yenilikler:
+• Alt menü yenilendi: seçili sekme artık yumuşak bir vurguyla belirtiliyor ve sekme değiştirdiğinizde göstergeci kayarak takip ediyor.
+• Açık temada alt menü de açık renkte; önceden koyu kalıyordu.
+• İşler, Müşteriler ve Belgeler ekranlarının sağ üstünde bekleyen kayıt sayısı görünüyor. Dokununca eşitleme durumuna gidiyor.
+• Sorun bildirdiğinizde hangi sürümü kullandığınızı size sormamıza gerek kalmıyor; destek tarafı bunu görebiliyor.
+
 ## v0.7.5
 
 Yenilikler:
