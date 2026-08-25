@@ -48,6 +48,57 @@ void main() {
       );
     });
 
+    test('kapatılan şerit aynı durum sürerken kapalı kalır', () {
+      expect(
+        syncBannerStaysHidden(
+          dismissedState: SyncBannerState.offline,
+          dismissedPending: 3,
+          currentState: SyncBannerState.offline,
+          currentPending: 3,
+        ),
+        isTrue,
+      );
+    });
+
+    test('kapatıldıktan sonra yeni kayıt birikirse geri gelir', () {
+      // Kullanıcı kapatırken 3 kayıt vardı; şimdi 7 var. Kapatma kararı
+      // o dördünü kapsamıyor.
+      expect(
+        syncBannerStaysHidden(
+          dismissedState: SyncBannerState.offline,
+          dismissedPending: 3,
+          currentState: SyncBannerState.offline,
+          currentPending: 7,
+        ),
+        isFalse,
+      );
+    });
+
+    test('bağlantı durumu değişirse kapatma geçersizleşir', () {
+      expect(
+        syncBannerStaysHidden(
+          dismissedState: SyncBannerState.offline,
+          dismissedPending: 3,
+          currentState: SyncBannerState.syncing,
+          currentPending: 3,
+        ),
+        isFalse,
+      );
+    });
+
+    test('bekleyen sayısı düşerse şerit geri gelmez', () {
+      // İyi haber için kullanıcıyı rahatsız etmeye gerek yok.
+      expect(
+        syncBannerStaysHidden(
+          dismissedState: SyncBannerState.waiting,
+          dismissedPending: 9,
+          currentState: SyncBannerState.waiting,
+          currentPending: 2,
+        ),
+        isTrue,
+      );
+    });
+
     test('done durumu hesaplamadan çıkmaz, yalnızca geçişle üretilir', () {
       // done, "kuyruk yeni boşaldı" geçişinin sonucudur; anlık üç
       // sinyalden türetilemez. Hesaplama fonksiyonu onu asla döndürmemeli.

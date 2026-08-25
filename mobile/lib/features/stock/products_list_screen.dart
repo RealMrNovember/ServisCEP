@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/utils/money.dart';
+import '../../shared/skeleton.dart';
+import '../../shared/ui.dart';
 import '../auth/data/session_controller.dart';
 import 'barcode_scanner_screen.dart';
 import 'data/products_repository.dart';
@@ -44,12 +46,15 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
   }
 
   Future<void> _scanAndFind() async {
-    final code = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()));
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
     if (code == null || !mounted) return;
 
-    final companyId = ref.read(sessionControllerProvider).valueOrNull?.companyId;
+    final companyId = ref
+        .read(sessionControllerProvider)
+        .valueOrNull
+        ?.companyId;
     if (companyId == null) return;
 
     final repo = ref.read(productsRepositoryProvider);
@@ -61,9 +66,11 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
       if (widget.selectionMode) {
         Navigator.of(context).pop(existing);
       } else {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => ProductFormScreen(existing: existing)));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ProductFormScreen(existing: existing),
+          ),
+        );
       }
       return;
     }
@@ -71,9 +78,7 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
     final globalResult = await repo.lookupGlobalBarcode(code);
     if (!mounted) return;
 
-    Navigator.of(
-      context,
-    ).push(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ProductFormScreen(
           prefilledBarcode: code,
@@ -106,7 +111,8 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                     ),
-                    onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+                    onChanged: (v) =>
+                        setState(() => _query = v.trim().toLowerCase()),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -120,8 +126,11 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
           ),
           Expanded(
             child: productsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
+              loading: () => const AppSkeleton(count: 6),
+              error: (_, _) => AppErrorState(
+                message: 'Stok listesi yüklenemedi.',
+                onRetry: () => ref.invalidate(productsListProvider),
+              ),
               data: (products) {
                 final filtered = _query.isEmpty
                     ? products
@@ -135,15 +144,20 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
 
                 if (products.isEmpty) {
                   return _EmptyState(
-                    onAdd: () => Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute(builder: (_) => const ProductFormScreen())),
+                    onAdd: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProductFormScreen(),
+                      ),
+                    ),
                     onScan: _scanAndFind,
                   );
                 }
                 if (filtered.isEmpty) {
                   return Center(
-                    child: Text('Sonuç bulunamadı', style: TextStyle(color: scheme.onSurfaceVariant)),
+                    child: Text(
+                      'Sonuç bulunamadı',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                   );
                 }
 
@@ -160,7 +174,10 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
                           Navigator.of(context).pop(product);
                         } else {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => ProductFormScreen(existing: product)),
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ProductFormScreen(existing: product),
+                            ),
                           );
                         }
                       },
@@ -175,9 +192,9 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
       floatingActionButton: widget.selectionMode
           ? null
           : FloatingActionButton.extended(
-              onPressed: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const ProductFormScreen())),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProductFormScreen()),
+              ),
               icon: const Icon(Icons.add),
               label: const Text('Yeni Ürün'),
             ),
@@ -198,7 +215,10 @@ class _ProductTile extends StatelessWidget {
     return Card(
       child: ListTile(
         onTap: onTap,
-        title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          product.name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text(
           [
             if (product.brand?.isNotEmpty == true) product.brand!,
@@ -217,11 +237,18 @@ class _ProductTile extends StatelessWidget {
               ),
               child: Text(
                 _statusLabels[status]!,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
               ),
             ),
             const SizedBox(height: 4),
-            Text('${product.currentStock} ${product.unit}', style: const TextStyle(fontSize: 12)),
+            Text(
+              '${product.currentStock} ${product.unit}',
+              style: const TextStyle(fontSize: 12),
+            ),
           ],
         ),
       ),
@@ -243,17 +270,25 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inventory_2_outlined, size: 56, color: scheme.onSurfaceVariant),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 56,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             Text(
               'Stokta ürün yok',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               'Barkod tarayarak veya elle ekleyerek başla.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
             Row(
@@ -265,7 +300,11 @@ class _EmptyState extends StatelessWidget {
                   label: const Text('Barkod Tara'),
                 ),
                 const SizedBox(width: 12),
-                FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add), label: const Text('Ekle')),
+                FilledButton.icon(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Ekle'),
+                ),
               ],
             ),
           ],

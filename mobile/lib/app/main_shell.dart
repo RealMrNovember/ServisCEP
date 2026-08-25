@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/services/play_update_service.dart';
 import '../core/services/update_prompt.dart';
+import '../shared/sync_indicators.dart';
 import 'theme.dart';
 
 /// Ana navigasyon iskeleti — bkz. docs/06 § Mobil Navigasyon:
@@ -61,17 +62,38 @@ class MainShell extends ConsumerWidget {
     // "Sonra" denip çalışmaya devam edilebilir (bkz. UpdatePromptGate).
     return UpdatePromptGate(
       child: Scaffold(
-      body: Column(
-        children: [
-          if (playUpdateReady) const _PlayUpdateReadyBanner(),
-          Expanded(child: navigationShell),
-        ],
-      ),
-      bottomNavigationBar: _FloatingNavBar(
-        currentIndex: navigationShell.currentIndex,
-        destinations: _destinations,
-        onSelect: (index) => _onSelect(index),
-      ),
+        // Kabuğun Scaffold'unda AppBar YOK, bu yüzden gövde ekranın en
+        // tepesinden başlıyor ve şeritler durum çubuğunun ALTINDA kalıyordu
+        // (metin saatin ve pil simgesinin arkasına düşüyordu).
+        //
+        // SafeArea üst dolguyu burada tüketiyor; sekmelerin kendi AppBar'ları
+        // da aynı dolguyu ikinci kez eklemiyor. Şerit görünmediğinde sonuç
+        // aynı kalıyor: durum çubuğu alanı zaten AppBar ile aynı renk olan
+        // ekran zeminiyle doluyor.
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              if (playUpdateReady) const _PlayUpdateReadyBanner(),
+              // Çevrimdışı / eşitleme şeridi — bkz. tasarım sistemi § 6.1.
+              //
+              // Tasarım şeridi "üst çubuğun hemen altına" koyuyor; burada üst
+              // çubuğun ÜSTÜNDE duruyor. Sebep: her sekmenin ve her detay
+              // ekranının kendi AppBar'ı var, şeridi 42 ekrana tek tek
+              // eklemek gerekirdi. Kabuğa konunca sekmelerde ve onların
+              // üstüne push edilen ekranlarda kendiliğinden görünüyor.
+              // Kuralın asıl amacı korunuyor: hiçbir şeyin üstüne binmiyor,
+              // içeriği aşağı itiyor.
+              const SyncBanner(),
+              Expanded(child: navigationShell),
+            ],
+          ),
+        ),
+        bottomNavigationBar: _FloatingNavBar(
+          currentIndex: navigationShell.currentIndex,
+          destinations: _destinations,
+          onSelect: (index) => _onSelect(index),
+        ),
       ),
     );
   }
@@ -87,7 +109,9 @@ class _PlayUpdateReadyBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialBanner(
-      content: const Text('Güncelleme indirildi. Uygulamayı yeniden başlatmak için devam et.'),
+      content: const Text(
+        'Güncelleme indirildi. Uygulamayı yeniden başlatmak için devam et.',
+      ),
       leading: const Icon(Icons.system_update_alt_rounded),
       actions: [
         TextButton(
@@ -100,7 +124,11 @@ class _PlayUpdateReadyBanner extends StatelessWidget {
 }
 
 class _FloatingNavBar extends StatelessWidget {
-  const _FloatingNavBar({required this.currentIndex, required this.destinations, required this.onSelect});
+  const _FloatingNavBar({
+    required this.currentIndex,
+    required this.destinations,
+    required this.onSelect,
+  });
 
   final int currentIndex;
   final List<({IconData icon, String label})> destinations;
@@ -111,13 +139,22 @@ class _FloatingNavBar extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomInset > 0 ? bottomInset + 8 : 16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        bottomInset > 0 ? bottomInset + 8 : 16,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.darkBg,
           borderRadius: BorderRadius.circular(26),
           boxShadow: [
-            BoxShadow(color: AppColors.darkBg.withValues(alpha: 0.4), blurRadius: 24, offset: const Offset(0, 10)),
+            BoxShadow(
+              color: AppColors.darkBg.withValues(alpha: 0.4),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: SizedBox(
@@ -142,7 +179,12 @@ class _FloatingNavBar extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  const _NavItem({required this.icon, required this.label, required this.selected, required this.onTap});
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -164,7 +206,9 @@ class _NavItem extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 3),
           padding: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
-            color: selected ? AppColors.accent.withValues(alpha: 0.18) : Colors.transparent,
+            color: selected
+                ? AppColors.accent.withValues(alpha: 0.18)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(

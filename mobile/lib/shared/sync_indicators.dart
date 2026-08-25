@@ -17,9 +17,9 @@ import 'tc_icon.dart';
 /// Bu ekranın GoRouter rotası yok; uygulamanın başka yerlerinde de
 /// doğrudan push ediliyor (bkz. settings_screen.dart).
 void _esitlemeDurumunaGit(BuildContext context) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => const SyncStatusScreen()),
-  );
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => const SyncStatusScreen()));
 }
 
 /// Çevrimdışı göstergeleri — tasarım sistemi § 6.
@@ -70,11 +70,38 @@ SyncBannerState syncBannerStateFor({
   return SyncBannerState.hidden;
 }
 
+/// Kullanıcının kapattığı şerit hâlâ kapalı kalmalı mı.
+///
+/// Kapatma, o ANKİ duruma bağlıdır; kalıcı bir "bir daha gösterme"
+/// değildir. Durum değişirse ya da bekleyen kayıt sayısı artarsa şerit
+/// yeniden çıkar — kullanıcı kapatırken henüz var olmayan kayıtlardan
+/// haberdar olmalı.
+///
+/// Kötüleşme kontrolü bilerek tek yönlü: sayı DÜŞERSE şerit geri gelmez.
+/// Kullanıcıyı iyi haberle rahatsız etmenin anlamı yok.
+bool syncBannerStaysHidden({
+  required SyncBannerState dismissedState,
+  required int dismissedPending,
+  required SyncBannerState currentState,
+  required int currentPending,
+}) {
+  if (dismissedState != currentState) return false;
+  if (currentPending > dismissedPending) return false;
+  return true;
+}
+
 /// Üst çubuğun hemen altında duran global durum şeridi.
 ///
 /// İçeriğin ÜSTÜNE binmez, aşağı iter — hiçbir eylem örtülmemeli.
-/// Kapatılamaz: kapatılabilir olsaydı kullanıcı durumu kaybederdi.
 /// Dokununca Eşitleme Durumu ekranına gider.
+///
+/// **Kapatılabilir, ama durum değişince geri gelir.** Tasarım sistemi
+/// şeridi hiç kapatılamaz yapıyordu; gerekçesi kullanıcının durumu
+/// kaybetmemesiydi. Uzun bir çevrimdışı çalışmada sürekli duran bir
+/// şerit rahatsız edici olduğu için burada kapatılabilir yapıldı, fakat
+/// kapatma yalnızca O ANKİ durum için geçerli: bağlantı durumu değişirse
+/// ya da bekleyen kayıt sayısı artarsa şerit yeniden çıkar. Kalıcı ve
+/// rahatsız etmeyen gösterge olarak üst çubuktaki [PendingBadge] duruyor.
 class SyncBanner extends ConsumerStatefulWidget {
   const SyncBanner({super.key});
 
@@ -87,6 +114,21 @@ class _SyncBannerState extends ConsumerState<SyncBanner> {
   Timer? _tamamlandiZamanlayici;
   bool _tamamlandiGoster = false;
   SyncBannerState _oncekiDurum = SyncBannerState.hidden;
+
+  /// Kullanıcının kapattığı durum. Aynı durum sürdüğü sürece şerit
+  /// gösterilmez; durum değişir ya da kötüleşirse yeniden çıkar.
+  ({SyncBannerState durum, int bekleyen})? _kapatilan;
+
+  bool _kapaliKalmali(SyncBannerState durum, int bekleyen) {
+    final kapatilan = _kapatilan;
+    if (kapatilan == null) return false;
+    return syncBannerStaysHidden(
+      dismissedState: kapatilan.durum,
+      dismissedPending: kapatilan.bekleyen,
+      currentState: durum,
+      currentPending: bekleyen,
+    );
+  }
 
   @override
   void dispose() {
@@ -140,9 +182,16 @@ class _SyncBannerState extends ConsumerState<SyncBanner> {
           if (durum != _oncekiDurum) setState(() => _durumDegisti(durum));
         });
 
-        final gorunen = durum == SyncBannerState.hidden && _tamamlandiGoster
+        var gorunen = durum == SyncBannerState.hidden && _tamamlandiGoster
             ? SyncBannerState.done
             : durum;
+
+        // "Tamamlandı" kutlaması zaten iki saniyelik; onu kapatma
+        // kaydına takmanın anlamı yok.
+        if (gorunen != SyncBannerState.done &&
+            _kapaliKalmali(gorunen, bekleyen)) {
+          gorunen = SyncBannerState.hidden;
+        }
 
         return AnimatedSize(
           duration: AppMotion.base,
@@ -150,19 +199,37 @@ class _SyncBannerState extends ConsumerState<SyncBanner> {
           alignment: Alignment.topCenter,
           child: gorunen == SyncBannerState.hidden
               ? const SizedBox(width: double.infinity)
-              : _Serit(durum: gorunen, bekleyen: bekleyen),
+              : Dismissible(
+                  // Anahtar duruma bağlı: durum değişince Dismissible
+                  // sıfırlanır ve yeni şerit kapanmış sayılmaz.
+                  key: ValueKey<SyncBannerState>(gorunen),
+                  direction: DismissDirection.horizontal,
+                  onDismissed: (_) => setState(() {
+                    _kapatilan = (durum: gorunen, bekleyen: bekleyen);
+                  }),
+                  child: _Serit(
+                    durum: gorunen,
+                    bekleyen: bekleyen,
+                    onClose: () => setState(() {
+                      _kapatilan = (durum: gorunen, bekleyen: bekleyen);
+                    }),
+                  ),
+                ),
         );
       },
     );
   }
-
 }
 
 class _Serit extends StatelessWidget {
-  const _Serit({required this.durum, required this.bekleyen});
+  const _Serit({required this.durum, required this.bekleyen, this.onClose});
 
   final SyncBannerState durum;
   final int bekleyen;
+
+  /// Kapatma düğmesi. Verilmezse düğme çıkmaz ("tamamlandı" gibi kendi
+  /// kendine kapanan durumlarda gereksiz).
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -210,30 +277,57 @@ class _Serit extends StatelessWidget {
 
     return Material(
       color: zemin,
-      child: InkWell(
-        onTap: () => _esitlemeDurumunaGit(context),
-        child: Container(
-          height: 36,
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: cizgi)),
-          ),
-          child: Row(
-            children: [
-              TcIcon(ikon, size: 18, color: yazi),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  metin,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.label.copyWith(color: yazi),
+      child: Container(
+        height: 36,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: cizgi)),
+        ),
+        child: Row(
+          children: [
+            // Metnin kendisi Eşitleme Durumu ekranına götürür.
+            Expanded(
+              child: InkWell(
+                onTap: () => _esitlemeDurumunaGit(context),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.xl),
+                  child: Row(
+                    children: [
+                      TcIcon(ikon, size: 18, color: yazi),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          metin,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.label.copyWith(color: yazi),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              TcIcon(TcIcons.chevronRight, size: 16, color: yazi),
-            ],
-          ),
+            ),
+            if (onClose != null)
+              // Dokunma hedefi 48dp; şerit 36dp olduğu için genişlikten
+              // alınıyor. Eldivenli parmak küçük bir X'i tutturamıyor.
+              Semantics(
+                label: 'Şeridi kapat',
+                button: true,
+                child: InkWell(
+                  onTap: onClose,
+                  child: SizedBox(
+                    width: AppSize.touch,
+                    height: double.infinity,
+                    child: Center(
+                      child: TcIcon(TcIcons.x, size: 16, color: yazi),
+                    ),
+                  ),
+                ),
+              )
+            else
+              const SizedBox(width: AppSpacing.xl),
+          ],
         ),
       ),
     );

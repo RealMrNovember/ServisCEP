@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/customer_display.dart';
 import '../../core/utils/money.dart';
+import '../../shared/skeleton.dart';
+import '../../shared/ui.dart';
 import '../proformas/data/proformas_repository.dart';
 import '../proformas/proforma_detail_screen.dart';
 import '../proformas/proforma_form_screen.dart';
@@ -31,7 +33,8 @@ class DocumentsScreen extends StatefulWidget {
   State<DocumentsScreen> createState() => _DocumentsScreenState();
 }
 
-class _DocumentsScreenState extends State<DocumentsScreen> with SingleTickerProviderStateMixin {
+class _DocumentsScreenState extends State<DocumentsScreen>
+    with SingleTickerProviderStateMixin {
   late final _tabController = TabController(length: 2, vsync: this)
     ..addListener(() => setState(() {}));
 
@@ -50,18 +53,26 @@ class _DocumentsScreenState extends State<DocumentsScreen> with SingleTickerProv
         title: const Text('Belgeler'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'Teklifler'), Tab(text: 'Proformalar')],
+          tabs: const [
+            Tab(text: 'Teklifler'),
+            Tab(text: 'Proformalar'),
+          ],
         ),
       ),
-      body: TabBarView(controller: _tabController, children: const [_QuotesTab(), _ProformasTab()]),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [_QuotesTab(), _ProformasTab()],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           if (isQuotesTab) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const QuoteFormScreen()));
-          } else {
             Navigator.of(
               context,
-            ).push(MaterialPageRoute(builder: (_) => const ProformaFormScreen()));
+            ).push(MaterialPageRoute(builder: (_) => const QuoteFormScreen()));
+          } else {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ProformaFormScreen()),
+            );
           }
         },
         icon: const Icon(Icons.add),
@@ -79,11 +90,17 @@ class _QuotesTab extends ConsumerWidget {
     final quotesAsync = ref.watch(quotesListProvider);
 
     return quotesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Hata: $e')),
+      loading: () => const AppSkeleton(count: 5),
+      error: (_, _) => AppErrorState(
+        message: 'Teklifler yüklenemedi.',
+        onRetry: () => ref.invalidate(quotesListProvider),
+      ),
       data: (quotes) {
         if (quotes.isEmpty) {
-          return _EmptyDocsState(icon: Icons.description_outlined, text: 'Henüz teklif yok');
+          return _EmptyDocsState(
+            icon: Icons.description_outlined,
+            text: 'Henüz teklif yok',
+          );
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -94,10 +111,17 @@ class _QuotesTab extends ConsumerWidget {
             return Card(
               child: ListTile(
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => QuoteDetailScreen(quoteId: item.quote.id)),
+                  MaterialPageRoute(
+                    builder: (_) => QuoteDetailScreen(quoteId: item.quote.id),
+                  ),
                 ),
-                title: Text(item.customer.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${item.quote.code} · ${Money.formatMinor(item.quote.totalMinor)}'),
+                title: Text(
+                  item.customer.displayName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${item.quote.code} · ${Money.formatMinor(item.quote.totalMinor)}',
+                ),
                 trailing: Chip(
                   label: Text(
                     _quoteStatusLabels[item.quote.status] ?? item.quote.status,
@@ -122,11 +146,17 @@ class _ProformasTab extends ConsumerWidget {
     final proformasAsync = ref.watch(proformasListProvider);
 
     return proformasAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Hata: $e')),
+      loading: () => const AppSkeleton(count: 5),
+      error: (_, _) => AppErrorState(
+        message: 'Proformalar yüklenemedi.',
+        onRetry: () => ref.invalidate(proformasListProvider),
+      ),
       data: (proformas) {
         if (proformas.isEmpty) {
-          return _EmptyDocsState(icon: Icons.receipt_long_outlined, text: 'Henüz proforma yok');
+          return _EmptyDocsState(
+            icon: Icons.receipt_long_outlined,
+            text: 'Henüz proforma yok',
+          );
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -138,10 +168,14 @@ class _ProformasTab extends ConsumerWidget {
               child: ListTile(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ProformaDetailScreen(proformaId: item.proforma.id),
+                    builder: (_) =>
+                        ProformaDetailScreen(proformaId: item.proforma.id),
                   ),
                 ),
-                title: Text(item.customer.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(
+                  item.customer.displayName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(
                   '${item.proforma.code} · ${Money.formatMinor(item.proforma.totalMinor)}',
                 ),
@@ -172,7 +206,9 @@ class _EmptyDocsState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               text,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),

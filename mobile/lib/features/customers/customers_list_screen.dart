@@ -5,13 +5,16 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/customer_types.dart';
 import '../../core/database/app_database.dart';
 import '../../core/utils/customer_display.dart';
+import '../../shared/skeleton.dart';
+import '../../shared/ui.dart';
 import 'data/customers_repository.dart';
 
 class CustomersListScreen extends ConsumerStatefulWidget {
   const CustomersListScreen({super.key});
 
   @override
-  ConsumerState<CustomersListScreen> createState() => _CustomersListScreenState();
+  ConsumerState<CustomersListScreen> createState() =>
+      _CustomersListScreenState();
 }
 
 class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
@@ -47,8 +50,11 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
           ),
           Expanded(
             child: customersAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
+              loading: () => const AppSkeleton(count: 6),
+              error: (_, _) => AppErrorState(
+                message: 'Müşteri listesi yüklenemedi.',
+                onRetry: () => ref.invalidate(customersListProvider),
+              ),
               data: (customers) {
                 final filtered = _query.isEmpty
                     ? customers
@@ -78,7 +84,8 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 100),
                   itemCount: filtered.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) => _CustomerTile(customer: filtered[index]),
+                  itemBuilder: (context, index) =>
+                      _CustomerTile(customer: filtered[index]),
                 );
               },
             ),
@@ -109,12 +116,22 @@ class _CustomerTile extends StatelessWidget {
         leading: CircleAvatar(
           backgroundColor: scheme.primary.withValues(alpha: 0.12),
           child: Text(
-            customer.displayName.isNotEmpty ? customer.displayName[0].toUpperCase() : '?',
-            style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700),
+            customer.displayName.isNotEmpty
+                ? customer.displayName[0].toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: scheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
-        title: Text(customer.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(customer.phone?.isNotEmpty == true ? customer.phone! : customer.code),
+        title: Text(
+          customer.displayName,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          customer.phone?.isNotEmpty == true ? customer.phone! : customer.code,
+        ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
@@ -148,17 +165,25 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.people_outline_rounded, size: 56, color: scheme.onSurfaceVariant),
+            Icon(
+              Icons.people_outline_rounded,
+              size: 56,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             Text(
               'Henüz müşterin yok',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               'İlk müşterini ekleyerek başla.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
             FilledButton.icon(

@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/utils/customer_display.dart';
 import '../../core/utils/money.dart';
+import '../../shared/skeleton.dart';
+import '../../shared/ui.dart';
 import '../service_requests/data/service_requests_repository.dart';
 import '../service_requests/service_request_form_screen.dart';
 import 'data/jobs_repository.dart';
@@ -20,7 +22,8 @@ class JobsListScreen extends StatefulWidget {
   State<JobsListScreen> createState() => _JobsListScreenState();
 }
 
-class _JobsListScreenState extends State<JobsListScreen> with SingleTickerProviderStateMixin {
+class _JobsListScreenState extends State<JobsListScreen>
+    with SingleTickerProviderStateMixin {
   late final _tabController = TabController(length: 2, vsync: this)
     ..addListener(() => setState(() {}));
 
@@ -39,7 +42,10 @@ class _JobsListScreenState extends State<JobsListScreen> with SingleTickerProvid
         title: const Text('İşler'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'İşler'), Tab(text: 'Talepler')],
+          tabs: const [
+            Tab(text: 'İşler'),
+            Tab(text: 'Talepler'),
+          ],
         ),
       ),
       body: TabBarView(
@@ -51,9 +57,11 @@ class _JobsListScreenState extends State<JobsListScreen> with SingleTickerProvid
           if (isJobsTab) {
             context.push('/jobs/new');
           } else {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const ServiceRequestFormScreen()));
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const ServiceRequestFormScreen(),
+              ),
+            );
           }
         },
         icon: const Icon(Icons.add),
@@ -105,8 +113,11 @@ class _JobsTabState extends ConsumerState<_JobsTab> {
         ),
         Expanded(
           child: jobsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
+            loading: () => const AppSkeleton(pattern: SkeletonPattern.cards),
+            error: (_, _) => AppErrorState(
+              message: 'İş listesi yüklenemedi.',
+              onRetry: () => ref.invalidate(jobsListProvider),
+            ),
             data: (jobs) {
               final filtered = _statusFilter == null
                   ? jobs
@@ -117,7 +128,10 @@ class _JobsTabState extends ConsumerState<_JobsTab> {
               }
               if (filtered.isEmpty) {
                 return Center(
-                  child: Text('Bu durumda iş yok', style: TextStyle(color: scheme.onSurfaceVariant)),
+                  child: Text(
+                    'Bu durumda iş yok',
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
                 );
               }
 
@@ -125,7 +139,8 @@ class _JobsTabState extends ConsumerState<_JobsTab> {
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
                 itemCount: filtered.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, index) => _JobTile(item: filtered[index]),
+                itemBuilder: (context, index) =>
+                    _JobTile(item: filtered[index]),
               );
             },
           ),
@@ -151,8 +166,11 @@ class _RequestsTab extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return requestsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Bir hata oluştu: $e')),
+      loading: () => const AppSkeleton(pattern: SkeletonPattern.cards),
+      error: (_, _) => AppErrorState(
+        message: 'Servis talepleri yüklenemedi.',
+        onRetry: () => ref.invalidate(serviceRequestsListProvider),
+      ),
       data: (requests) {
         if (requests.isEmpty) {
           return Center(
@@ -161,13 +179,17 @@ class _RequestsTab extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.inbox_outlined, size: 56, color: scheme.onSurfaceVariant),
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 56,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Henüz talep yok',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -191,14 +213,17 @@ class _RequestTile extends ConsumerWidget {
   final RequestWithCustomer item;
 
   Future<void> _convert(BuildContext context, WidgetRef ref) async {
-    final job = await ref.read(serviceRequestsRepositoryProvider).convertToJob(item.request);
+    final job = await ref
+        .read(serviceRequestsRepositoryProvider)
+        .convertToJob(item.request);
     if (context.mounted) context.push('/jobs/${job.id}');
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final request = item.request;
-    final canConvert = request.status == 'BEKLIYOR' || request.status == 'ISLEME_ALINDI';
+    final canConvert =
+        request.status == 'BEKLIYOR' || request.status == 'ISLEME_ALINDI';
 
     return Card(
       child: Padding(
@@ -211,10 +236,16 @@ class _RequestTile extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     item.customer.displayName,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
-                Text(request.code, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  request.code,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -245,14 +276,22 @@ class _RequestTile extends ConsumerWidget {
 }
 
 class _FilterChipItem extends StatelessWidget {
-  const _FilterChipItem({required this.label, required this.selected, required this.onTap});
+  const _FilterChipItem({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onTap());
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+    );
   }
 }
 
@@ -290,26 +329,42 @@ class _JobTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       job.title,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(color: priorityColor, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: priorityColor,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(item.customer.displayName, style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                item.customer.displayName,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.schedule, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.schedule,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     dateLabel,
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const Spacer(),
                   // Tamamlanan işlerde alınan ücret kartta görünür:
@@ -328,14 +383,21 @@ class _JobTile extends StatelessWidget {
                     const SizedBox(width: 10),
                   ],
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       jobStatusLabels[job.status] ?? job.status,
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
                     ),
                   ),
                 ],
@@ -361,20 +423,32 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.work_outline_rounded, size: 56, color: scheme.onSurfaceVariant),
+            Icon(
+              Icons.work_outline_rounded,
+              size: 56,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             Text(
               'Henüz iş yok',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               'İlk işini oluşturarak başla.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
-            FilledButton.icon(onPressed: onAdd, icon: const Icon(Icons.add), label: const Text('İş Oluştur')),
+            FilledButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add),
+              label: const Text('İş Oluştur'),
+            ),
           ],
         ),
       ),
