@@ -49,8 +49,15 @@ jobs:
           printf '%s' "$PLAY_SA" > "$RUNNER_TEMP/play-sa.json"
           gcloud auth activate-service-account \
             --key-file="$RUNNER_TEMP/play-sa.json" --quiet
+          # Kapsam AÇIKÇA verilmeli. Kapsamsız çağrı varsayılan
+          # cloud-platform kapsamıyla jeton üretiyor ve Play Developer API
+          # onu reddediyor: "Request had insufficient authentication
+          # scopes" (ACCESS_TOKEN_SCOPE_INSUFFICIENT). İş bu yüzden her
+          # çalışmada sessizce düşüyordu.
+          #
           # Jeton loglara yazılmaz; maskelenip çıktı olarak taşınır.
-          TOKEN="$(gcloud auth print-access-token)"
+          TOKEN="$(gcloud auth print-access-token \
+            --scopes=https://www.googleapis.com/auth/androidpublisher)"
           echo "::add-mask::$TOKEN"
           echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
 
