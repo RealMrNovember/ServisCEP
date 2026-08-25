@@ -39,6 +39,21 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
     super.dispose();
   }
 
+  /// Yeni müşteri oluşturur ve OLUŞTURULANI SEÇEREK kapanır.
+  ///
+  /// Önceden seçici sonuçsuz kapatılıp müşteri formu ayrıca açılıyordu:
+  /// kullanıcı müşteriyi oluşturup belge formuna dönüyor ama müşteri
+  /// seçilmemiş oluyordu — seçtiğini sandığı hâlde. "Belge oluştur"
+  /// düğmesi de bu yüzden sönük kalıyor ve sebebi hiçbir yerde
+  /// yazmıyordu.
+  Future<void> _yeniMusteri(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final olusturulanId = await context.push<String>('/customers/new');
+
+    if (!navigator.mounted) return;
+    navigator.pop(olusturulanId);
+  }
+
   bool _matches(Customer customer) {
     if (_query.isEmpty) return true;
     final needle = _query.toLowerCase();
@@ -82,10 +97,7 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
                           ),
                         ),
                         TextButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            context.push('/customers/new');
-                          },
+                          onPressed: () => _yeniMusteri(context),
                           icon: const Icon(Icons.person_add_alt, size: 18),
                           label: const Text('Yeni'),
                         ),
@@ -124,10 +136,7 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
                             ? 'Teklif hazırlamak için önce bir müşteri ekle.'
                             : '"$_query" için sonuç bulunamadı.',
                         action: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            context.push('/customers/new');
-                          },
+                          onPressed: () => _yeniMusteri(context),
                           icon: const Icon(Icons.person_add_alt),
                           label: const Text('Yeni müşteri ekle'),
                         ),

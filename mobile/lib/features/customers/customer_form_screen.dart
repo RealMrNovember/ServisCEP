@@ -67,6 +67,7 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
   }
 
   Future<void> _submit() async {
+    String? olusturulanId;
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
 
@@ -90,7 +91,8 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
       } else {
         final session = ref.read(sessionControllerProvider).valueOrNull;
         if (session == null) return;
-        await repo.create(
+
+        final olusturulan = await repo.create(
           companyId: session.companyId,
           contactName: _emptyToNull(_contactNameController.text),
           companyName: _emptyToNull(_companyNameController.text),
@@ -104,8 +106,16 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
           taxInfo: _emptyToNull(_taxController.text),
           notes: _emptyToNull(_notesController.text),
         );
+        olusturulanId = olusturulan.id;
       }
-      if (mounted) context.pop();
+      // Oluşturulan müşterinin kimliğiyle kapanır.
+      //
+      // Çağıran taraf (teklif formundaki müşteri seçici) bunu kullanıp
+      // yeni müşteriyi otomatik seçer. Öncesinde sonuçsuz kapanıyordu:
+      // kullanıcı "Yeni" deyip müşteriyi oluşturuyor, forma dönüyor ve
+      // müşteri SEÇİLMEMİŞ oluyordu — ama seçtiğini sanıyordu. Belge
+      // oluştur düğmesi de bu yüzden sönük kalıyordu.
+      if (mounted) context.pop(olusturulanId);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

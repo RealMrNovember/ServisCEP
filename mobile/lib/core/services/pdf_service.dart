@@ -99,6 +99,36 @@ abstract final class PdfService {
     }
   }
 
+  /// Logoyu KENDİ ORANINDA yerleştirir.
+  ///
+  /// Sabit kare kutu, yatay logoları (simge + yazı) küçücük bırakıyordu:
+  /// 3:1 bir logo 62pt'lik kareye sığdırılınca 62×21 çiziliyor, kutunun
+  /// yarısı boş kalıyordu. Burada yükseklik sabit, genişlik orandan
+  /// hesaplanır ve bir üst sınırla kesilir.
+  static pw.Widget _logoBox(
+    pw.MemoryImage logo, {
+    required double maxHeight,
+    required double maxWidth,
+  }) {
+    // `MemoryImage` boyutları nullable; okunamazsa kareye düşülür.
+    final w = logo.width ?? 0;
+    final h = logo.height ?? 0;
+    final ratio = (w <= 0 || h <= 0) ? 1.0 : w / h;
+
+    var height = maxHeight;
+    var width = height * ratio;
+    if (width > maxWidth) {
+      width = maxWidth;
+      height = width / ratio;
+    }
+
+    return pw.SizedBox(
+      width: width,
+      height: height,
+      child: pw.Image(logo, fit: pw.BoxFit.contain),
+    );
+  }
+
   static pw.TextStyle _style({
     double size = 9,
     PdfColor color = _ink,
@@ -174,11 +204,7 @@ abstract final class PdfService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         if (logo != null) ...[
-          pw.Container(
-            width: 62,
-            height: 62,
-            child: pw.Image(logo, fit: pw.BoxFit.contain),
-          ),
+          _logoBox(logo, maxHeight: 60, maxWidth: 150),
           pw.SizedBox(width: 14),
         ],
         pw.Expanded(
@@ -329,11 +355,7 @@ abstract final class PdfService {
           ),
           if (logo != null) ...[
             pw.SizedBox(width: 12),
-            pw.Container(
-              width: 54,
-              height: 54,
-              child: pw.Image(logo, fit: pw.BoxFit.contain),
-            ),
+            _logoBox(logo, maxHeight: 52, maxWidth: 120),
           ],
         ],
       ),
@@ -391,16 +413,26 @@ abstract final class PdfService {
       letterSpacing: 0.7,
     );
 
+    // İskonto sütunu YALNIZCA gerçekten iskonto varsa çıkar.
+    //
+    // Sebebi somut: bir belgede birim fiyat 3.500, tutar 3.000 yazıyordu
+    // ve aradaki farkı açıklayan hiçbir şey yoktu — yalnızca en altta
+    // küçük bir dipnot. Müşteri belgedeki aritmetiği takip edemiyorsa
+    // belge güven vermez. Sütun olmadığında da tablo gereksiz yere
+    // kalabalıklaşmasın diye koşullu.
+    final iskontoVar = items.any((item) => item.discountMinor > 0);
+
     return pw.Table(
       border: pw.TableBorder.all(color: _line, width: 0.6),
-      columnWidths: const {
-        0: pw.FixedColumnWidth(24),
-        1: pw.FlexColumnWidth(4.2),
-        2: pw.FixedColumnWidth(38),
-        3: pw.FixedColumnWidth(40),
-        4: pw.FlexColumnWidth(1.6),
-        5: pw.FixedColumnWidth(32),
-        6: pw.FlexColumnWidth(1.8),
+      columnWidths: {
+        0: const pw.FixedColumnWidth(24),
+        1: pw.FlexColumnWidth(iskontoVar ? 3.6 : 4.2),
+        2: const pw.FixedColumnWidth(38),
+        3: const pw.FixedColumnWidth(40),
+        4: const pw.FlexColumnWidth(1.6),
+        if (iskontoVar) 5: const pw.FlexColumnWidth(1.4),
+        (iskontoVar ? 6 : 5): const pw.FixedColumnWidth(32),
+        (iskontoVar ? 7 : 6): const pw.FlexColumnWidth(1.8),
       },
       children: [
         pw.TableRow(
@@ -416,6 +448,12 @@ abstract final class PdfService {
               align: pw.Alignment.centerRight,
               style: headerStyle,
             ),
+            if (iskontoVar)
+              cell(
+                'İSKONTO',
+                align: pw.Alignment.centerRight,
+                style: headerStyle,
+              ),
             cell('KDV', align: pw.Alignment.center, style: headerStyle),
             cell('TUTAR', align: pw.Alignment.centerRight, style: headerStyle),
           ],
@@ -436,6 +474,13 @@ abstract final class PdfService {
                 Money.formatMinor(items[i].unitPriceMinor, currency: currency),
                 align: pw.Alignment.centerRight,
               ),
+              if (iskontoVar)
+                cell(
+                  items[i].discountMinor > 0
+                      ? '-${Money.formatMinor(items[i].discountMinor, currency: currency)}'
+                      : '—',
+                  align: pw.Alignment.centerRight,
+                ),
               cell('%${items[i].taxRate}', align: pw.Alignment.center),
               cell(
                 // "+ KDV" belgede satır tutarı KDV'siz yazılır ve KDV altta
@@ -531,7 +576,6 @@ abstract final class PdfService {
     required Currency currency,
     required VatMode vatMode,
     required int vatRate,
-    required bool hasDiscount,
   }) {
     final lines = <String>[
       vatMode == VatMode.included
@@ -539,7 +583,6 @@ abstract final class PdfService {
           : 'Fiyatlarımıza KDV dahil değildir; %$vatRate KDV ilave '
                 'edilecektir.',
       'Tutarlar ${currency.label} (${currency.code}) cinsindendir.',
-      if (hasDiscount) 'Satır tutarlarına iskonto yansıtılmıştır.',
     ];
 
     return pw.Column(
@@ -913,7 +956,6 @@ abstract final class PdfService {
                   currency: currency,
                   vatMode: vatMode,
                   vatRate: vatRate,
-                  hasDiscount: totals.discountMinor > 0,
                 ),
               ),
               pw.SizedBox(width: 14),
