@@ -27,6 +27,16 @@ class SubscriptionPayment extends Model
 
     public const STATUS_FAILED = 'FAILED';
 
+    /**
+     * Doğrulanmış ama karşılığı olmayan bildirim.
+     *
+     * Sağlayıcı panelinden elle üretilmiş bir ödeme bağlantısı ya da
+     * uygulamada kart akışı yokken yapılmış bir ödeme böyle düşer.
+     * Para hareketi kaybolmasın diye kaydedilir; hangi şirkete ait
+     * olduğu sonradan belirlenip elle bağlanır.
+     */
+    public const STATUS_ORPHAN = 'ORPHAN';
+
     public const DURATION_MONTHLY = 'MONTHLY';
 
     public const DURATION_YEARLY = 'YEARLY';

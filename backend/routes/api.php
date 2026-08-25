@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
 use App\Http\Controllers\Api\V1\SubscriptionCheckoutController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\V1\SubscriptionHistoryController;
 use App\Http\Controllers\Api\V1\SubscriptionPaymentRequestController;
 use App\Http\Controllers\Api\V1\SyncConflictController;
 use App\Http\Controllers\Api\V1\AppVersionController;
@@ -104,6 +105,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
         Route::get('/subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
         Route::get('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'index'])
             ->name('subscription.payment-requests.index');
+        // Ödeme geçmişi — kart ve havale bir arada.
+        Route::get('/subscription/history', [SubscriptionHistoryController::class, 'index'])
+            ->name('subscription.history');
         // Kartla ödeme başlatma. Tutar SUNUCUDA hesaplanır.
         Route::post('/subscription/checkout', [SubscriptionCheckoutController::class, 'checkout'])
             ->name('subscription.checkout');

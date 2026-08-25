@@ -138,4 +138,141 @@ class PaymentModeTest extends TestCase
             'duration' => 'MONTHLY',
         ])->assertStatus(503);
     }
+
+    public function test_history_merges_card_and_transfer_payments(): void
+    {
+        // Kullanici icin ikisi ayni sey: "ne zaman, ne kadar odedim".
+        $user = User::factory()->create();
+        $this->withToken($user->createToken('test')->plainTextToken);
+
+        $plan = \App\Models\Plan::create([
+            'name' => 'Test Paketi',
+            'slug' => 'test-gecmis',
+            'price_minor' => 100000,
+            'price_yearly_minor' => 1000000,
+            'duration_days' => 30,
+        ]);
+
+        \App\Models\SubscriptionPayment::create([
+            'company_id' => $user->company_id,
+            'plan_id' => $plan->id,
+            'amount_minor' => 100000,
+            'currency' => 'TRY',
+            'duration' => 'MONTHLY',
+            'provider' => 'paytr',
+            'provider_ref' => 'TCGECMIS1',
+            'status' => 'PAID',
+            'paid_at' => now(),
+        ]);
+
+        \App\Models\PaymentRequest::create([
+            'company_id' => $user->company_id,
+            'plan_id' => $plan->id,
+            'claimed_amount_minor' => 50000,
+            'status' => 'PENDING',
+        ]);
+
+        $yanit = $this->getJson('/api/v1/subscription/history')->assertOk();
+
+        $this->assertCount(2, $yanit->json('data'));
+        $turler = array_column($yanit->json('data'), 'kind');
+        $this->assertContains('card', $turler);
+        $this->assertContains('transfer', $turler);
+    }
+
+    public function test_history_is_scoped_to_own_company(): void
+    {
+        $baskasi = User::factory()->create();
+        \App\Models\SubscriptionPayment::create([
+            'company_id' => $baskasi->company_id,
+            'amount_minor' => 100000,
+            'currency' => 'TRY',
+            'duration' => 'MONTHLY',
+            'provider' => 'paytr',
+            'provider_ref' => 'TCBASKASI1',
+            'status' => 'PAID',
+        ]);
+
+        $ben = User::factory()->create();
+        $this->withToken($ben->createToken('test')->plainTextToken);
+
+        $this->getJson('/api/v1/subscription/history')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_rejection_notifies_the_customer(): void
+    {
+        // Kullanici havalesini yapmis ve cevap bekliyor. Reddedildigini
+        // ogrenmesinin baska yolu yok; bildirim gonderilmezse parasinin
+        // ne oldugunu bilmeden bekler.
+        $sahte = new class extends \App\Services\FcmService
+        {
+            public array $gonderilen = [];
+
+            public function __construct() {}
+
+            public function sendToCompany(
+                \App\Models\Company $company,
+                string $title,
+                string $body,
+                array $data = [],
+            ): int {
+                $this->gonderilen[] = ['title' => $title, 'body' => $body, 'data' => $data];
+
+                return 1;
+            }
+        };
+        $this->app->instance(\App\Services\FcmService::class, $sahte);
+
+        $user = User::factory()->create();
+        $admin = \App\Models\AdminUser::create([
+            'full_name' => 'Test Yonetici',
+            'email' => 'yonetici-'.uniqid().'@teknikcep.test',
+            'password' => 'gizli-parola-123',
+        ]);
+
+        $talep = \App\Models\PaymentRequest::create([
+            'company_id' => $user->company_id,
+            'claimed_amount_minor' => 50000,
+            'status' => 'PENDING',
+        ]);
+
+        $talep->reject($admin, 'Tutar eksik gonderilmis.');
+
+        $this->assertSame('REJECTED', $talep->fresh()->status);
+        $this->assertCount(1, $sahte->gonderilen);
+        $this->assertSame('Tutar eksik gonderilmis.', $sahte->gonderilen[0]['body']);
+        $this->assertSame('payment_request_rejected', $sahte->gonderilen[0]['data']['type']);
+    }
+
+    public function test_orphan_callback_is_recorded_not_lost(): void
+    {
+        // Imzasi gecerli ama karsiligi olmayan bildirim: gercekten para
+        // hareketi olmus demektir. Yalnizca gunluge yazmak yetmez,
+        // gunlukler budaniyor; para hareketi budanmamali.
+        \App\Models\Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        \App\Models\Setting::set(PaymentConfig::KEY_ENABLED, '1');
+        PaymentConfig::setSecret('payment.paytr.merchant_id', 'MID123');
+        PaymentConfig::setSecret('payment.paytr.merchant_key', 'KEY123');
+        PaymentConfig::setSecret('payment.paytr.merchant_salt', 'SALT123');
+
+        $oid = 'TCYETIM0001';
+        $imza = base64_encode(hash_hmac('sha256', $oid.'SALT123'.'success'.'250000', 'KEY123', true));
+
+        $this->post('/api/v1/payments/paytr/callback', [
+            'merchant_oid' => $oid,
+            'status' => 'success',
+            'total_amount' => '250000',
+            'hash' => $imza,
+        ])->assertOk()->assertSee('OK');
+
+        $kayit = \App\Models\SubscriptionPayment::where('provider_ref', $oid)->first();
+
+        $this->assertNotNull($kayit, 'Yetim odeme kayit altina alinmali');
+        $this->assertSame(\App\Models\SubscriptionPayment::STATUS_ORPHAN, $kayit->status);
+        $this->assertSame(250000, $kayit->amount_minor);
+        $this->assertNull($kayit->company_id);
+        $this->assertNotNull($kayit->provider_payload);
+    }
 }

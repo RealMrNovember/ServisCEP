@@ -27,6 +27,9 @@ class SubscriptionPaymentsTable
 
                 TextColumn::make('company.name')
                     ->label('Şirket')
+                    // Sahipsiz kayıtta şirket boştur; bu bir hata değil,
+                    // elle bağlanmayı bekleyen bir para hareketidir.
+                    ->placeholder('sahipsiz')
                     ->weight(FontWeight::SemiBold)
                     ->searchable()
                     ->sortable(),
@@ -38,9 +41,13 @@ class SubscriptionPaymentsTable
                 TextColumn::make('duration')
                     ->label('Süre')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state) => $state === SubscriptionPayment::DURATION_YEARLY
-                        ? 'Yıllık'
-                        : 'Aylık')
+                    // Sahipsiz kayıtta süre bilinmiyor; "Aylık" yazmak
+                    // olmayan bir bilgiyi uydurmak olurdu.
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        SubscriptionPayment::DURATION_YEARLY => 'Yıllık',
+                        SubscriptionPayment::DURATION_MONTHLY => 'Aylık',
+                        default => '—',
+                    })
                     ->color('gray'),
 
                 TextColumn::make('amount_minor')
@@ -55,11 +62,13 @@ class SubscriptionPaymentsTable
                     ->formatStateUsing(fn (?string $state) => match ($state) {
                         SubscriptionPayment::STATUS_PAID => 'Ödendi',
                         SubscriptionPayment::STATUS_FAILED => 'Başarısız',
+                        SubscriptionPayment::STATUS_ORPHAN => 'Sahipsiz',
                         default => 'Bekliyor',
                     })
                     ->color(fn (?string $state) => match ($state) {
                         SubscriptionPayment::STATUS_PAID => 'success',
                         SubscriptionPayment::STATUS_FAILED => 'danger',
+                        SubscriptionPayment::STATUS_ORPHAN => 'danger',
                         default => 'warning',
                     }),
 
@@ -84,6 +93,7 @@ class SubscriptionPaymentsTable
                         SubscriptionPayment::STATUS_PAID => 'Ödendi',
                         SubscriptionPayment::STATUS_PENDING => 'Bekliyor',
                         SubscriptionPayment::STATUS_FAILED => 'Başarısız',
+                        SubscriptionPayment::STATUS_ORPHAN => 'Sahipsiz',
                     ]),
                 SelectFilter::make('company_id')
                     ->label('Şirket')

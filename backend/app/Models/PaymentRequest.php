@@ -101,10 +101,10 @@ class PaymentRequest extends Model
         // ayrı yazıldığı sürece birbirinden sapma riski vardı.
         $previousExpiry = $this->company->subscription_expires_at;
 
-        $company = $service->apply(
+        $company = $service->applyForPlan(
             $this->company,
-            months: $duration === 'YEARLY' ? 12 : 1,
-            planId: $planId ?: null,
+            $planId ? Plan::find($planId) : null,
+            $duration,
         );
 
         $this->update([
@@ -118,9 +118,21 @@ class PaymentRequest extends Model
 
         // Bildirim, abonelik yazıldıktan SONRA gönderilir: gönderim hatası
         // onayı geri almamalı (bkz. FcmService).
-        $service->notifyChanged($company, $previousExpiry);
+        $service->notifyChanged($company, $previousExpiry, $note);
     }
 
+    /**
+     * Ödeme bildirimini reddeder ve MÜŞTERİYİ HABERDAR EDER.
+     *
+     * Bildirim gönderilmediği sürece kullanıcı havalesini yapmış, formu
+     * doldurmuş ve cevap bekliyor durumda kalıyordu; reddedildiğini
+     * öğrenmesinin hiçbir yolu yoktu. Onay bildirim gönderiyordu, red
+     * göndermiyordu — oysa kullanıcının bilmeye en çok ihtiyaç duyduğu
+     * durum bu.
+     *
+     * Sebep varsa mesaja konur: "reddedildi" deyip susmak, kullanıcıyı
+     * ne yapacağını bilmeden bırakır.
+     */
     public function reject(AdminUser $admin, ?string $note = null): void
     {
         $this->update([
@@ -129,5 +141,24 @@ class PaymentRequest extends Model
             'reviewed_by_admin_id' => $admin->id,
             'reviewed_at' => Carbon::now(),
         ]);
+
+        $temizNot = trim((string) $note);
+
+        // Gönderim hatası reddi ASLA geri almamalı; karar zaten yazıldı.
+        try {
+            app(\App\Services\FcmService::class)->sendToCompany(
+                $this->company,
+                'Ödeme bildirimin onaylanmadı',
+                $temizNot !== ''
+                    ? $temizNot
+                    : 'Ödeme bildirimin onaylanmadı. Ayrıntı için bizimle iletişime geçebilirsin.',
+                ['type' => 'payment_request_rejected'],
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Ödeme reddi bildirimi gönderilemedi', [
+                'payment_request_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

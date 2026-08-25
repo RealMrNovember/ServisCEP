@@ -50,9 +50,17 @@ class PlanForm
                         $component->state(is_numeric($state) ? $state / 100 : 0);
                     }),
                 TextInput::make('duration_days')
-                    ->label('Süre (gün)')
-                    ->helperText('Bu pakete geçen bir şirketin abonelik süresi kaç gün olsun.')
-                    ->numeric(),
+                    ->label('Aylık süre (gün)')
+                    ->helperText('Aylık alımda kaç gün eklensin. Boş = 30.')
+                    ->numeric()
+                    ->minValue(1)
+                    ->placeholder('30'),
+                TextInput::make('duration_days_yearly')
+                    ->label('Yıllık süre (gün)')
+                    ->helperText('Yıllık alımda kaç gün eklensin. Boş = 365.')
+                    ->numeric()
+                    ->minValue(1)
+                    ->placeholder('365'),
                 TextInput::make('max_users')
                     ->label('Maksimum kullanıcı')
                     ->helperText('Boş = sınırsız')

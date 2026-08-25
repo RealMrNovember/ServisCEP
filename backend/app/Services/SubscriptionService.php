@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\AdminUser;
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\Plan;
 use App\Notifications\SubscriptionChanged;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +84,37 @@ class SubscriptionService
         });
     }
 
+
+    /**
+     * Aboneliği PLANIN tanımladığı süre kadar uzatır.
+     *
+     * Süre panelden yönetilir: paketin "Aylık süre (gün)" ve "Yıllık süre
+     * (gün)" alanlarında ne yazıyorsa o uygulanır. Önceden bu alanlar
+     * tamamen yok sayılıyor, sabit 1 ay / 12 ay ekleniyordu; panelde
+     * 90 gün yazan bir pakete ödeme yapan müşteri 30 gün alıyordu.
+     *
+     * Kart ödemesi, ödeme talebi onayı ve elle uzatma bu TEK yoldan
+     * geçer — üç ayrı hesap üç ayrı sonuç demekti.
+     */
+    public function applyForPlan(
+        Company $company,
+        ?Plan $plan,
+        string $duration,
+        ?string $note = null,
+    ): Company {
+        // Plan silinmişse eski davranışa düşülür: ödeme alınmışken
+        // aboneliğin hiç uzamaması en kötü sonuç olurdu.
+        $gun = $plan?->durationDaysFor($duration)
+            ?? ($duration === 'YEARLY' ? 365 : 30);
+
+        return $this->apply(
+            $company,
+            days: $gun,
+            planId: $plan?->id,
+            note: $note,
+        );
+    }
+
     /**
      * Süper-admin işlemi için denetim kaydı.
      *
@@ -111,22 +143,35 @@ class SubscriptionService
      * çektiğinde ya da yalnızca paketi değiştirdiğinde bu müşteriye
      * yanlış bilgi veriyordu.
      */
-    public function notifyChanged(Company $company, ?Carbon $previousExpiry): void
-    {
+    public function notifyChanged(
+        Company $company,
+        ?Carbon $previousExpiry,
+        ?string $note = null,
+    ): void {
         $company->loadMissing('plan');
         $current = $company->subscription_expires_at;
 
         $extended = $current !== null
             && ($previousExpiry === null || $current->greaterThan($previousExpiry));
 
+        $govde = sprintf(
+            '%s paketi %s tarihine kadar geçerli.',
+            $company->plan?->name ?? 'Paketin',
+            $current?->translatedFormat('d F Y') ?? '-'
+        );
+
+        // Yöneticinin notu MÜŞTERİYE ULAŞIR. Onay sırasında yazılan
+        // açıklama ("gönderdiğin tutar şu pakete yetti") panelde kalıp
+        // müşteriye hiç gitmiyordu; oysa yazılmasının tek sebebi o.
+        $temizNot = trim((string) $note);
+        if ($temizNot !== '') {
+            $govde .= ' — '.$temizNot;
+        }
+
         $this->fcm->sendToCompany(
             $company,
             $extended ? 'Aboneliğin uzatıldı' : 'Aboneliğin güncellendi',
-            sprintf(
-                '%s paketi %s tarihine kadar geçerli.',
-                $company->plan?->name ?? 'Paketin',
-                $current?->translatedFormat('d F Y') ?? '-'
-            ),
+            $govde,
             ['type' => $extended ? 'subscription_extended' : 'subscription_updated'],
         );
 

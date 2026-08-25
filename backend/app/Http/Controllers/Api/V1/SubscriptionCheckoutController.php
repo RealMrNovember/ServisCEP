@@ -141,14 +141,34 @@ class SubscriptionCheckoutController extends Controller
         $payment = SubscriptionPayment::where('provider_ref', $post['merchant_oid'])->first();
 
         if ($payment === null) {
-            // Bilinmeyen sipariş: yine de OK dönülür, aksi halde sağlayıcı
-            // sonsuza kadar tekrar dener. Ama iz bırakılır — imzası geçerli
-            // ama karşılığı olmayan bir bildirim açıklanması gereken bir
-            // durumdur.
-            AppLog::event('Karşılığı olmayan ödeme bildirimi', [
+            // Karşılığı olmayan ama İMZASI GEÇERLİ bir bildirim: gerçekten
+            // para hareketi olmuş demektir. Yalnızca günlüğe yazmak yetmez,
+            // günlükler budanıyor; para hareketi budanmamalı.
+            //
+            // Kayıt ORPHAN olarak tutulur, hangi şirkete ait olduğu
+            // sonradan belirlenip elle bağlanabilir. Sağlayıcı panelinden
+            // elle üretilmiş bir ödeme bağlantısı ya da uygulamada kart
+            // akışı henüz yokken yapılmış bir ödeme böyle düşer.
+            SubscriptionPayment::create([
+                'company_id' => null,
+                'amount_minor' => (int) ($post['total_amount'] ?? 0),
+                'currency' => 'TRY',
+                'duration' => null,
+                'provider' => PaymentConfig::PROVIDER_PAYTR,
+                'provider_ref' => (string) $post['merchant_oid'],
+                'status' => SubscriptionPayment::STATUS_ORPHAN,
+                'provider_payload' => $post,
+                'paid_at' => ($post['status'] ?? '') === 'success' ? now() : null,
+            ]);
+
+            AppLog::event('Karşılığı olmayan ödeme bildirimi kaydedildi', [
                 'siparis_no' => $post['merchant_oid'] ?? null,
+                'tutar_minor' => (int) ($post['total_amount'] ?? 0),
+                'sonuc' => $post['status'] ?? null,
             ], level: 'warning');
 
+            // Sağlayıcıya yine OK dönülür; aksi halde bildirimi sonsuza
+            // kadar tekrar dener.
             return response('OK');
         }
 
@@ -202,10 +222,10 @@ class SubscriptionCheckoutController extends Controller
             //
             // Servis ayrıca eşzamanlı uzatmalara karşı kilit alıyor ve
             // "erken yenileyen gün kaybetmez" kuralını uyguluyor.
-            $this->subscriptions->apply(
+            $this->subscriptions->applyForPlan(
                 $company,
-                months: $payment->duration === SubscriptionPayment::DURATION_YEARLY ? 12 : 1,
-                planId: $payment->plan_id,
+                $payment->plan,
+                $payment->duration,
             );
 
             // Ödeme yapan kişi aboneliğinin uzadığını öğrenmeli.

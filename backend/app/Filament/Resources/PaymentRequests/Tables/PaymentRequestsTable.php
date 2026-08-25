@@ -118,7 +118,9 @@ class PaymentRequestsTable
                             ->required()
                             ->native(false),
                         Textarea::make('note')
-                            ->label('Not (opsiyonel)'),
+                            ->label('Müşteriye not (opsiyonel)')
+                            ->helperText('Bu not müşteriye bildirim olarak GİDER. Ödeme başka bir paket için geçerli sayıldıysa burada belirtin.')
+                            ->rows(3),
                     ])
                     ->action(function (PaymentRequest $record, array $data): void {
                         /** @var AdminUser $admin */
@@ -138,7 +140,9 @@ class PaymentRequestsTable
                     ->requiresConfirmation()
                     ->schema([
                         Textarea::make('note')
-                            ->label('Red gerekçesi (opsiyonel)'),
+                            ->label('Red gerekçesi (opsiyonel)')
+                            ->helperText('Bu metin müşteriye bildirim olarak GİDER ve uygulamada ödeme kaydının altında görünür. Boş bırakılırsa genel bir mesaj gönderilir.')
+                            ->rows(3),
                     ])
                     ->action(function (PaymentRequest $record, array $data): void {
                         /** @var AdminUser $admin */
