@@ -17,6 +17,15 @@ Kurallar:
 
 ---
 
+## v0.7.5
+
+Yenilikler:
+• Bağlantı durumu ekranın üstünde görünüyor: internet yokken kaç kaydın cihazda beklediğini yazıyor. Kaydırarak kapatabilirsiniz.
+• "Gönderiliyor" yazan yerler doğruyu söylüyor: gerçekten gönderilirken "eşitleniyor", sırasını beklerken "bekliyor".
+• Teklifte kalemlerin KDV oranı farklıysa belge artık tek bir oran yazmıyor.
+• Ödeme bilgisi bloğu her belgede yer alıyor.
+• Aksilikte teknik hata metni yerine anlaşılır bir açıklama ve kayıtlarınızın güvende olduğu bilgisi çıkıyor.
+
 ## v0.7.4
 
 Yenilikler:
