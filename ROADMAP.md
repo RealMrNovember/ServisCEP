@@ -293,7 +293,19 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 - [x] Tasarım sistemi tokenları, bileşen katmanı, yeni alt menü
 - [x] Yeni marka işareti — uygulama simgesi
 - [ ] **42 ekranın yeniden düzeni** — Asıl iş. Tasarımcının teslimatı hazır.
-- [ ] Logo'nun kalan yüzeyleri: PDF anteti, favicon, tanıtım sitesi
+- [x] **Mağaza görselleri ve favicon** (2026-08-26) — Play'de İKİ ayrı
+      simge var ve birlikte değişmiyorlar: AAB'nin içindeki launcher
+      ikonu ile mağaza listesinin 512x512 simgesi. Yeni işaret 0.7.7 ile
+      uygulamaya girmiş ama mağaza eskisiyle kalmıştı; kullanıcı Play'de
+      eski, telefonunda yeni logoyu görüyordu. Simge yüklendi ve
+      doğrulandı. Mağaza simgesi AYRI üretiliyor: Play köşe yuvarlamayı
+      kendisi uyguluyor ve saydamlık kabul etmiyor, bu yüzden tam kare ve
+      opak. Afiş ürünü gösterecek şekilde yeniden kurgulandı (gerçek pano
+      ekranı, telefon maketinde). Ekran görüntüleri uygulamanın kendi
+      kodundan kurgulanmış demo veriyle üretiliyor — gerçek hesapla
+      çekilseydi müşteri adları ve IBAN Play'de yayınlanmış olurdu.
+      Favicon ve tanıtım sitesi görselleri de yenilendi.
+- [ ] Logo'nun kalan yüzeyi: PDF anteti
 - [ ] Adımlı teklif formu (4 adım)
 - [ ] İkon göçü — 176 çağrı yeri Material'dan tasarım setine
 
