@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app/motion.dart';
@@ -46,23 +48,39 @@ class _AppSkeletonState extends State<AppSkeleton>
     with SingleTickerProviderStateMixin {
   static const _gecikme = Duration(milliseconds: 500);
 
-  late final AnimationController _parilti = AnimationController(
-    vsync: this,
-    duration: AppMotion.shimmer,
-  )..repeat();
+  /// Denetleyici `initState` içinde kuruluyor, `late` alan olarak DEĞİL.
+  ///
+  /// `late` hâlinde ilk erişimde oluşuyordu ve liste 500 ms'den hızlı
+  /// yüklendiğinde ilk erişim `dispose()` oluyordu: iskelet hiç
+  /// görünmeden, sırf yok etmek için, ARTIK KAPATILMIŞ bir eleman
+  /// üzerinde ticker kuruluyordu. Ticker kurulumu ağaçta yukarı bakıyor
+  /// (TickerMode) ve kapatılmış bir elemanda bu tanımsız davranış.
+  late final AnimationController _parilti;
+
+  /// Gecikme zamanlayıcısı SAKLANIYOR ki dispose'da iptal edilebilsin.
+  /// `Future.delayed` iptal edilemiyor; widget söküldükten sonra da
+  /// çalışmaya devam ediyordu.
+  Timer? _gecikmeZamanlayici;
 
   bool _gorunur = false;
 
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(_gecikme).then((_) {
-      if (mounted) setState(() => _gorunur = true);
+    _parilti = AnimationController(vsync: this, duration: AppMotion.shimmer);
+
+    // Parıltı ancak iskelet GÖRÜNDÜĞÜNDE dönmeye başlıyor. Baştan
+    // döndürmek, hiç görünmeyecek iskeletlerde de kare üretirdi.
+    _gecikmeZamanlayici = Timer(_gecikme, () {
+      if (!mounted) return;
+      setState(() => _gorunur = true);
+      _parilti.repeat();
     });
   }
 
   @override
   void dispose() {
+    _gecikmeZamanlayici?.cancel();
     _parilti.dispose();
     super.dispose();
   }

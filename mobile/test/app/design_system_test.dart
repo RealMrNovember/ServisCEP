@@ -155,6 +155,78 @@ void main() {
       expect(tema.labelLarge?.fontFamily, AppTypography.uiFamily);
     });
 
+    /// Bileşen temaları TextTheme'den MİRAS ALMAZ.
+    ///
+    /// listTileTheme, chipTheme, dialogTheme gibi temalarda verilen
+    /// TextStyle, TextTheme'i tamamen değiştirir ve `ThemeData.fontFamily`
+    /// de bu stillere uygulanmaz. Aile yazılmazsa metin sistem fontuna
+    /// düşer.
+    ///
+    /// Bu gerçekten yaşandı: müşteri adları, belge başlıkları, filtre
+    /// çipleri, düğme etiketleri ve uyarı kutuları uygulamanın geri kalanı
+    /// Barlow'ken Roboto ile çiziliyordu. Ekranda göze batmayacak kadar
+    /// benzer oldukları için uzun süre fark edilmedi — hiçbir test buraya
+    /// bakmıyordu.
+    test(
+      'bileşen temalarındaki yazı stilleri de tasarım ailesini kullanır',
+      () {
+        for (final tema in [AppTheme.dark(), AppTheme.light()]) {
+          final stiller = <String, TextStyle?>{
+            'listTile.title': tema.listTileTheme.titleTextStyle,
+            'listTile.subtitle': tema.listTileTheme.subtitleTextStyle,
+            'chip.label': tema.chipTheme.labelStyle,
+            'dialog.title': tema.dialogTheme.titleTextStyle,
+            'dialog.content': tema.dialogTheme.contentTextStyle,
+            'snackBar.content': tema.snackBarTheme.contentTextStyle,
+            // tooltipTheme uygulamada tanımlı değil; yukarıdaki kural
+            // gereği atlanıyor ama listede duruyor ki bir gün
+            // tanımlandığında ailesiz kalması yakalansın.
+            'tooltip.text': tema.tooltipTheme.textStyle,
+            'input.label': tema.inputDecorationTheme.labelStyle,
+            'input.hint': tema.inputDecorationTheme.hintStyle,
+            'input.helper': tema.inputDecorationTheme.helperStyle,
+            'input.error': tema.inputDecorationTheme.errorStyle,
+          };
+
+          // Kural: TANIMLIYSA aileyi taşımalı.
+          //
+          // Tanımsız bırakmak sorun değil — bileşen o zaman TextTheme'e
+          // düşüyor ve oradaki aile zaten doğru. Sorun, tanımlayıp aileyi
+          // yazmamak: stil TextTheme'i tamamen değiştirdiği için metin
+          // sistem fontuna düşüyor ve kimse fark etmiyor.
+          for (final girdi in stiller.entries) {
+            if (girdi.value == null) continue;
+            expect(
+              girdi.value!.fontFamily,
+              AppTypography.uiFamily,
+              reason:
+                  '${girdi.key} stili tanımlı ama ailesi yok/yanlış; bu '
+                  'metin sistem fontuna düşer.',
+            );
+          }
+
+          // Buton stilleri WidgetStateProperty içinde; çözülmesi gerekiyor.
+          final butonlar = <String, TextStyle?>{
+            'filledButton': tema.filledButtonTheme.style?.textStyle?.resolve(
+              {},
+            ),
+            'outlinedButton': tema.outlinedButtonTheme.style?.textStyle
+                ?.resolve({}),
+            'textButton': tema.textButtonTheme.style?.textStyle?.resolve({}),
+          };
+
+          for (final girdi in butonlar.entries) {
+            if (girdi.value == null) continue;
+            expect(
+              girdi.value!.fontFamily,
+              AppTypography.uiFamily,
+              reason: '${girdi.key} etiketi sistem fontuna düşer.',
+            );
+          }
+        }
+      },
+    );
+
     test('tutar stilinde yedek aile var', () {
       // JetBrains Mono'da ₺ (U+20BA) glifi yok. Yedek kaldırılırsa her
       // tutarda kutucuk çıkar.

@@ -133,11 +133,51 @@ Future<void> _demoVeriYaz(AppDatabase db) async {
       );
 
   const musteriler = [
-    ('m1', 'MUS-0041', 'Selin Kaya', null, 'BIREYSEL', '0532 118 40 27', 'Kadıköy'),
-    ('m2', 'MUS-0040', null, 'Yıldız Sitesi Yönetimi', 'SITE', '0216 445 12 08', 'Ataşehir'),
-    ('m3', 'MUS-0039', 'Burak Demir', 'Demir Gıda Ltd.', 'FIRMA', '0533 204 71 65', 'Ümraniye'),
-    ('m4', 'MUS-0038', 'Elif Şahin', null, 'BIREYSEL', '0555 913 22 04', 'Maltepe'),
-    ('m5', 'MUS-0037', null, 'Marmara Apartmanı', 'APARTMAN', '0216 377 90 15', 'Kartal'),
+    (
+      'm1',
+      'MUS-0041',
+      'Selin Kaya',
+      null,
+      'BIREYSEL',
+      '0532 118 40 27',
+      'Kadıköy',
+    ),
+    (
+      'm2',
+      'MUS-0040',
+      null,
+      'Yıldız Sitesi Yönetimi',
+      'SITE',
+      '0216 445 12 08',
+      'Ataşehir',
+    ),
+    (
+      'm3',
+      'MUS-0039',
+      'Burak Demir',
+      'Demir Gıda Ltd.',
+      'FIRMA',
+      '0533 204 71 65',
+      'Ümraniye',
+    ),
+    (
+      'm4',
+      'MUS-0038',
+      'Elif Şahin',
+      null,
+      'BIREYSEL',
+      '0555 913 22 04',
+      'Maltepe',
+    ),
+    (
+      'm5',
+      'MUS-0037',
+      null,
+      'Marmara Apartmanı',
+      'APARTMAN',
+      '0216 377 90 15',
+      'Kartal',
+    ),
   ];
 
   for (final (id, kod, yetkili, firma, tur, telefon, ilce) in musteriler) {
@@ -160,11 +200,51 @@ Future<void> _demoVeriYaz(AppDatabase db) async {
   }
 
   const isler = [
-    ('i1', 'IS-0132', 'm1', 'Kombi bakımı ve petek temizliği', 'DEVAM_EDIYOR', 'YUKSEK', 285000),
-    ('i2', 'IS-0131', 'm2', 'Site otoparkı kamera arızası', 'PLANLANDI', 'YUKSEK', 640000),
-    ('i3', 'IS-0130', 'm3', 'Soğuk oda termostat değişimi', 'PLANLANDI', 'NORMAL', 175000),
-    ('i4', 'IS-0129', 'm4', 'Elektrik tesisatı kontrolü', 'TAMAMLANDI', 'NORMAL', 90000),
-    ('i5', 'IS-0128', 'm5', 'Asansör makine dairesi bakımı', 'TAMAMLANDI', 'DUSUK', 420000),
+    (
+      'i1',
+      'IS-0132',
+      'm1',
+      'Kombi bakımı ve petek temizliği',
+      'DEVAM_EDIYOR',
+      'YUKSEK',
+      285000,
+    ),
+    (
+      'i2',
+      'IS-0131',
+      'm2',
+      'Site otoparkı kamera arızası',
+      'PLANLANDI',
+      'YUKSEK',
+      640000,
+    ),
+    (
+      'i3',
+      'IS-0130',
+      'm3',
+      'Soğuk oda termostat değişimi',
+      'PLANLANDI',
+      'NORMAL',
+      175000,
+    ),
+    (
+      'i4',
+      'IS-0129',
+      'm4',
+      'Elektrik tesisatı kontrolü',
+      'TAMAMLANDI',
+      'NORMAL',
+      90000,
+    ),
+    (
+      'i5',
+      'IS-0128',
+      'm5',
+      'Asansör makine dairesi bakımı',
+      'TAMAMLANDI',
+      'DUSUK',
+      420000,
+    ),
   ];
 
   for (var i = 0; i < isler.length; i++) {
