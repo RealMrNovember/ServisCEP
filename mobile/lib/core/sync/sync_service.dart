@@ -58,7 +58,27 @@ class SyncService {
   /// "başarılı" sayılınca "son senkron" zamanı sunucuya hiç ulaşılamadığı
   /// hâlde güncelleniyordu. Ekran da bunu "az önce eşitlendi" diye
   /// gösteriyordu — kullanıcıya söylenen düpedüz yanlış bir bilgi.
-  Future<bool> runOnce(String companyId) async {
+  /// Halihazırda çalışan tur — aynı anda ikinci bir tur BAŞLATILMAZ.
+  ///
+  /// `calisiyor` yalnızca YAZILIYOR, hiç OKUNMUYORDU. Uygulama öne gelirken
+  /// resume + bağlantı + periyodik tetikleyiciler aynı saniyeye denk
+  /// geldiğinde (tipik senaryo) 2-3 tur aynı PENDING listesini okuyup aynı
+  /// CREATE'i iki kez POST ediyordu. İkinci deneme hata alınca satır çoktan
+  /// silinmiş oluyor — güncelleme no-op — ama `_setEntitySyncStatus`
+  /// varlığın kendisini FAILED'e boyuyordu: sunucuya BAŞARIYLA gitmiş bir
+  /// kayıt kullanıcıya "gönderilemedi" olarak görünüyordu.
+  Future<bool>? _calisanTur;
+
+  Future<bool> runOnce(String companyId) {
+    final mevcut = _calisanTur;
+    if (mevcut != null) return mevcut;
+
+    final tur = _runOnceKorumali(companyId);
+    _calisanTur = tur;
+    return tur.whenComplete(() => _calisanTur = null);
+  }
+
+  Future<bool> _runOnceKorumali(String companyId) async {
     if (await _tokenStore.read() == null) return false;
 
     calisiyor.value = true;
@@ -70,8 +90,15 @@ class SyncService {
   }
 
   Future<bool> _runOnce(String companyId) async {
-    await _drainOutbox();
     try {
+      // `_drainOutbox()` BİLEREK try'ın İÇİNDE: eskiden dışarıdaydı ve
+      // içinden sızan her beklenmedik hata (bozuk payload'ın jsonDecode'u,
+      // bilinmeyen operasyon türünün StateError'ı, bir DB hatası)
+      // `_runOnce`'tan çıkıp `runOnce`'ın finally'sini geçiyor, `unawaited`
+      // çağrısı yüzünden de tamamen yutuluyordu. Sonuç: tek bir bozuk
+      // outbox satırı, HER senkron turunu — push'u da pull'u da — sonsuza
+      // kadar öldürüyordu ve hiçbir yerde tek satır iz kalmıyordu.
+      await _drainOutbox();
       // Her adımdan önce oturum yeniden kontrol edilir.
       //
       // Sebep: bir senkron turu sürerken kullanıcı çıkış yapabiliyor.
@@ -95,6 +122,14 @@ class SyncService {
       // pull bir sonraki tetiklemede yeniden dener; `runOnce` unawaited
       // çağrıldığı için buradan exception SIZMAMALI (bkz. SyncTrigger).
       return false;
+    } on Object catch (e, s) {
+      // Son savunma hattı: buraya düşen her şey bir yazılım hatasıdır ve
+      // sessizce yutulursa senkron motoru kalıcı olarak ölür. Tur başarısız
+      // sayılır (ekran "eşitlendi" DEMEZ) ama bir sonraki tetikleme yeniden
+      // dener; bozuk satır `_drainOutbox` içinde kalıcı FAILED'e alındığı
+      // için kuyruk da kilitlenmez.
+      debugPrint('Senkron turu beklenmedik hatayla düştü: $e\n$s');
+      return false;
     }
 
     return true;
@@ -108,8 +143,10 @@ class SyncService {
             .get();
 
     for (final op in pending) {
-      final payload = jsonDecode(op.payload) as Map<String, dynamic>;
       try {
+        // `jsonDecode` BİLEREK try'ın İÇİNDE: bozuk bir payload eskiden
+        // döngünün dışına sızıp bütün turu (pull dahil) öldürüyordu.
+        final payload = jsonDecode(op.payload) as Map<String, dynamic>;
         switch ((op.entityType, op.operation)) {
           case ('customer', 'CREATE'):
             final result = await _api.createCustomer(payload);
@@ -257,14 +294,32 @@ class SyncService {
       } on ApiConflictException catch (e) {
         await _markConflicted(op, e);
       } on ApiException catch (e) {
-        if (e.statusCode == null || e.statusCode == 402) {
-          // Ağ hatası veya abonelik süresi dolmuş (402) — kuyruk PENDING
-          // kalır: veri kaybolmaz, bağlantı/yenileme sonrası akar. 402'de
-          // satırları FAILED işaretlemek yanlış olurdu; sorun veride değil,
-          // abonelikte (bkz. backend EnsureSubscriptionIsActive).
+        if (e.statusCode == null ||
+            e.statusCode == 402 ||
+            e.statusCode == 401) {
+          // Ağ hatası, abonelik süresi dolmuş (402) veya kimlik geçersiz
+          // (401) — kuyruk PENDING kalır: veri kaybolmaz, bağlantı/yenileme
+          // /yeniden giriş sonrası akar. 402'de satırları FAILED işaretlemek
+          // yanlış olurdu; sorun veride değil, abonelikte (bkz. backend
+          // EnsureSubscriptionIsActive).
+          //
+          // 401 EKLENDİ: token geçersizleştiğinde tüm kuyruk kalıcı FAILED
+          // oluyordu ve kullanıcı yeniden giriş yapsa BİLE o kayıtlar bir
+          // daha asla gönderilmiyordu — çevrimdışı yazılmış işlerin sessizce
+          // telefonda hapsolmasının en sık sebebi buydu.
           return;
         }
         await _markFailed(op, e);
+      } on Object catch (e) {
+        // Bozuk payload, bilinmeyen operasyon türü, diskten kaybolmuş medya:
+        // bu satır hiçbir denemede gönderilemez. Tüm kuyruğu kilitlemesin
+        // diye KALICI olarak FAILED'e alınır ve döngü diğer satırlarla
+        // devam eder.
+        await _markFailed(
+          op,
+          ApiException(null, 'Gönderilemeyen kayıt: $e'),
+          kalici: true,
+        );
       }
     }
   }
@@ -349,17 +404,69 @@ class SyncService {
     await _setEntitySyncStatus(op, 'CONFLICT');
   }
 
-  Future<void> _markFailed(SyncOperation op, ApiException e) async {
+  /// Bir satır kaç başarısız denemeden sonra KALICI olarak FAILED sayılır.
+  ///
+  /// Denemeler arası bekleme ayrı bir zamanlayıcıyla değil, senkron turunun
+  /// kendi ritmiyle oluşur (bağlantı değişimi / öne gelme / 3 dakikalık
+  /// periyot) — bu yüzden ayrı bir "sonraki deneme zamanı" kolonuna ve şema
+  /// göçüne gerek yok.
+  static const _maxDeneme = 5;
+
+  /// Başarısız gönderim.
+  ///
+  /// KRİTİK DAVRANIŞ DEĞİŞİKLİĞİ: geçici hatalarda satır artık PENDING
+  /// KALIR ve bir sonraki turda yeniden denenir.
+  ///
+  /// Eskiden ilk hatada FAILED'e alınıyordu; `_drainOutbox` ise yalnızca
+  /// PENDING satırları okuduğu için o kayıt bir daha ASLA gönderilmiyordu.
+  /// Hiçbir kod FAILED'i tekrar PENDING'e çevirmiyor, arayüzde "yeniden
+  /// dene" düğmesi de bulunmuyordu. Yani tek bir geçici 500 ya da anlık
+  /// sunucu hatası, kullanıcının çevrimdışı yazdığı kaydı sonsuza kadar
+  /// telefonda hapsediyordu. `attemptCount` artırılıyordu ama hiçbir yerde
+  /// okunmadığı için retry/backoff mantığı fiilen hiç yazılmamıştı.
+  Future<void> _markFailed(
+    SyncOperation op,
+    ApiException e, {
+    bool kalici = false,
+  }) async {
+    final deneme = op.attemptCount + 1;
+    final bitti = kalici || deneme >= _maxDeneme;
+    final durum = bitti ? 'FAILED' : 'PENDING';
+
     await (_db.update(
       _db.syncOperations,
     )..where((o) => o.id.equals(op.id))).write(
       SyncOperationsCompanion(
-        status: const Value('FAILED'),
+        status: Value(durum),
         lastError: Value(e.message),
-        attemptCount: Value(op.attemptCount + 1),
+        attemptCount: Value(deneme),
       ),
     );
-    await _setEntitySyncStatus(op, 'FAILED');
+    await _setEntitySyncStatus(op, durum);
+  }
+
+  /// Kalıcı FAILED satırları yeniden kuyruğa alır (kullanıcı eylemi).
+  ///
+  /// Deneme sayacı sıfırlanır: kullanıcı "yeniden dene" dediğinde kayıt
+  /// tam bir tur hakkı daha kazanır. Gönderilen satır sayısını döndürür.
+  Future<int> retryFailed() async {
+    final failed = await (_db.select(
+      _db.syncOperations,
+    )..where((o) => o.status.equals('FAILED'))).get();
+    if (failed.isEmpty) return 0;
+
+    await (_db.update(
+      _db.syncOperations,
+    )..where((o) => o.status.equals('FAILED'))).write(
+      const SyncOperationsCompanion(
+        status: Value('PENDING'),
+        attemptCount: Value(0),
+      ),
+    );
+    for (final op in failed) {
+      await _setEntitySyncStatus(op, 'PENDING');
+    }
+    return failed.length;
   }
 
   Future<bool> _hasPendingOutboxFor(String entityId) async {
