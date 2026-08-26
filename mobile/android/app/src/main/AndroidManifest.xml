@@ -2,6 +2,11 @@
     xmlns:tools="http://schemas.android.com/tools">
     <!-- Ag erisimi: Google Sign-In, guncelleme kontrolu, gelecekteki API -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- connectivity_plus kendi manifestinde bu izni beyan ediyor ve merge
+         sirasinda normalde eklenir; ACIKCA yaziliyor cunku bu izin merge
+         edilmezse baglanti dinleyicisi hic yayin yapmaz ve "internet gelince
+         otomatik esitle" davranisi sessizce olur. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- image_picker paketi bu izinleri manifest merge sirasinda otomatik
          ekliyor, ama uygulama SADECE ImageSource.camera kullaniyor (bkz.
          job_detail_screen.dart) — galeriye/videoya hic erisilmiyor. Play

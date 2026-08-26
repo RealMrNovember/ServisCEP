@@ -126,8 +126,14 @@ class SyncStatusScreen extends ConsumerWidget {
             _StatusRow(
               icon: Icons.error_outline_rounded,
               label: 'Gönderilemeyen',
-              value: '$failed kayıt',
+              value: '$failed kayıt — dokun, yeniden dene',
               warn: true,
+              // Kalıcı hata almış kayıtlar için ARAYÜZDE HİÇBİR YOL YOKTU:
+              // satır yalnızca sayıyı gösteriyor, dokunulamıyordu ve hiçbir
+              // kod FAILED'i tekrar kuyruğa almıyordu (çakışma satırının
+              // aksine). Kayıt kullanıcının telefonunda kalıcı mahsur
+              // kalıyordu.
+              onTap: () => _yenidenDene(context, ref),
             ),
           if (conflicts > 0)
             _StatusRow(
@@ -148,8 +154,8 @@ class SyncStatusScreen extends ConsumerWidget {
             switch ((pending > 0, taze)) {
               (true, _) =>
                 'Bekleyen kayıtlar cihazında güvenle duruyor. Bağlantı '
-                    'kurulduğunda otomatik olarak gönderilecek — uygulamayı '
-                    'açık tutmana gerek yok.',
+                'kurulduğunda otomatik gönderilir; uygulama kapalıyken de '
+                'arka planda düzenli olarak denenir.',
               (false, true) =>
                 'Verilerin sunucuyla eşitlenmiş durumda. Uygulama bağlantı '
                     'geldiğinde, öne alındığında ve birkaç dakikada bir '
@@ -219,6 +225,21 @@ class _StatusRow extends StatelessWidget {
 /// Sonucu BEKLER ve gerçekten olanı bildirir. Önceden koşulsuz "Senkron
 /// başlatıldı" diyordu; sunucuya hiç ulaşılamadığında bile. Olmayan bir
 /// başarıyı bildirmek, ekranın tamamına olan güveni zedeliyor.
+/// Kalıcı hata almış kayıtları yeniden kuyruğa alır ve hemen bir tur başlatır.
+Future<void> _yenidenDene(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final adet = await ref.read(syncTriggerProvider).retryFailed();
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        adet > 0
+            ? '$adet kayıt yeniden gönderim sırasına alındı.'
+            : 'Yeniden denenecek kayıt yok.',
+      ),
+    ),
+  );
+}
+
 class _SyncNowButton extends ConsumerStatefulWidget {
   const _SyncNowButton();
 

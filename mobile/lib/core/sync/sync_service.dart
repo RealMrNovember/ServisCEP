@@ -51,13 +51,6 @@ class SyncService {
   /// yalan oluyor.
   final ValueNotifier<bool> calisiyor = ValueNotifier<bool>(false);
 
-  /// Bir senkron turu çalıştırır ve BAŞARIYI döndürür.
-  ///
-  /// Dönüş değeri kritik: hatalar burada bilinçli olarak yutuluyor
-  /// (`unawaited` çağrıldığı için dışarı sızmamalı), ama yutulan hata
-  /// "başarılı" sayılınca "son senkron" zamanı sunucuya hiç ulaşılamadığı
-  /// hâlde güncelleniyordu. Ekran da bunu "az önce eşitlendi" diye
-  /// gösteriyordu — kullanıcıya söylenen düpedüz yanlış bir bilgi.
   /// Halihazırda çalışan tur — aynı anda ikinci bir tur BAŞLATILMAZ.
   ///
   /// `calisiyor` yalnızca YAZILIYOR, hiç OKUNMUYORDU. Uygulama öne gelirken
@@ -69,6 +62,15 @@ class SyncService {
   /// kayıt kullanıcıya "gönderilemedi" olarak görünüyordu.
   Future<bool>? _calisanTur;
 
+  /// Bir senkron turu çalıştırır ve BAŞARIYI döndürür.
+  ///
+  /// Dönüş değeri kritik: hatalar burada bilinçli olarak yutuluyor
+  /// (`unawaited` çağrıldığı için dışarı sızmamalı), ama yutulan hata
+  /// "başarılı" sayılınca "son senkron" zamanı sunucuya hiç ulaşılamadığı
+  /// hâlde güncelleniyordu. Ekran da bunu "az önce eşitlendi" diye
+  /// gösteriyordu — kullanıcıya söylenen düpedüz yanlış bir bilgi.
+  ///
+  /// Zaten süren bir tur varsa YENİSİ AÇILMAZ; çağıran o turun sonucunu alır.
   Future<bool> runOnce(String companyId) {
     final mevcut = _calisanTur;
     if (mevcut != null) return mevcut;
@@ -133,6 +135,22 @@ class SyncService {
     }
 
     return true;
+  }
+
+  /// Yalnızca outbox'ı gönderir (pull YOK) — arka plan görevi için.
+  ///
+  /// Arka planda kullanıcıya gösterilecek bir ekran olmadığı için sunucudan
+  /// veri çekmenin anlamı yok; önemli olan kullanıcının çevrimdışı yazdığı
+  /// kaydın sunucuya ulaşması. Hata dışarı sızmaz: arka plan görevinden
+  /// fırlayan hata, işletim sisteminin görevi tekrar tekrar denemesine yol
+  /// açar (bkz. background_sync.dart).
+  Future<void> drainOutboxOnly() async {
+    if (await _tokenStore.read() == null) return;
+    try {
+      await _drainOutbox();
+    } on Object catch (e) {
+      debugPrint('Arka plan outbox gönderimi düştü: $e');
+    }
   }
 
   Future<void> _drainOutbox() async {
@@ -212,7 +230,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Vergi levhası dosyası artık cihazda yok.'),
-              );
+              kalici: true,
+            );
               continue;
             }
             await _api.uploadTaxCertificate(
@@ -234,7 +253,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Logo dosyası artık cihazda yok.'),
-              );
+              kalici: true,
+            );
               continue;
             } else {
               await _api.uploadCompanyLogo(path);
@@ -247,7 +267,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Logo dosyası artık cihazda yok.'),
-              );
+              kalici: true,
+            );
               continue;
             } else {
               await _api.uploadCustomerLogo(op.entityId, path);
@@ -262,7 +283,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Fotoğraf dosyası artık cihazda yok.'),
-              );
+              kalici: true,
+            );
               continue;
             }
             await _api.createJobPhoto(
@@ -276,7 +298,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'İmza dosyası artık cihazda yok.'),
-              );
+              kalici: true,
+            );
               continue;
             }
             await _api.createJobSignature(
