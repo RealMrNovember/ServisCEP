@@ -124,6 +124,7 @@ jobs:
 
       - name: Yayına girdiyse haber ver
         if: steps.track.outputs.yayinda == 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           SURUM: ${{ steps.track.outputs.surum }}
@@ -133,7 +134,7 @@ jobs:
           BASLIK="Play: $SURUM kapalı teste açıldı (sürüm kodu $KOD)"
 
           # Aynı sürüm için ikinci kez issue açma — iş 20 dakikada bir koşuyor.
-          VAR=$(gh issue list --state all --search "$BASLIK in:title" \
+          VAR=$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --search "$BASLIK in:title" \
             --json title --jq "map(select(.title == \"$BASLIK\")) | length")
           if [ "$VAR" != "0" ]; then
             echo "Bu sürüm için bildirim zaten açılmış."
