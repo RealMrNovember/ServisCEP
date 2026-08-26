@@ -1,0 +1,55 @@
+name: Play mağaza simgesi
+
+# Elle tetiklenir. Sürüm hattına bağlanmadı çünkü mağaza simgesi her
+# sürümde değişmiyor — her yayında listeye dokunmak, gereksiz bir
+# inceleme kuyruğu riski demek.
+#
+# Play'de İKİ ayrı simge var ve birlikte değişmiyorlar: AAB'nin içindeki
+# launcher ikonu (telefonun ana ekranında) ve mağaza listesinin 512x512
+# simgesi (Play'de arama sonucunda). Yeni marka işareti 0.7.7 ile
+# uygulamaya girdi ama mağaza listesi eskisiyle kaldı — kullanıcı Play'de
+# eski, telefonunda yeni logoyu görüyordu.
+on:
+  workflow_dispatch:
+    inputs:
+      gorsel:
+        description: 'Yüklenecek 512x512 PNG (depo içi yol)'
+        required: false
+        default: 'assets/branding/icon-512.png'
+
+jobs:
+  yukle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Bağımlılıklar
+        run: pip install --quiet google-auth requests
+
+      # Play, mağaza simgesini TAM 512x512 istiyor. Yanlış boyutu API
+      # reddediyor ama hata mesajı boyuta işaret etmiyor; burada
+      # kırılması ne olduğunu anlamak için çok daha hızlı.
+      - name: Görseli doğrula
+        run: |
+          python3 - "${{ inputs.gorsel }}" <<'PYEOF'
+          import struct, sys
+          yol = sys.argv[1]
+          ham = open(yol, 'rb').read()
+          if ham[:8] != b'\x89PNG\r\n\x1a\n':
+              sys.exit(f'{yol} bir PNG değil.')
+          en, boy = struct.unpack('>II', ham[16:24])
+          if (en, boy) != (512, 512):
+              sys.exit(f'{yol} {en}x{boy} — Play tam 512x512 istiyor.')
+          if len(ham) > 1024 * 1024:
+              sys.exit(f'{yol} {len(ham)} bayt — Play sınırı 1 MB.')
+          print(f'{yol}: {en}x{boy}, {len(ham)} bayt — uygun.')
+          PYEOF
+
+      - name: Mağaza simgesini yükle
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: python3 .github/scripts/upload_store_icon.py "${{ inputs.gorsel }}"

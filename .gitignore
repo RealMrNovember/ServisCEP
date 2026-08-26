@@ -78,3 +78,6 @@ build/
 # edilir; local'de `npm run build` ile yeniden üretilebilir.
 !backend/public/build/
 !backend/public/build/**
+
+# Python derleme onbellegi
+__pycache__/
