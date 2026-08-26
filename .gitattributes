@@ -1,0 +1,11 @@
+# Kabuk betikleri HER ZAMAN LF.
+#
+# Windows'ta core.autocrlf açıkken checkout CRLF üretiyor. Böyle bir dosya
+# sunucuya kopyalandığında shebang satırı "#!/bin/bash\r" olur ve çekirdek
+# "\r" adlı bir yorumlayıcı arar: "bad interpreter". Betik hiç çalışmaz.
+*.sh text eol=lf
+
+# Aynı gerekçe: sunucuda ya da container'da yorumlanan diğer dosyalar.
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
