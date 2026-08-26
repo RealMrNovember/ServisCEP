@@ -71,7 +71,7 @@ Future<void> _outboxGonder() async {
     )..limit(1)).getSingleOrNull();
     if (company == null) return;
 
-    final api = SyncApiClient(ApiClient(tokenStore));
+    final api = DioSyncApiClient(ApiClient(tokenStore));
     final sync = SyncService(db, api, tokenStore);
     await sync.drainOutboxOnly();
   } finally {
@@ -81,7 +81,7 @@ Future<void> _outboxGonder() async {
 
 /// Periyodik arka plan senkronunu kaydeder. Uygulama açılışında çağrılır;
 /// aynı `uniqueName` ile tekrar kaydetmek mevcut görevi değiştirir
-/// (`ExistingWorkPolicy.keep` ile ikinci bir kopya oluşmaz).
+/// (`ExistingPeriodicWorkPolicy.keep` ile ikinci bir kopya oluşmaz).
 ///
 /// Hata durumunda sessizce vazgeçilir: arka plan senkronu bir iyileştirmedir,
 /// uygulamanın açılışını engellememelidir.
@@ -92,7 +92,7 @@ Future<void> registerBackgroundSync() async {
       _backgroundSyncUniqueName,
       backgroundSyncTaskName,
       frequency: _backgroundSyncInterval,
-      existingWorkPolicy: ExistingWorkPolicy.keep,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
       // Ağ yokken uyandırmanın anlamı yok; pil tüketir.
       constraints: Constraints(networkType: NetworkType.connected),
       backoffPolicy: BackoffPolicy.exponential,
