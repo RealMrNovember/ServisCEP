@@ -33,7 +33,6 @@ HEDEF = os.path.join(KOK, "assets", "branding")
 ARA = 2048
 
 BOYUTLAR = {
-    # Play magaza listesi bu dosyayi kullaniyor (tam 512x512 sart).
     "icon-512.png": 512,
     "icon-192.png": 192,
     "icon-180.png": 180,
@@ -47,8 +46,8 @@ BOYUTLAR = {
 FAVICON_BOYUTLARI = [16, 32, 48]
 
 
-def rasterlestir(svg_yolu: str, boyut: int) -> Image.Image:
-    cizim = svg2rlg(svg_yolu)
+def rasterlestir(svg_metni: str, boyut: int) -> Image.Image:
+    cizim = svg2rlg(io.BytesIO(svg_metni.encode("utf-8")))
     # svglib SVG'yi kendi birimlerinde okuyor; olcegi PDF asamasinda
     # veriyoruz ki kenar yumusatma hedef cozunurlukte yapilsin.
     olcek = boyut / cizim.width
@@ -61,8 +60,10 @@ def rasterlestir(svg_yolu: str, boyut: int) -> Image.Image:
     pdf.seek(0)
 
     belge = pdfium.PdfDocument(pdf.read())
-    sayfa = belge[0]
-    goruntu = sayfa.render(scale=1).to_pil().convert("RGBA")
+    # fill_color saydam: varsayilan BEYAZ. Varsayilanla birakilinca
+    # yuvarlatilmis kosenin disi beyaz kaliyordu ve bu magaza simgesine
+    # kadar gitti — Play'e beyaz koseli bir ikon yuklenmisti.
+    goruntu = belge[0].render(scale=1, fill_color=(0, 0, 0, 0)).to_pil().convert("RGBA")
     belge.close()
 
     if goruntu.size != (boyut, boyut):
@@ -71,7 +72,22 @@ def rasterlestir(svg_yolu: str, boyut: int) -> Image.Image:
 
 
 def main() -> None:
-    ana = rasterlestir(KAYNAK, ARA)
+    kaynak_svg = open(KAYNAK, encoding="utf-8").read()
+
+    ana = rasterlestir(kaynak_svg, ARA)
+
+    # Play magaza simgesi AYRI uretiliyor.
+    #
+    # Play kose yuvarlamayi ve golgeyi KENDISI uyguluyor ve saydamlik
+    # kabul etmiyor; hazir yuvarlatilmis bir ikon iki kez yuvarlatilmis
+    # gorunuyor. Bu yuzden ayni isaret, kosesi yuvarlatilmamis tam kare
+    # olarak ikinci kez uretiliyor.
+    kare_svg = kaynak_svg.replace('rx="114.5344"', 'rx="0"')
+    if kare_svg == kaynak_svg:
+        raise SystemExit("Kaynak SVG'de beklenen rx bulunamadi — kose yaricapi degismis olabilir.")
+    kare = rasterlestir(kare_svg, ARA).resize((512, 512), Image.LANCZOS)
+    kare.convert("RGB").save(os.path.join(HEDEF, "play-store-icon.png"))
+    print("  play-store-icon.png (512x512, tam kare, opak)")
 
     for ad, boyut in BOYUTLAR.items():
         ana.resize((boyut, boyut), Image.LANCZOS).save(os.path.join(HEDEF, ad))

@@ -1,115 +1,101 @@
-"""
-Play Store "feature graphic" (1024x500) uretir — marka kimligine uygun,
-icon.svg/generate_assets.py ile ayni gorsel dilde (koyu zemin + bezelli
-telefon + aksan renkli senkron dalgalari).
+"""Play magaza afisini (1024x500 "feature graphic") uretir.
+
+Eski surum logoyu Pillow ile CIZIYORDU ve uzerinde "ServisCEP" yaziyordu.
+Marka SVG'ye tasindiginda o kod olu bir ikinci tanim haline geldi:
+calistirilsa hem eski logoyu hem eski adi geri getirirdi.
+
+Artik isaret marka SVG'sinden, renkler ve yazi tipleri uygulamanin kendi
+tasarim sisteminden geliyor (mobile/lib/app/palette.dart ve
+mobile/assets/fonts). Magaza afisi uygulamanin ilk izlenimi — ayri bir
+gorsel dilde olmasi icin sebep yok.
 
 Kullanim:
-    python generate_feature_graphic.py
+    python assets/branding/generate_feature_graphic.py
 """
+
+import os
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-BG = "#131316"
-BEZEL = "#3F3F46"
-SCREEN = "#FAFAFA"
-SCREEN_DETAIL = "#D4D4D8"
-ACCENT = "#3B82F6"
-WHITE = "#FFFFFF"
-MUTED = "#9CA3AF"
+# Rasterlestirme generate_assets'ten aliniyor, kopyalanmiyor. Kopya
+# durdugu surece iki yerde ayri ayri bozulabiliyor: beyaz zemin hatasi
+# birinde duzeltildiginde digerinde kaldi ve isaretin arkasinda beyaz
+# kare olarak afise cikti.
+from generate_assets import rasterlestir
 
-SUPER = 4
-W, H = 1024, 500
-SIZE_W, SIZE_H = W * SUPER, H * SUPER
+KOK = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ISARET = os.path.join(KOK, "mobile", "assets", "brand", "teknikcep-b-plaka-appicon-512.svg")
+FONTLAR = os.path.join(KOK, "mobile", "assets", "fonts")
+CIKTI = os.path.join(KOK, "assets", "branding", "play-feature-graphic.png")
 
-FONT_DIR = "C:/Windows/Fonts"
+# palette.dart § dark
+ZEMIN = (0x0B, 0x0C, 0x0F)
+METIN = (0xF4, 0xF6, 0xF9)
+SOLUK = (0x98, 0xA2, 0xB0)
+AKSAN = (0x3B, 0x82, 0xF6)
+
+EN, BOY = 1024, 500
+
+# Metin ve isaret, olceklenmis tuvale cizilip sona kuculuyor — Pillow'un
+# kenar yumusatmasi bu boyutta yetersiz kaliyor.
+KAT = 3
 
 
-def S(*vals):
-    return tuple(v * SUPER for v in vals)
+def main() -> None:
+    w, h = EN * KAT, BOY * KAT
+    tuval = Image.new("RGBA", (w, h), ZEMIN + (255,))
 
+    # İşaretin arkasında yumuşak bir aksan halesi: düz koyu zeminde
+    # 1024x500'lük bir afiş cansız duruyor.
+    hale = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    hd = ImageDraw.Draw(hale)
+    hcx, hcy, hr = int(w * 0.755), h // 2, int(w * 0.16)
+    hd.ellipse([hcx - hr, hcy - hr, hcx + hr, hcy + hr], fill=AKSAN + (64,))
+    tuval = Image.alpha_composite(tuval, hale.filter(ImageFilter.GaussianBlur(w * 0.025)))
 
-def draw_phone_icon(canvas, cx_base, cy_base, scale=1.0):
-    # Orijinal icon.svg/generate_assets.py ile AYNI oranlar (bx=158,by=110,
-    # bw=156,bh=230, arc-merkezi=318,150) — sadece cx_base/cy_base etrafında
-    # yeniden konumlandirilip olceklenir. Senkron dalgalari kasitli olarak
-    # telefonun sag-ust kosesinden disariya tasar (orijinal tasarim niyeti).
-    d = ImageDraw.Draw(canvas, "RGBA")
+    isaret_boyut = int(260 * KAT)
+    isaret = rasterlestir(open(ISARET, encoding="utf-8").read(), isaret_boyut)
+    tuval.paste(isaret, (hcx - isaret_boyut // 2, hcy - isaret_boyut // 2), isaret)
 
-    bw, bh, brx = 156 * scale, 230 * scale, 38 * scale
-    bx, by = cx_base - bw / 2, cy_base - bh / 2
-    d.rounded_rectangle(S(bx, by, bx + bw, by + bh), radius=brx * SUPER, fill=BEZEL)
+    d = ImageDraw.Draw(tuval)
+    baslik = ImageFont.truetype(os.path.join(FONTLAR, "Archivo-Bold.ttf"), 88 * KAT)
+    slogan = ImageFont.truetype(os.path.join(FONTLAR, "Barlow-Medium.ttf"), 34 * KAT)
 
-    pad = 10 * scale
-    sw, sh, srx = bw - pad * 2, bh - pad * 2, 30 * scale
-    sx, sy = bx + pad, by + pad
-    d.rounded_rectangle(S(sx, sy, sx + sw, sy + sh), radius=srx * SUPER, fill=SCREEN)
+    sol = 72 * KAT
 
-    screen_cx = sx + sw / 2
+    # Dikey yerleşim ÖLÇÜLEREK yapılıyor, sabit sayılarla değil: yazı tipi
+    # ya da punto değiştiğinde sabitler sessizce üst üste biner. İlk
+    # denemede aksan çizgisi tam da böyle başlığın üstüne düşmüştü.
+    baslik_metni = "TeknikCEP"
+    slogan_metni = "Saha servis yönetimi cebinizde"
+
+    bk = d.textbbox((0, 0), baslik_metni, font=baslik)
+    sk = d.textbbox((0, 0), slogan_metni, font=slogan)
+    baslik_y = bk[3] - bk[1]
+    slogan_y = sk[3] - sk[1]
+
+    cizgi_bosluk = 26 * KAT
+    cizgi_kalinlik = 5 * KAT
+    slogan_bosluk = 22 * KAT
+
+    toplam = baslik_y + cizgi_bosluk + cizgi_kalinlik + slogan_bosluk + slogan_y
+    ust = (h - toplam) // 2
+
+    d.text((sol, ust - bk[1]), baslik_metni, font=baslik, fill=METIN)
+
+    cizgi_ust = ust + baslik_y + cizgi_bosluk
     d.rounded_rectangle(
-        S(screen_cx - 18 * scale, sy + 14 * scale, screen_cx + 18 * scale, sy + 18 * scale),
-        radius=2 * scale * SUPER,
-        fill=BEZEL,
-    )
-    d.rounded_rectangle(
-        S(screen_cx - 22 * scale, sy + sh - 16 * scale, screen_cx + 22 * scale, sy + sh - 12 * scale),
-        radius=2 * scale * SUPER,
-        fill=SCREEN_DETAIL,
+        [sol, cizgi_ust, sol + 104 * KAT, cizgi_ust + cizgi_kalinlik],
+        radius=cizgi_kalinlik // 2,
+        fill=AKSAN,
     )
 
-    cx = bx + bw * (160 / 156)
-    cy = by + bh * (40 / 230)
-    stroke_w = 15 * scale
-    cap_r = stroke_w / 2
-    for r_ratio, color in ((46 / 156, ACCENT), (82 / 156, WHITE)):
-        r = bw * r_ratio
-        bbox = S(cx - r, cy - r, cx + r, cy + r)
-        d.arc(bbox, start=270, end=360, fill=color, width=int(stroke_w * SUPER))
-        for px, py in ((cx, cy - r), (cx + r, cy)):
-            d.ellipse(S(px - cap_r, py - cap_r, px + cap_r, py + cap_r), fill=color)
+    slogan_ust = cizgi_ust + cizgi_kalinlik + slogan_bosluk
+    d.text((sol, slogan_ust - sk[1]), slogan_metni, font=slogan, fill=SOLUK)
 
-
-def main():
-    canvas = Image.new("RGBA", (SIZE_W, SIZE_H), BG)
-
-    # yumusak radial highlight — sol ust
-    highlight = Image.new("RGBA", (SIZE_W, SIZE_H), (0, 0, 0, 0))
-    hd = ImageDraw.Draw(highlight)
-    hd.ellipse(S(-200, -260, 500, 320), fill=(255, 255, 255, 30))
-    highlight = highlight.filter(ImageFilter.GaussianBlur(SIZE_W * 0.03))
-    canvas = Image.alpha_composite(canvas, highlight)
-
-    # aksan glow — telefon ikonunun arkasinda
-    glow = Image.new("RGBA", (SIZE_W, SIZE_H), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    gcx, gcy, gr = 850, 210, 150
-    gd.ellipse(S(gcx - gr, gcy - gr, gcx + gr, gcy + gr), fill=(59, 130, 246, 70))
-    glow = glow.filter(ImageFilter.GaussianBlur(SIZE_W * 0.02))
-    canvas = Image.alpha_composite(canvas, glow)
-
-    draw_phone_icon(canvas, 785, 250, scale=1.15)
-
-    d = ImageDraw.Draw(canvas, "RGBA")
-    title_font = ImageFont.truetype(f"{FONT_DIR}/segoeuib.ttf", 92 * SUPER)
-    tagline_font = ImageFont.truetype(f"{FONT_DIR}/segoeui.ttf", 34 * SUPER)
-
-    tx = 70 * SUPER
-    d.text((tx, 178 * SUPER), "ServisCEP", font=title_font, fill=WHITE)
-    d.text(
-        (tx, 292 * SUPER),
-        "Saha teknik servis işletmeleri için",
-        font=tagline_font,
-        fill=MUTED,
-    )
-    d.text(
-        (tx, 336 * SUPER),
-        "mobil-first, offline-first yönetim platformu",
-        font=tagline_font,
-        fill=MUTED,
-    )
-
-    canvas = canvas.resize((W, H), Image.LANCZOS)
-    canvas.convert("RGB").save("feature_graphic.png")
-    print("Tamamlandi: feature_graphic.png")
+    # Play afişi saydamlık kabul etmiyor; RGB'ye düşürülüyor.
+    tuval.resize((EN, BOY), Image.LANCZOS).convert("RGB").save(CIKTI)
+    print(f"Tamamlandi: {CIKTI} ({EN}x{BOY})")
 
 
 if __name__ == "__main__":
