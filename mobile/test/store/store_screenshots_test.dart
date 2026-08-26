@@ -192,6 +192,8 @@ Future<void> _demoVeriYaz(AppDatabase db) async {
     ('t1', 'TKF-2026-0042', 'm2', 'GONDERILDI', 1845000),
     ('t2', 'TKF-2026-0041', 'm3', 'KABUL_EDILDI', 926000),
     ('t3', 'TKF-2026-0040', 'm1', 'TASLAK', 312000),
+    ('t4', 'TKF-2026-0039', 'm4', 'KABUL_EDILDI', 158000),
+    ('t5', 'TKF-2026-0038', 'm5', 'GONDERILDI', 2240000),
   ];
 
   for (final (id, kod, musteri, durum, tutar) in teklifler) {

@@ -171,13 +171,18 @@ abstract final class AppTheme {
           horizontal: AppSpacing.xl,
           vertical: AppSpacing.xs,
         ),
-        // Aile AÇIKÇA veriliyor. ListTile başlık/alt başlık stilleri
-        // TextTheme'den MİRAS ALMIYOR; burada verilen stil onu tamamen
-        // değiştiriyor. Aile yazılmadığında bu iki alan sistem fontuna
-        // düşüyordu: müşteri adları, belge başlıkları ve daha bir düzine
-        // liste satırı, uygulamanın geri kalanı Barlow'ken Roboto ile
+        // NOT: Bu dosyadaki HER bileşen stili aileyi açıkça veriyor.
+        //
+        // Bileşen temaları (listTileTheme, chipTheme, dialogTheme...)
+        // TextTheme'den MİRAS ALMIYOR; oradaki stil onu tamamen
+        // değiştiriyor ve `ThemeData.fontFamily` de bu stillere
+        // uygulanmıyor. Aile yazılmadığında o metinler sistem fontuna
+        // düşüyordu: müşteri adları, belge başlıkları, filtre çipleri,
+        // uyarı kutuları — uygulamanın geri kalanı Barlow'ken Roboto ile
         // çiziliyordu. Ekranda göze batmayacak kadar benzer oldukları
-        // için uzun süre fark edilmedi.
+        // için uzun süre fark edilmedi; mağaza ekran görüntüsü koşumunda
+        // (test motorunda sistem fontu yok) dolu blok olarak çıkınca
+        // ortaya çıktı.
         titleTextStyle: TextStyle(
           fontFamily: AppTypography.uiFamily,
           fontSize: 15.5,
@@ -203,6 +208,7 @@ abstract final class AppTheme {
           disabledForegroundColor: palette.disabledText,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
           textStyle: const TextStyle(
+            fontFamily: AppTypography.uiFamily,
             fontSize: 15.5,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.1,
@@ -217,12 +223,17 @@ abstract final class AppTheme {
           disabledForegroundColor: palette.disabledText,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
           side: BorderSide(color: palette.borderStrong),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: AppTypography.uiFamily,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           textStyle: const TextStyle(
+            fontFamily: AppTypography.uiFamily,
             fontSize: 14.5,
             fontWeight: FontWeight.w600,
           ),
@@ -260,16 +271,34 @@ abstract final class AppTheme {
           borderRadius: AppRadius.field,
           borderSide: BorderSide(color: palette.danger, width: 1.6),
         ),
-        labelStyle: TextStyle(color: palette.textMuted),
-        hintStyle: TextStyle(color: palette.textFaint),
-        helperStyle: TextStyle(fontSize: 11.5, color: palette.textMuted),
-        errorStyle: TextStyle(fontSize: 12.5, color: palette.dangerText),
+        labelStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
+          color: palette.textMuted,
+        ),
+        hintStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
+          color: palette.textFaint,
+        ),
+        helperStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
+          fontSize: 11.5,
+          color: palette.textMuted,
+        ),
+        errorStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
+          fontSize: 12.5,
+          color: palette.dangerText,
+        ),
       ),
 
       chipTheme: ChipThemeData(
         side: BorderSide(color: palette.border),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.pill),
-        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        labelStyle: const TextStyle(
+          fontFamily: AppTypography.uiFamily,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         showCheckmark: false,
         selectedColor: palette.accentSolid,
@@ -292,11 +321,13 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
         titleTextStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
           fontSize: 19,
           fontWeight: FontWeight.w700,
           color: palette.text,
         ),
         contentTextStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
           fontSize: 14.5,
           height: 1.45,
           color: palette.textMuted,
@@ -322,7 +353,11 @@ abstract final class AppTheme {
         // (Önceden koyu temada inverseSurface kullanılıyordu; M3'te bu
         // AÇIK bir renk olduğu için beyaz yazı görünmez hâle geliyordu.)
         backgroundColor: isDark ? palette.surfaceHi : const Color(0xFF1F2430),
-        contentTextStyle: const TextStyle(fontSize: 14, color: Colors.white),
+        contentTextStyle: const TextStyle(
+          fontFamily: AppTypography.uiFamily,
+          fontSize: 14,
+          color: Colors.white,
+        ),
         actionTextColor: AppPalette.dark.accentText,
       ),
 
@@ -330,6 +365,7 @@ abstract final class AppTheme {
         style: SegmentedButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: AppRadius.field),
           textStyle: const TextStyle(
+            fontFamily: AppTypography.uiFamily,
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
           ),
@@ -349,7 +385,11 @@ abstract final class AppTheme {
         elevation: 0,
         height: AppSize.nav,
         labelTextStyle: WidgetStateProperty.all(
-          const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          const TextStyle(
+            fontFamily: AppTypography.uiFamily,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
