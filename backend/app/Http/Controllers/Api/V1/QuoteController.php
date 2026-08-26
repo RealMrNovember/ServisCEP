@@ -93,15 +93,22 @@ class QuoteController extends Controller
 
         $data = $request->validated();
         $baseVersion = $data['base_version'];
-        unset($data['base_version']);
+        $changedFields = $data['changed_fields'] ?? [];
+        unset($data['base_version'], $data['changed_fields']);
 
-        $conflict = $this->detectVersionConflict(
-            $this->syncConflictService, $request->user(), $quote, 'quote', $data, $baseVersion
+        $outcome = $this->resolveVersionConflict(
+            $this->syncConflictService, $request->user(), $quote, 'quote',
+            $data, $baseVersion, $changedFields
         );
 
-        if ($conflict) {
-            return (new SyncConflictResource($conflict))->response()->setStatusCode(409);
+        if ($outcome->isConflict()) {
+            return (new SyncConflictResource($outcome->conflict))->response()->setStatusCode(409);
         }
+
+        // Birleştirilmiş bir sonuçta $data yalnızca istemcinin
+        // değiştirdiği alanları içerir; sunucudaki diğer değişiklikler
+        // olduğu gibi kalır.
+        $data = $outcome->data;
 
         $quote->update($data);
 

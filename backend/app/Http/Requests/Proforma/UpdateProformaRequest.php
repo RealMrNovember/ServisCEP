@@ -27,6 +27,16 @@ class UpdateProformaRequest extends FormRequest
             'vat_mode' => ['sometimes', 'string', 'in:EXCLUDED,INCLUDED'],
             'vat_rate' => ['sometimes', 'integer', 'min:0', 'max:100'],
             'base_version' => ['required', 'integer', 'min:1'],
+
+            // İstemcinin GERÇEKTEN değiştirdiği alanlar. Yük kaydın
+            // tamamını taşıdığı için bu bilgi yükten çıkarılamıyor; onsuz
+            // her sürüm uyuşmazlığı elle çözülmesi gereken bir çakışma
+            // sayılırdı (bkz. DetectsSyncConflicts).
+            //
+            // `sometimes`: eski uygulama sürümleri bunu göndermiyor ve
+            // göndermedikleri sürece eski davranışı görüyorlar.
+            'changed_fields' => ['sometimes', 'array'],
+            'changed_fields.*' => ['string', 'max:64'],
             'valid_until' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
         ];

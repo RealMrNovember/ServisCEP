@@ -23,6 +23,16 @@ class UpdateJobRequest extends FormRequest
 
         return [
             'base_version' => ['required', 'integer', 'min:1'],
+
+            // İstemcinin GERÇEKTEN değiştirdiği alanlar. Yük kaydın
+            // tamamını taşıdığı için bu bilgi yükten çıkarılamıyor; onsuz
+            // her sürüm uyuşmazlığı elle çözülmesi gereken bir çakışma
+            // sayılırdı (bkz. DetectsSyncConflicts).
+            //
+            // `sometimes`: eski uygulama sürümleri bunu göndermiyor ve
+            // göndermedikleri sürece eski davranışı görüyorlar.
+            'changed_fields' => ['sometimes', 'array'],
+            'changed_fields.*' => ['string', 'max:64'],
             'customer_id' => [
                 'sometimes', 'uuid',
                 Rule::exists('customers', 'id')->where(fn ($query) => $query->where('company_id', $companyId)),

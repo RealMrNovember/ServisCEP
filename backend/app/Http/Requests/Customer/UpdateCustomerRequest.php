@@ -22,6 +22,16 @@ class UpdateCustomerRequest extends FormRequest
             // İstemcinin son gördüğü sürüm — optimistic concurrency için
             // zorunlu. Bkz. ROADMAP.md § B10, DetectsSyncConflicts.
             'base_version' => ['required', 'integer', 'min:1'],
+
+            // İstemcinin GERÇEKTEN değiştirdiği alanlar. Yük kaydın
+            // tamamını taşıdığı için bu bilgi yükten çıkarılamıyor; onsuz
+            // her sürüm uyuşmazlığı elle çözülmesi gereken bir çakışma
+            // sayılırdı (bkz. DetectsSyncConflicts).
+            //
+            // `sometimes`: eski uygulama sürümleri bunu göndermiyor ve
+            // göndermedikleri sürece eski davranışı görüyorlar.
+            'changed_fields' => ['sometimes', 'array'],
+            'changed_fields.*' => ['string', 'max:64'],
             'code' => ['sometimes', 'string', 'max:50'],
             'contact_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'company_name' => ['sometimes', 'nullable', 'string', 'max:255'],

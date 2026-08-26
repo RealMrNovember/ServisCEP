@@ -20,6 +20,16 @@ class UpdateServiceRequestRequest extends FormRequest
     {
         return [
             'base_version' => ['required', 'integer', 'min:1'],
+
+            // İstemcinin GERÇEKTEN değiştirdiği alanlar. Yük kaydın
+            // tamamını taşıdığı için bu bilgi yükten çıkarılamıyor; onsuz
+            // her sürüm uyuşmazlığı elle çözülmesi gereken bir çakışma
+            // sayılırdı (bkz. DetectsSyncConflicts).
+            //
+            // `sometimes`: eski uygulama sürümleri bunu göndermiyor ve
+            // göndermedikleri sürece eski davranışı görüyorlar.
+            'changed_fields' => ['sometimes', 'array'],
+            'changed_fields.*' => ['string', 'max:64'],
             'description' => ['sometimes', 'string'],
             'priority' => ['sometimes', 'string', 'in:YUKSEK,NORMAL,DUSUK'],
             'address' => ['sometimes', 'nullable', 'string'],

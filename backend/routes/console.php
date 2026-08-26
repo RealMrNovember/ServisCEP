@@ -22,3 +22,8 @@ Schedule::command('subscriptions:notify-expiring')->dailyAt('10:00');
 // kanıtını daha fark edilmeden siliyordu. Pazar gecesi 03:40 — haftanın
 // en sakin saati.
 Schedule::command('logs:prune')->weeklyOn(0, '03:40');
+
+// Alan izleri yalnızca çakışma çözümünde kullanılıyor; kayıt
+// senkronlandıktan sonra ölü ağırlık. Budama veri kaybettirmez —
+// iz eksikse birleştirme reddedilir ve çakışma insana gider.
+Schedule::command('sync:prune-field-changes')->weeklyOn(0, '03:50');

@@ -125,7 +125,7 @@ Backend, iki katmanlı olarak ilerliyor ve **her ikisi de kalıcı, birbirini ta
 | **14** | Income / Expense — gelir/gider modülleri (bkz. [docs/04](docs/04-finans-ve-stok.md)) | Sprint 5 | ✅ Tamamlandı — Hem mobil hem web panelde. |
 | **15** | Payments — tahsilat modülü, finans dashboard | Sprint 5 | ✅ Mobil tamamlandı — Tahsilat cari hesaba otomatik ALACAK olarak işliyor, tek transaction. Aynı tahsilatın bakiyeye iki kez yansıması (v0.6.0) giderildi. **Web'de cari/tahsilat yok** (bkz. W3). |
 | **16** | Offline Engine — yerel veritabanı, offline CRUD (bkz. [docs/08](docs/08-offline-first-ve-senkronizasyon.md)) | Sprint 6 | ✅ Tamamlandı — Drift, şema v9. Her yazma önce cihaza gider; internetsiz tam işlevsel. |
-| **17** | Synchronization — sync queue, conflict handling, backup | Sprint 6 | 🟡 Senkron ve çakışma tamamlandı, **yedekleme YOK** — Outbox deseni, sürüm tabanlı iyimser eşzamanlılık, pull bekleyen yerel yazmanın üzerine yazmıyor, tombstone senkronu, çakışma çözüm ekranı. Kullanıcı verisinin cihaz dışına yedeklenmesi henüz yok. |
+| **17** | Synchronization — sync queue, conflict handling, backup | Sprint 6 | ✅ Tamamlandı — Outbox deseni, sürüm tabanlı iyimser eşzamanlılık, pull bekleyen yerel yazmanın üzerine yazmıyor, tombstone senkronu, çakışma çözüm ekranı. **Çakışmalar artık otomatik birleşiyor**: iki taraf farklı alanlara dokunduysa kimse elle karar vermiyor (alan izi + `changed_fields`); elle çözüm yalnızca aynı alan iki tarafta da değiştiğinde gerekiyor. **Yedekleme devrede**: gecelik veritabanı + saha dosyası yedeği, Google Drive'a dış kopya, ayda bir gerçek restore testi. |
 | **18** | Notifications — hatırlatmalar, bildirimler, takvim | Sprint 7 | ✅ Tamamlandı — Yerel iş hatırlatmaları (süre ayarlanabilir), FCM push (abonelik onayı/reddi, süre hatırlatması), takvim ekranı. |
 | **19** | WhatsApp Sharing — Android Share entegrasyonu, harita | Sprint 7 | ✅ Tamamlandı — Belge WhatsApp/e-posta ile paylaşılıyor, müşteri adresi haritada açılıyor. |
 | **20** | Real User Testing — gerçek kullanıcı testi, bug fixing, performans, release build | Sprint 8 | 🟡 Sürüyor — Google Play kapalı testte, otomatik sürüm hattı çalışıyor (v0.7.7). Gerçek kullanımdan gelen hatalar sürümlerle gideriliyor. Play'in 12 testçi / 14 gün şartı henüz karşılanmadı. |
@@ -151,10 +151,11 @@ Gelir · Gider · Tahsilat · Finans dashboard
 
 > Cari hesap ve tahsilat web panelde henüz yok — bkz. W3.
 
-### Sprint 6 — Offline & Senkronizasyon 🟡
-Offline database ✅ · Sync engine ✅ · Conflict handling ✅ · **Backup ❌** · Error handling ✅
+### Sprint 6 — Offline & Senkronizasyon ✅
+Offline database ✅ · Sync engine ✅ · Conflict handling ✅ · Backup ✅ · Error handling ✅
 
-> Yedekleme dışında tamamlandı. Kullanıcı verisinin cihaz dışına yedeklenmesi henüz yok.
+> Çakışmaların çoğu artık otomatik çözülüyor; yedekleme her gece alınıp Drive'a
+> çıkıyor ve ayda bir gerçekten geri yüklenerek doğrulanıyor.
 
 ### Sprint 7 — İletişim ve Zamanlama ✅
 WhatsApp sharing · Bildirimler · Takvim · Harita
@@ -316,12 +317,44 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 
 ### Bakım
 
-- [ ] Sürüm hattındaki eskimiş action'lar — `track` parametresi
-      kullanımdan kalkmış, ileride sürüm yayınlamayı kırabilir.
-- [ ] Sunucudaki sürüm kaydını CI'ın yazması — şu an elle giriliyor ve
-      bir kez unutuldu (güncelleme bildirimi çalışmadı).
-- [ ] `CalculatesDocumentTotal` iki dosyada duruyor (API + Filament),
-      elle eşit tutuluyor. Sapma riski.
+- [x] **Yedekleme** (2026-08-26) — Veritabanının yedeği YOKTU: sunucudaki
+      yedekleme betiği yalnızca Docker container'ı olarak çalışan
+      Postgres'leri buluyor, TeknikCEP'inki çıplak kurulu olduğu için
+      taramaya hiç girmiyordu. Artık her gece 02:30'da veritabanı +
+      saha dosyaları alınıp mevcut Drive akışına bırakılıyor; ayın 1'inde
+      son yedek boş bir container'a gerçekten geri yükleniyor ve şirket
+      sayısı doğrulanıyor. Hatalar Telegram'a düşüyor. Kurulumda 13
+      şirket geri yüklenerek kanıtlandı. `.env` bilinçli olarak yedeğe
+      girmiyor — bedeli `deploy/README.md`'de yazılı: APP_KEY kaybolursa
+      şifreli sütunlar geri getirilemez.
+- [x] **Otomatik çakışma çözümü** (2026-08-26) — Sürüm uyuşmazlığı "aynı
+      anda düzenlendi" demek, "aynı ŞEY düzenlendi" demek değildi; yine de
+      hepsi elle çözülüyordu. Artık iki taraf farklı alanlara dokunduysa
+      güncelleme otomatik birleşiyor. İki bilgi gerekiyordu: istemcinin
+      neyi değiştirdiği (`changed_fields`) ve sunucunun neyi değiştirdiği
+      (`field_changes` izi, sürüm sayacıyla aynı yerde tutuluyor ki panel
+      üzerinden yapılanlar da kapsansın). Bilgi eksikse — eski istemci ya
+      da budanmış iz — çakışma kaydediliyor: eksik bilgiyle birleştirmek,
+      bu mekanizmanın engellemek için var olduğu şeyin ta kendisi olurdu.
+- [x] **Sürüm kaydını CI yazıyor** (2026-08-26) — Elle giriliyordu ve bir
+      kez unutuldu: 0.7.5 Play'e çıktı, sunucu "sürüm yok" dediği için
+      kimseye güncelleme bildirimi gitmedi. Yayın hattı artık yüklemeden
+      sonra sunucuya bildiriyor (paylaşılan jeton; jeton yoksa uç KAPALI).
+- [x] **Eskimiş CI action'ları** (2026-08-26) — `track` parametresi
+      action tarafından kullanımdan kaldırılmıştı; yerine `tracks` geldi.
+      Eski alan bir gün kalksa sürüm yayınlamak tamamen kırılırdı.
+      checkout ve setup-java v5'e çekildi.
+- [x] **`CalculatesDocumentTotal` tekilleştirildi** (2026-08-26) — İki
+      dosyada duruyor, elle eşit tutuluyordu; proje aynı hatayı abonelik
+      süresinde bir kez yaşamıştı. Tek `DocumentTotal` sınıfına toplandı.
+      Bu arada bir tuzak da kapandı: `discount_rate` saklanıyor ama
+      toplama hiç yansımıyordu.
+> Mobil tarafta `changed_fields` gönderen tüm yollar kapsandı: müşteri ve
+> iş güncellemeleri (alan farkı hesaplanarak), iş/teklif durum
+> değişiklikleri ve iş tamamlama (değişen alanlar zaten kodda belli).
+> Proforma ve servis talebi mobilden hiç güncelleme kuyruğuna girmiyor;
+> sunucudaki uçları `changed_fields` kabul ediyor, kullanan olduğunda
+> hazır.
 
 ---
 
