@@ -213,7 +213,11 @@ class QuotesRepository {
         entityId: id,
         operation: 'UPDATE',
         baseVersion: quote.version,
-        payload: {'status': status},
+        // Tek alan; sunucunun tahmin etmesine gerek yok.
+        payload: {
+          'status': status,
+          'changed_fields': const ['status'],
+        },
       );
     });
   }

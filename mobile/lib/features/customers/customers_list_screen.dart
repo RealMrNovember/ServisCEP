@@ -37,7 +37,10 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Müşteriler'),
-        actions: const [PendingBadge(), SizedBox(width: AppSpacing.md)],
+        actions: const [
+          PendingBadge(),
+          SizedBox(width: AppSpacing.md),
+        ],
       ),
       body: Column(
         children: [

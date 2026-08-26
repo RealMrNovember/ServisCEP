@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+import '../../../core/sync/changed_fields.dart';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -106,29 +108,48 @@ class CustomersRepository {
   /// bu gönderilir, sunucudaki gerçek son sürümle karşılaştırılır.
   Future<void> update(Customer customer) async {
     await _db.transaction(() async {
+      // Kaydın ESKİ hâli, üzerine yazmadan ÖNCE okunuyor: sunucuya hangi
+      // alanların gerçekten değiştiğini bildirebilmek için tek fırsat
+      // burası. Yük kaydın tamamını taşıdığı için sunucu bunu kendi
+      // başına çıkaramıyor (bkz. degisenAlanlar).
+      final oncesi = await byId(customer.id);
+      final yuk = _yuk(customer);
+
       await _db.update(_db.customers).replace(customer);
       await _enqueue(
         entityId: customer.id,
         operation: 'UPDATE',
         baseVersion: customer.version,
         payload: {
-          'code': customer.code,
-          'contact_name': customer.contactName,
-          'company_name': customer.companyName,
-          'iban': customer.iban,
-          'type': customer.type,
-          'phone': customer.phone,
-          'email': customer.email,
-          'address': customer.address,
-          'il': customer.il,
-          'ilce': customer.ilce,
-          'tax_info': customer.taxInfo,
-          'notes': customer.notes,
-          'tags': customer.tags,
+          ...yuk,
+          'changed_fields': degisenAlanlar(
+            oncesi == null ? null : _yuk(oncesi),
+            yuk,
+          ),
         },
       );
     });
   }
+
+  /// Sunucuya gönderilen alan kümesi.
+  ///
+  /// Ayrı bir metot olması şart: aynı eşleme hem yeni hem eski kayda
+  /// uygulanmazsa fark hesabı anlamsız olur.
+  Map<String, dynamic> _yuk(Customer customer) => {
+    'code': customer.code,
+    'contact_name': customer.contactName,
+    'company_name': customer.companyName,
+    'iban': customer.iban,
+    'type': customer.type,
+    'phone': customer.phone,
+    'email': customer.email,
+    'address': customer.address,
+    'il': customer.il,
+    'ilce': customer.ilce,
+    'tax_info': customer.taxInfo,
+    'notes': customer.notes,
+    'tags': customer.tags,
+  };
 
   Future<void> softDelete(String id) async {
     await _db.transaction(() async {

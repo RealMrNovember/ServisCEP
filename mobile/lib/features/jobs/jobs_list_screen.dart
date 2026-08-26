@@ -44,7 +44,10 @@ class _JobsListScreenState extends State<JobsListScreen>
         title: const Text('İşler'),
         // Bekleyen kayıt rozeti — tasarım sistemi § 6.2. Sayı 0
         // olduğunda tamamen kaybolur.
-        actions: const [PendingBadge(), SizedBox(width: AppSpacing.md)],
+        actions: const [
+          PendingBadge(),
+          SizedBox(width: AppSpacing.md),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

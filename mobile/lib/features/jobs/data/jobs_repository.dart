@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../../core/sync/changed_fields.dart';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -156,7 +158,13 @@ class JobsRepository {
         entityId: id,
         operation: 'UPDATE',
         baseVersion: job.version,
-        payload: {'status': status},
+        // Yük zaten tek alan; sunucunun bunu tahmin etmesine gerek yok.
+        // Sahadan gelen bir durum değişikliği, ofisin aynı anda yaptığı
+        // başka bir düzenlemeyle artık çakışmıyor.
+        payload: {
+          'status': status,
+          'changed_fields': const ['status'],
+        },
       );
     });
   }
@@ -165,12 +173,24 @@ class JobsRepository {
   /// olarak gönderilir (bkz. CustomersRepository.update ile aynı kalıp).
   Future<void> update(Job job) async {
     await _db.transaction(() async {
+      // Eski hâl, üzerine yazmadan ÖNCE okunuyor — sunucuya hangi
+      // alanların gerçekten değiştiğini bildirebilmek için tek fırsat
+      // burası (bkz. degisenAlanlar).
+      final oncesi = await byId(job.id);
+      final yuk = _jobPayload(job);
+
       await _db.update(_db.jobs).replace(job);
       await _enqueue(
         entityId: job.id,
         operation: 'UPDATE',
         baseVersion: job.version,
-        payload: _jobPayload(job),
+        payload: {
+          ...yuk,
+          'changed_fields': degisenAlanlar(
+            oncesi == null ? null : _jobPayload(oncesi),
+            yuk,
+          ),
+        },
       );
     });
   }
@@ -212,7 +232,12 @@ class JobsRepository {
         entityId: job.id,
         operation: 'UPDATE',
         baseVersion: job.version,
-        payload: _jobPayload(updated),
+        payload: {
+          ..._jobPayload(updated),
+          // Tamamlama tam olarak bu iki alana dokunuyor; fark hesabına
+          // gerek yok, kod zaten biliyor.
+          'changed_fields': const ['status', 'actual_price_minor'],
+        },
       );
     });
   }

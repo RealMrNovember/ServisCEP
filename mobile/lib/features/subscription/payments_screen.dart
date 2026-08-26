@@ -83,9 +83,7 @@ class PaymentsScreen extends ConsumerWidget {
                 if (gecmis.isNotEmpty) ...[
                   SectionHeader(
                     'Geçmiş',
-                    subtitle: bekleyen.isEmpty
-                        ? null
-                        : 'Tamamlanmış ödemeler.',
+                    subtitle: bekleyen.isEmpty ? null : 'Tamamlanmış ödemeler.',
                   ),
                   for (final k in gecmis)
                     Padding(

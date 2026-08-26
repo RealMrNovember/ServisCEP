@@ -99,9 +99,9 @@ class MoreScreen extends ConsumerWidget {
             title: const Text('Ödemelerim'),
             subtitle: const Text('Geçmiş ödemeler, tarih ve tutarlar'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const PaymentsScreen()),
-            ),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const PaymentsScreen())),
           ),
 
           // Çakışma varken görünür — yoksa menüyü kalabalıklaştırmaz.

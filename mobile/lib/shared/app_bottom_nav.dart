@@ -205,11 +205,13 @@ class _NavItem extends StatelessWidget {
                     style: AppTypography.navLabel.copyWith(
                       fontSize: 12,
                       color: renk,
-                      fontWeight: selected
-                          ? FontWeight.w700
-                          : FontWeight.w600,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                     ),
-                    child: Text(destination.label, maxLines: 1, softWrap: false),
+                    child: Text(
+                      destination.label,
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
                   ),
                 ),
               ),

@@ -89,11 +89,12 @@ class PaymentHistoryItem {
   String get stateLabel => switch (state) {
     PaymentState.paid => 'Ödendi',
     PaymentState.failed => 'Başarısız',
-    PaymentState.pending => kind == PaymentKind.transfer
-        // Havalede "bekliyor" demek onay bekliyor demek; kullanıcı
-        // neyi beklediğini bilmeli.
-        ? 'Onay bekliyor'
-        : 'Bekliyor',
+    PaymentState.pending =>
+      kind == PaymentKind.transfer
+          // Havalede "bekliyor" demek onay bekliyor demek; kullanıcı
+          // neyi beklediğini bilmeli.
+          ? 'Onay bekliyor'
+          : 'Bekliyor',
   };
 
   /// Kullanıcının TAKİP ettiği kayıt mı, yoksa geçmiş mi.
@@ -115,7 +116,8 @@ final paymentHistoryProvider = FutureProvider<List<PaymentHistoryItem>>((
   final client = ref.watch(apiClientProvider);
   try {
     final response = await client.dio.get('/subscription/history');
-    final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
+    final data =
+        (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
     return data
         .map((e) => PaymentHistoryItem.fromJson(e as Map<String, dynamic>))
         .toList();

@@ -53,7 +53,10 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Belgeler'),
-        actions: const [PendingBadge(), SizedBox(width: AppSpacing.md)],
+        actions: const [
+          PendingBadge(),
+          SizedBox(width: AppSpacing.md),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
