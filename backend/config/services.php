@@ -53,4 +53,11 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID', 'serviscep'),
     ],
 
+    // Sürüm hattının yayındaki sürümü sunucuya bildirmesi için paylaşılan
+    // jeton. Boşsa uç 503 döner — parolasız açık kalmasındansa kapalı
+    // olması yeğdir.
+    'app_version' => [
+        'publish_token' => env('APP_VERSION_PUBLISH_TOKEN', ''),
+    ],
+
 ];

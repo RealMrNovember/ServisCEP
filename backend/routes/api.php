@@ -51,6 +51,13 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
     // Uygulama güncel mi sorusu, giriş yapılamadığında da sorulabilmeli.
     Route::get('/app/version', [AppVersionController::class, 'show'])->name('app.version');
 
+    // Sürüm kaydını CI yazar. Kimlik doğrulaması gövdede değil, paylaşılan
+    // jetonla (bkz. AppVersionController::publish) — çağıran bir kullanıcı
+    // değil, yayın hattı.
+    Route::post('/app/version', [AppVersionController::class, 'publish'])
+        ->middleware('throttle:10,1')
+        ->name('app.version.publish');
+
     // Ödeme sağlayıcısının bildirimi.
     //
     // Kimlik doğrulaması YOK: istek PayTR'nin sunucusundan gelir,

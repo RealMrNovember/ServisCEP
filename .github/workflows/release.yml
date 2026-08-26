@@ -45,7 +45,7 @@ jobs:
       run:
         working-directory: mobile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Secret'ların eksiksiz olduğunu doğrula
         env:
@@ -59,7 +59,7 @@ jobs:
           if [ -z "$KEYSTORE_B64" ]; then echo "HATA: ANDROID_KEYSTORE_BASE64 secret'ı tanımlı değil"; exit 1; fi
           if [ -z "$PLAY_SA" ]; then echo "HATA: PLAY_SERVICE_ACCOUNT_JSON secret'ı tanımlı değil"; exit 1; fi
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -112,5 +112,40 @@ jobs:
           # Developer API ile doğrulandı — "draft app" kısıtlaması geçti,
           # alpha track "completed" durumda gerçek bir sürüm barındırıyor.
           # Otomatik yüklemeler artık doğrudan kapalı teste (alpha) akıyor.
-          track: alpha
+          # `track` KULLANIMDAN KALDIRILDI (action README). `tracks`
+          # virgülle ayrılmış isim listesi bekliyor; tek kanal için tek
+          # isim. Eski alan bir gün kaldırılırsa sürüm yayınlamak
+          # tamamen kırılırdı.
+          tracks: alpha
           status: completed
+
+      # Sunucudaki sürüm kaydını CI yazar.
+      #
+      # Bu adım, elle yapılan bir işi ortadan kaldırmak için var. Sürüm
+      # panelden elle giriliyordu ve bir kez unutuldu: 0.7.5 Play'e çıktı,
+      # sunucu hâlâ "sürüm yok" dediği için hiçbir kullanıcıya güncelleme
+      # bildirimi gitmedi. Elle kalan her adım er ya da geç unutulur.
+      #
+      # Yükleme adımından SONRA çalışır — Play'e çıkmamış bir sürümü
+      # kullanıcıya duyurmak, indirilemeyen bir güncelleme göstermek olurdu.
+      #
+      # Bu adım kırmızı verirse AAB zaten yüklenmiştir; eksik olan yalnızca
+      # duyurudur ve panelden elle tamamlanabilir. Yine de sessizce
+      # geçilmiyor: sessiz geçmek, düzeltmeye çalıştığımız hatanın ta kendisi.
+      - name: Sunucuya yayındaki sürümü bildir
+        env:
+          JETON: ${{ secrets.APP_VERSION_PUBLISH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # pubspec tek kaynak: AAB'yi de bu satır belirledi.
+          SATIR=$(grep -m1 '^version:' mobile/pubspec.yaml | awk '{print $2}')
+          SURUM="${SATIR%%+*}"
+          YAPI="${SATIR##*+}"
+          NOT=$(cat mobile/whatsnew/whatsnew-tr-TR)
+
+          echo "Bildiriliyor: ${SURUM} (${YAPI})"
+
+          # --fail-with-body: HTTP hatasında hem çıkışı kırar hem gövdeyi
+          # gösterir; yalnızca --fail olsaydı sunucunun sebebi kaybolurdu.
+          jq -n --arg v "$SURUM" --argjson b "$YAPI" --arg n "$NOT"             '{version:$v, build:$b, notes:$n}'           | curl --fail-with-body --silent --show-error               --retry 3 --retry-delay 5 --retry-connrefused               -X POST https://serviscep.cicibyte.com/api/v1/app/version               -H "Authorization: Bearer ${JETON}"               -H 'Content-Type: application/json'               -H 'Accept: application/json'               --data @-

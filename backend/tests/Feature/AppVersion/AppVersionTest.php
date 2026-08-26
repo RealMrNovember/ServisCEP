@@ -72,4 +72,77 @@ class AppVersionTest extends TestCase
             ->assertJsonPath('data.latest_build', 30)
             ->assertJsonPath('data.notes', 'Teklif formu yenilendi.');
     }
+
+    /**
+     * Jeton tanımlı değilse uç kapalıdır.
+     *
+     * Boş jeton "herkese açık" anlamına gelmemeli: yapılandırma unutulursa
+     * uç, sunucudaki sürüm kaydını isteyen herkese yazdırabilirdi.
+     */
+    public function test_publish_endpoint_is_closed_when_no_token_is_configured(): void
+    {
+        config(['services.app_version.publish_token' => '']);
+
+        $this->postJson('/api/v1/app/version', [
+            'version' => '9.9.9',
+            'build' => 999,
+        ])->assertStatus(503);
+
+        $this->assertNull(Setting::get(AppVersionController::KEY_VERSION));
+    }
+
+    public function test_publish_endpoint_rejects_a_wrong_token(): void
+    {
+        config(['services.app_version.publish_token' => 'dogru-jeton']);
+
+        $this->withHeader('Authorization', 'Bearer yanlis-jeton')
+            ->postJson('/api/v1/app/version', [
+                'version' => '9.9.9',
+                'build' => 999,
+            ])->assertStatus(401);
+
+        $this->assertNull(Setting::get(AppVersionController::KEY_VERSION));
+    }
+
+    /**
+     * Asıl amaç: sürüm kaydı elle giriliyordu ve bir kez unutuldu.
+     * 0.7.5 Play'e çıktı, sunucu "sürüm yok" dedi, kimseye güncelleme
+     * bildirimi gitmedi.
+     */
+    public function test_ci_can_publish_the_released_version(): void
+    {
+        config(['services.app_version.publish_token' => 'dogru-jeton']);
+
+        $this->withHeader('Authorization', 'Bearer dogru-jeton')
+            ->postJson('/api/v1/app/version', [
+                'version' => '0.7.7',
+                'build' => 27,
+                'notes' => 'Ödemelerim ekranı eklendi.',
+            ])->assertOk()
+            ->assertJsonPath('data.latest_version', '0.7.7');
+
+        $this->assertSame('0.7.7', Setting::get(AppVersionController::KEY_VERSION));
+        $this->assertSame('27', Setting::get(AppVersionController::KEY_BUILD));
+        $this->assertSame('Ödemelerim ekranı eklendi.', Setting::get(AppVersionController::KEY_NOTES));
+    }
+
+    /**
+     * Not gönderilmezse var olan not KORUNUR.
+     *
+     * Aksi halde notsuz bir yayın, bir önceki sürümün notunu silerdi ve
+     * kullanıcı boş bir "yenilikler" ekranı görürdü.
+     */
+    public function test_publishing_without_notes_keeps_the_existing_notes(): void
+    {
+        config(['services.app_version.publish_token' => 'dogru-jeton']);
+        Setting::set(AppVersionController::KEY_NOTES, 'Eski not');
+
+        $this->withHeader('Authorization', 'Bearer dogru-jeton')
+            ->postJson('/api/v1/app/version', [
+                'version' => '0.7.8',
+                'build' => 28,
+            ])->assertOk();
+
+        $this->assertSame('Eski not', Setting::get(AppVersionController::KEY_NOTES));
+    }
 }
