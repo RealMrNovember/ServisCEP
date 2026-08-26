@@ -304,25 +304,29 @@ void main() {
       '$hedefDizin/$ad.png',
     ).writeAsBytesSync(bayt.buffer.asUint8List(), flush: true);
 
-    // SIRA ÖNEMLİ: önce zamanlayıcılar boşaltılıyor, SONRA ağaç sökülüyor.
+    // Zamanlayıcılar hem AĞAÇ AYAKTAYKEN hem SÖKÜLDÜKTEN SONRA
+    // boşaltılıyor ve bunun iki ayrı sebebi var:
     //
-    // Ters sırada iskeletin gecikmeli geri çağrısı, ağaç çoktan
-    // sökülmüşken setState çağırıyor ve "defunct element" hatası
-    // veriyordu.
+    // - Önce boşaltılmazsa, iskeletin gecikmeli geri çağrısı ağaç
+    //   sökülmüşken setState çağırıyor ("defunct element").
+    // - Sonra boşaltılmazsa, ilk boşaltma sırasında kurulan yeni bir
+    //   zamanlayıcı (senkron şeridinin 2 sn'lik gizlemesi) sökümden
+    //   sonra bekliyor kalıyor ("A Timer is still pending").
     //
-    // İKİ tür zamanlayıcı var, ikisi ayrı boşaltılıyor: runAsync içinde
-    // kurulanlar GERÇEK zamanda, normal pump sırasında kurulanlar (ör.
-    // iskeletin 500 ms'lik gecikmesi) SAHTE zamanda ilerliyor. Gerçek
-    // taraf 2.5 sn: en uzun tek seferlik zamanlayıcı senkron şeridinin
-    // "tamamlandı" gizlemesi (2 sn) ve o runAsync sırasında kuruluyor.
-    await tester.pump(const Duration(seconds: 1));
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 2500)),
-    );
-    await tester.pump(const Duration(seconds: 1));
+    // Her iki boşaltmada da İKİ tür zamanlayıcı ayrı ayrı ilerletiliyor:
+    // runAsync içinde kurulanlar GERÇEK zamanda, normal pump sırasında
+    // kurulanlar (ör. iskeletin 500 ms'lik gecikmesi) SAHTE zamanda.
+    Future<void> zamanlayicilariBosalt() async {
+      await tester.pump(const Duration(seconds: 3));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 2500)),
+      );
+      await tester.pump(const Duration(seconds: 3));
+    }
 
+    await zamanlayicilariBosalt();
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
+    await zamanlayicilariBosalt();
   }
 
   testWidgets('01 pano', (t) => cek(t, '01-pano', const DashboardScreen()));
