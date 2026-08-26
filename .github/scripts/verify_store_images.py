@@ -17,12 +17,17 @@ KURALLAR = {
     # (en, boy) TAM eslesmeli
     "icon": {"tam": (512, 512), "azami_mb": 1},
     "featureGraphic": {"tam": (1024, 500), "azami_mb": 15},
-    # Ekran goruntuleri: her kenar 320-3840 arasi ve en/boy orani
-    # 16:9 ile 9:16 arasinda. Modern telefonlarin 20:9 orani REDDEDILIYOR
-    # — cihazdan ham cekilen goruntuler tam bu yuzden kabul edilmiyor.
+    # Ekran goruntuleri: her kenar 320-3840 arasi.
+    #
+    # Oran siniri BELGEDEN degil, GOZLEMDEN: Play dokumantasyonu "16:9 ya
+    # da 9:16" diyor ama bu listede halihazirda 720x1600 (9:20) goruntuler
+    # duruyor ve kabul edilmisler. Belgeye gore sikilastirmak, gecerli
+    # cihaz cikislarini bosuna reddederdi. Buradaki genis sinir yalnizca
+    # bariz hatayi (yatay/kare bir goruntuyu telefon kutusuna koymak)
+    # yakalamak icin.
     "phoneScreenshots": {
         "aralik": (320, 3840),
-        "oran": (9 / 16, 16 / 9),
+        "oran": (0.4, 2.5),
         "azami_mb": 8,
         "en_az": 2,
         "en_cok": 8,
@@ -86,7 +91,7 @@ def dogrula(tip: str, yol: str) -> None:
             if not (o_alt - 1e-6 <= oran <= o_ust + 1e-6):
                 sys.exit(
                     f"{ad}: {en}x{boy} (oran {oran:.3f}) — "
-                    f"Play 16:9 ile 9:16 arasi istiyor."
+                    f"telefon goruntusu icin {o_alt}-{o_ust} disinda."
                 )
 
         print(f"  {ad}: {en}x{boy}, {mb:.2f} MB — uygun")
