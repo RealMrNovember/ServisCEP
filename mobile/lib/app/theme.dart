@@ -171,12 +171,21 @@ abstract final class AppTheme {
           horizontal: AppSpacing.xl,
           vertical: AppSpacing.xs,
         ),
+        // Aile AÇIKÇA veriliyor. ListTile başlık/alt başlık stilleri
+        // TextTheme'den MİRAS ALMIYOR; burada verilen stil onu tamamen
+        // değiştiriyor. Aile yazılmadığında bu iki alan sistem fontuna
+        // düşüyordu: müşteri adları, belge başlıkları ve daha bir düzine
+        // liste satırı, uygulamanın geri kalanı Barlow'ken Roboto ile
+        // çiziliyordu. Ekranda göze batmayacak kadar benzer oldukları
+        // için uzun süre fark edilmedi.
         titleTextStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
           fontSize: 15.5,
           fontWeight: FontWeight.w600,
           color: scheme.onSurface,
         ),
         subtitleTextStyle: TextStyle(
+          fontFamily: AppTypography.uiFamily,
           fontSize: 12.5,
           color: scheme.onSurfaceVariant,
           height: 1.35,
