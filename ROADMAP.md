@@ -293,6 +293,20 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 - [x] Tasarım sistemi tokenları, bileşen katmanı, yeni alt menü
 - [x] Yeni marka işareti — uygulama simgesi
 - [ ] **42 ekranın yeniden düzeni** — Asıl iş. Tasarımcının teslimatı hazır.
+- [ ] **Yeniden düzenden SONRA mağaza ekran görüntülerini tazele** — Play
+      listesindeki görüntüler uygulamanın gerçek ekranları; arayüz
+      değişince bayatlıyorlar ve mağazada eski tasarım görünüyor. Tam da
+      bu yaşandı: listedeki üç görüntü eski alt menüyü ve eski marka adını
+      gösteriyordu. Elle iş yok, iki adım:
+
+      ```
+      cd mobile && TEKNIKCEP_STORE_DIR=build/store flutter test test/store
+      python assets/branding/generate_store_screenshots.py
+      python assets/branding/generate_feature_graphic.py   # afişteki maket de tazelenir
+      ```
+
+      Sonra `gh workflow run store-listing.yml -f komut=yukle`.
+      Ayrıntı: [assets/branding/README.md](assets/branding/README.md).
 - [x] **Mağaza görselleri ve favicon** (2026-08-26) — Play'de İKİ ayrı
       simge var ve birlikte değişmiyorlar: AAB'nin içindeki launcher
       ikonu ile mağaza listesinin 512x512 simgesi. Yeni işaret 0.7.7 ile
@@ -306,6 +320,25 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
       çekilseydi müşteri adları ve IBAN Play'de yayınlanmış olurdu.
       Favicon ve tanıtım sitesi görselleri de yenilendi.
 - [ ] Logo'nun kalan yüzeyi: PDF anteti
+- [x] **Yazı tipi ailesi bileşen temalarında eksikti** (2026-08-26) —
+      Bileşen temaları (listTileTheme, chipTheme, dialogTheme, buton
+      temaları, inputDecoration, snackBar) TextTheme'den MİRAS ALMIYOR ve
+      `ThemeData.fontFamily` de onlara uygulanmıyor. Aile verilmeyen 13
+      stil vardı: müşteri adları, belge başlıkları, filtre çipleri, düğme
+      etiketleri ve form etiketleri, uygulamanın geri kalanı Barlow'ken
+      sistem fontuyla çiziliyordu. Cihazda göze batmayacak kadar benzer
+      oldukları için uzun süre fark edilmedi; mağaza ekran görüntüsü
+      koşumu ortaya çıkardı (test motorunda sistem fontu yok, o metinler
+      dolu blok çıktı). Bir testle kilitlendi: bileşen stili TANIMLIYSA
+      aileyi taşımak zorunda.
+- [x] **İskelet bileşeninin yaşam döngüsü** (2026-08-26) — Animasyon
+      denetleyicisi `late` alandı, yani ilk erişimde oluşuyordu. Liste
+      500 ms'den hızlı yüklendiğinde — çoğu zaman — iskelet hiç görünmüyor
+      ve ilk erişim `dispose()` oluyordu: sırf yok etmek için, KAPATILMIŞ
+      bir eleman üzerinde ticker kuruluyordu. Ticker kurulumu ağaçta
+      yukarı baktığı için (TickerMode) bu tanımsız davranış; hata
+      ayıklamada assert, yayında sessiz. Denetleyici artık `initState`'te
+      kuruluyor, gecikme de iptal edilebilir bir Timer.
 - [ ] Adımlı teklif formu (4 adım)
 - [ ] İkon göçü — 176 çağrı yeri Material'dan tasarım setine
 
