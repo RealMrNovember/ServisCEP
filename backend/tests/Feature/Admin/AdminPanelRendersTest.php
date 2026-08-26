@@ -8,10 +8,13 @@ use App\Filament\Resources\Companies\Pages\ListCompanies;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\AdminUser;
 use App\Models\Company;
+use App\Models\PaymentRequest;
 use App\Models\Plan;
 use App\Models\User;
+use App\Notifications\SubscriptionChanged;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -131,7 +134,7 @@ class AdminPanelRendersTest extends TestCase
 
     public function test_customer_is_always_notified_when_subscription_changes(): void
     {
-        \Illuminate\Support\Facades\Notification::fake();
+        Notification::fake();
 
         $user = User::factory()->create();
         $company = Company::findOrFail($user->company_id);
@@ -146,15 +149,15 @@ class AdminPanelRendersTest extends TestCase
 
         // Müşteri ödemesini yaptıktan sonra onayı bekliyor — bildirim
         // KAPATILAMAZ, her değişiklikte gitmek zorunda (kullanıcı kararı).
-        \Illuminate\Support\Facades\Notification::assertSentTo(
+        Notification::assertSentTo(
             $user,
-            \App\Notifications\SubscriptionChanged::class,
+            SubscriptionChanged::class,
         );
     }
 
     public function test_payment_approval_notifies_the_customer(): void
     {
-        \Illuminate\Support\Facades\Notification::fake();
+        Notification::fake();
 
         $user = User::factory()->create();
         $company = Company::findOrFail($user->company_id);
@@ -164,7 +167,7 @@ class AdminPanelRendersTest extends TestCase
             'is_active' => true, 'sort_order' => 1,
         ]);
 
-        $request = \App\Models\PaymentRequest::create([
+        $request = PaymentRequest::create([
             'company_id' => $company->id,
             'requested_by_user_id' => $user->id,
             'plan_id' => $plan->id,
@@ -174,9 +177,9 @@ class AdminPanelRendersTest extends TestCase
 
         $request->approve('MONTHLY', AdminUser::first());
 
-        \Illuminate\Support\Facades\Notification::assertSentTo(
+        Notification::assertSentTo(
             $user,
-            \App\Notifications\SubscriptionChanged::class,
+            SubscriptionChanged::class,
         );
     }
 

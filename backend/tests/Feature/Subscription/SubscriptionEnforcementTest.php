@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Subscription;
 
 use App\Models\Company;
+use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -55,7 +56,7 @@ class SubscriptionEnforcementTest extends TestCase
         $this->getJson('/api/v1/plans')->assertOk();
 
         // Ödeme bildirimi (yenileme yolu) çalışmalı.
-        $plan = \App\Models\Plan::create([
+        $plan = Plan::create([
             'name' => 'Başlangıç', 'slug' => 'baslangic',
             'price_minor' => 50000, 'price_yearly_minor' => 500000,
             'is_active' => true, 'sort_order' => 1,

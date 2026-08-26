@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Personnel;
 
+use App\Models\User;
 use App\Support\RolePermissions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StorePersonnelRequest extends FormRequest
 {
@@ -54,16 +56,16 @@ class StorePersonnelRequest extends FormRequest
      * Genel "bu e-posta kullanılıyor" mesajı, sahibi çıkmaz sokakta
      * bırakıyordu.
      */
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function (\Illuminate\Validation\Validator $validator): void {
+        $validator->after(function (Validator $validator): void {
             // Biçim hatası varsa (geçersiz e-posta) benzersizliğe bakmaya
             // gerek yok — kullanıcıya tek ve net bir hata gösterilir.
             if ($validator->errors()->has('email')) {
                 return;
             }
 
-            $existing = \App\Models\User::where('email', $this->input('email'))->first();
+            $existing = User::where('email', $this->input('email'))->first();
             if ($existing === null) {
                 return;
             }

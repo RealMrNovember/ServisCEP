@@ -36,5 +36,4 @@ class JobIsolationTest extends TestCase
             ->putJson("/api/v1/jobs/{$foreignJob->id}", ['status' => 'IPTAL'])
             ->assertNotFound();
     }
-
 }

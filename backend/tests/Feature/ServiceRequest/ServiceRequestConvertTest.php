@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ServiceRequest;
 
+use App\Models\Job;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -97,7 +98,7 @@ class ServiceRequestConvertTest extends TestCase
             'job_id' => $clientJobId,
         ])->assertOk()->assertJsonPath('data.id', $clientJobId);
 
-        $this->assertSame(1, \App\Models\Job::where('id', $clientJobId)->count());
+        $this->assertSame(1, Job::where('id', $clientJobId)->count());
 
         // Farklı bir job_id ile tekrar dönüştürme denemesi hâlâ reddedilir.
         $this->postJson("/api/v1/service-requests/{$serviceRequest->id}/convert", [

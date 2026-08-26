@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\JobPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\URL;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\URL;
  * doğrulanmış `download_url` üzerinden (Sanctum) ya da süreli,
  * imzalı `signed_url` üzerinden sağlanır.
  *
- * @mixin \App\Models\JobPhoto
+ * @mixin JobPhoto
  */
 class JobPhotoResource extends JsonResource
 {

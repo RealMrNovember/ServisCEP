@@ -12,8 +12,8 @@ use App\Models\Job;
 use App\Models\JobPhoto;
 use App\Services\JobMediaService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,9 +22,7 @@ class JobPhotoController extends Controller
 {
     use AcceptsClientGeneratedId;
 
-    public function __construct(private readonly JobMediaService $jobMediaService)
-    {
-    }
+    public function __construct(private readonly JobMediaService $jobMediaService) {}
 
     public function index(Job $job): AnonymousResourceCollection
     {

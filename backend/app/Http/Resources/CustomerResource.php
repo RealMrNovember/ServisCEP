@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\URL;
 
 /**
- * @mixin \App\Models\Customer
+ * @mixin Customer
  */
 class CustomerResource extends JsonResource
 {

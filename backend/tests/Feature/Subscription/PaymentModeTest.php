@@ -4,7 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Subscription;
 
+use App\Models\AdminUser;
+use App\Models\Company;
+use App\Models\PaymentRequest;
+use App\Models\Plan;
+use App\Models\Setting;
+use App\Models\SubscriptionPayment;
 use App\Models\User;
+use App\Services\FcmService;
 use App\Support\PaymentConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,16 +45,16 @@ class PaymentModeTest extends TestCase
     {
         // "Etkin" isareti tek basina yetmez. Eksik yapilandirmayla kart
         // kipine gecmek, kullaniciyi yarida kalan bir akisa sokar.
-        \App\Models\Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
-        \App\Models\Setting::set(PaymentConfig::KEY_ENABLED, '1');
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_ENABLED, '1');
 
         $this->assertSame(PaymentConfig::MODE_TRANSFER, $this->kip());
     }
 
     public function test_switches_to_card_mode_when_fully_configured(): void
     {
-        \App\Models\Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
-        \App\Models\Setting::set(PaymentConfig::KEY_ENABLED, '1');
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_ENABLED, '1');
         foreach (PaymentConfig::SECRET_KEYS as $anahtar) {
             PaymentConfig::setSecret($anahtar, 'deneme-deger-123456');
         }
@@ -60,8 +67,8 @@ class PaymentModeTest extends TestCase
         foreach (PaymentConfig::SECRET_KEYS as $anahtar) {
             PaymentConfig::setSecret($anahtar, 'deneme-deger-123456');
         }
-        \App\Models\Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
-        \App\Models\Setting::set(PaymentConfig::KEY_ENABLED, '0');
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_ENABLED, '0');
 
         $this->assertSame(PaymentConfig::MODE_TRANSFER, $this->kip());
     }
@@ -72,7 +79,7 @@ class PaymentModeTest extends TestCase
         // imzalayabilir; veritabaninda duz metin durmamali.
         PaymentConfig::setSecret('payment.paytr.merchant_key', 'gizli-anahtar-42');
 
-        $ham = \App\Models\Setting::query()->find('payment.paytr.merchant_key')?->value;
+        $ham = Setting::query()->find('payment.paytr.merchant_key')?->value;
 
         $this->assertNotNull($ham);
         $this->assertStringNotContainsString('gizli-anahtar-42', $ham);
@@ -93,9 +100,9 @@ class PaymentModeTest extends TestCase
     public function test_transfer_info_is_sent_even_in_card_mode(): void
     {
         // Saglayici gecici olarak duserse kullanici yine de odeyebilmeli.
-        \App\Models\Setting::set('payment_iban', 'TR00 0000 0000 0000 0000 0000 00');
-        \App\Models\Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
-        \App\Models\Setting::set(PaymentConfig::KEY_ENABLED, '1');
+        Setting::set('payment_iban', 'TR00 0000 0000 0000 0000 0000 00');
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_ENABLED, '1');
         foreach (PaymentConfig::SECRET_KEYS as $anahtar) {
             PaymentConfig::setSecret($anahtar, 'deneme-deger-123456');
         }
@@ -125,7 +132,7 @@ class PaymentModeTest extends TestCase
     {
         $user = User::factory()->create();
         $this->withToken($user->createToken('test')->plainTextToken);
-        $plan = \App\Models\Plan::create([
+        $plan = Plan::create([
             'name' => 'Test Paketi',
             'slug' => 'test-paketi',
             'price_minor' => 100000,
@@ -145,7 +152,7 @@ class PaymentModeTest extends TestCase
         $user = User::factory()->create();
         $this->withToken($user->createToken('test')->plainTextToken);
 
-        $plan = \App\Models\Plan::create([
+        $plan = Plan::create([
             'name' => 'Test Paketi',
             'slug' => 'test-gecmis',
             'price_minor' => 100000,
@@ -153,7 +160,7 @@ class PaymentModeTest extends TestCase
             'duration_days' => 30,
         ]);
 
-        \App\Models\SubscriptionPayment::create([
+        SubscriptionPayment::create([
             'company_id' => $user->company_id,
             'plan_id' => $plan->id,
             'amount_minor' => 100000,
@@ -165,7 +172,7 @@ class PaymentModeTest extends TestCase
             'paid_at' => now(),
         ]);
 
-        \App\Models\PaymentRequest::create([
+        PaymentRequest::create([
             'company_id' => $user->company_id,
             'plan_id' => $plan->id,
             'claimed_amount_minor' => 50000,
@@ -183,7 +190,7 @@ class PaymentModeTest extends TestCase
     public function test_history_is_scoped_to_own_company(): void
     {
         $baskasi = User::factory()->create();
-        \App\Models\SubscriptionPayment::create([
+        SubscriptionPayment::create([
             'company_id' => $baskasi->company_id,
             'amount_minor' => 100000,
             'currency' => 'TRY',
@@ -206,14 +213,14 @@ class PaymentModeTest extends TestCase
         // Kullanici havalesini yapmis ve cevap bekliyor. Reddedildigini
         // ogrenmesinin baska yolu yok; bildirim gonderilmezse parasinin
         // ne oldugunu bilmeden bekler.
-        $sahte = new class extends \App\Services\FcmService
+        $sahte = new class extends FcmService
         {
             public array $gonderilen = [];
 
             public function __construct() {}
 
             public function sendToCompany(
-                \App\Models\Company $company,
+                Company $company,
                 string $title,
                 string $body,
                 array $data = [],
@@ -223,16 +230,16 @@ class PaymentModeTest extends TestCase
                 return 1;
             }
         };
-        $this->app->instance(\App\Services\FcmService::class, $sahte);
+        $this->app->instance(FcmService::class, $sahte);
 
         $user = User::factory()->create();
-        $admin = \App\Models\AdminUser::create([
+        $admin = AdminUser::create([
             'full_name' => 'Test Yonetici',
             'email' => 'yonetici-'.uniqid().'@teknikcep.test',
             'password' => 'gizli-parola-123',
         ]);
 
-        $talep = \App\Models\PaymentRequest::create([
+        $talep = PaymentRequest::create([
             'company_id' => $user->company_id,
             'claimed_amount_minor' => 50000,
             'status' => 'PENDING',
@@ -251,8 +258,8 @@ class PaymentModeTest extends TestCase
         // Imzasi gecerli ama karsiligi olmayan bildirim: gercekten para
         // hareketi olmus demektir. Yalnizca gunluge yazmak yetmez,
         // gunlukler budaniyor; para hareketi budanmamali.
-        \App\Models\Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
-        \App\Models\Setting::set(PaymentConfig::KEY_ENABLED, '1');
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_ENABLED, '1');
         PaymentConfig::setSecret('payment.paytr.merchant_id', 'MID123');
         PaymentConfig::setSecret('payment.paytr.merchant_key', 'KEY123');
         PaymentConfig::setSecret('payment.paytr.merchant_salt', 'SALT123');
@@ -267,10 +274,10 @@ class PaymentModeTest extends TestCase
             'hash' => $imza,
         ])->assertOk()->assertSee('OK');
 
-        $kayit = \App\Models\SubscriptionPayment::where('provider_ref', $oid)->first();
+        $kayit = SubscriptionPayment::where('provider_ref', $oid)->first();
 
         $this->assertNotNull($kayit, 'Yetim odeme kayit altina alinmali');
-        $this->assertSame(\App\Models\SubscriptionPayment::STATUS_ORPHAN, $kayit->status);
+        $this->assertSame(SubscriptionPayment::STATUS_ORPHAN, $kayit->status);
         $this->assertSame(250000, $kayit->amount_minor);
         $this->assertNull($kayit->company_id);
         $this->assertNotNull($kayit->provider_payload);

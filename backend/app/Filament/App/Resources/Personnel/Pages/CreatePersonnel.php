@@ -3,7 +3,6 @@
 namespace App\Filament\App\Resources\Personnel\Pages;
 
 use App\Filament\App\Resources\Personnel\PersonnelResource;
-use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -25,7 +24,7 @@ class CreatePersonnel extends CreateRecord
                 ->danger()
                 ->send();
 
-            throw new Halt();
+            throw new Halt;
         }
 
         $data['company_id'] = $company->id;

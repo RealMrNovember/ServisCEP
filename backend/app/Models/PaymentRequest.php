@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Notifications\NewPaymentRequestReceived;
+use App\Services\FcmService;
+use App\Services\SubscriptionService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -93,7 +95,7 @@ class PaymentRequest extends Model
      */
     public function approve(string $duration, AdminUser $admin, ?string $note = null, ?string $approvedPlanId = null): void
     {
-        $service = app(\App\Services\SubscriptionService::class);
+        $service = app(SubscriptionService::class);
         $planId = $approvedPlanId ?: $this->plan_id;
 
         // Süre hesabı TEK kaynaktan gelir (SubscriptionService) — admin
@@ -146,7 +148,7 @@ class PaymentRequest extends Model
 
         // Gönderim hatası reddi ASLA geri almamalı; karar zaten yazıldı.
         try {
-            app(\App\Services\FcmService::class)->sendToCompany(
+            app(FcmService::class)->sendToCompany(
                 $this->company,
                 'Ödeme bildirimin onaylanmadı',
                 $temizNot !== ''
@@ -155,7 +157,7 @@ class PaymentRequest extends Model
                 ['type' => 'payment_request_rejected'],
             );
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Ödeme reddi bildirimi gönderilemedi', [
+            Log::error('Ödeme reddi bildirimi gönderilemedi', [
                 'payment_request_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);

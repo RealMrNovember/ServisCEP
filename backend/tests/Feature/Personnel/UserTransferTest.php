@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Personnel;
 
 use App\Models\AdminUser;
-use App\Models\Company;
 use App\Models\Customer;
 use App\Models\DeviceToken;
 use App\Models\User;

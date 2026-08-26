@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\AppLog;
 use App\Models\Company;
 use App\Models\User;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -126,7 +127,7 @@ class AuthService
             ];
 
             // Google HTTP ile reddettiyse durum kodu ve gövdesi asıl ipucu.
-            if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
+            if ($e instanceof RequestException && $e->hasResponse()) {
                 $response = $e->getResponse();
                 $context['google_status'] = $response->getStatusCode();
                 $context['google_body'] = substr((string) $response->getBody(), 0, 500);

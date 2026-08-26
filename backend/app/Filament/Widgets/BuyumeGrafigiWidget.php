@@ -7,6 +7,7 @@ namespace App\Filament\Widgets;
 use App\Models\Company;
 use App\Models\User;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Collection;
 
 /**
  * Son 30 günün günlük kayıt eğrisi.
@@ -33,7 +34,7 @@ class BuyumeGrafigiWidget extends ChartWidget
     }
 
     /**
-     * @return \Illuminate\Support\Collection<string, int> tarih => adet
+     * @return Collection<string, int> tarih => adet
      *
      * Gruplama PHP'de: `date(created_at)` gibi ifadelerin davranışı
      * veritabanı motoruna göre değişiyor ve widget testlerde (SQLite)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -32,7 +33,7 @@ class UnauthenticatedApiResponseTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('protectedEndpoints')]
+    #[DataProvider('protectedEndpoints')]
     public function test_returns_401_without_json_accept_header(string $endpoint): void
     {
         // Kasıtlı olarak `getJson` DEĞİL — Accept başlığı olmayan ham istek.
@@ -41,7 +42,7 @@ class UnauthenticatedApiResponseTest extends TestCase
             ->assertJsonPath('message', 'Unauthenticated.');
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('protectedEndpoints')]
+    #[DataProvider('protectedEndpoints')]
     public function test_returns_401_with_json_accept_header(string $endpoint): void
     {
         $this->getJson($endpoint)->assertStatus(401);

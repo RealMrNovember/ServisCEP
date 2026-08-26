@@ -6,12 +6,12 @@ namespace App\Filament\Resources\AppLogs\Tables;
 
 use App\Models\AppLog;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Filament\Forms\Components\DatePicker;
 use Illuminate\Support\HtmlString;
 
 class AppLogsTable

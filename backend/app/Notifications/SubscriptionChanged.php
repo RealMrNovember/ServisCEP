@@ -22,8 +22,7 @@ class SubscriptionChanged extends Notification
     public function __construct(
         private readonly Company $company,
         private readonly bool $extended,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<int, string>

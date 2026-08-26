@@ -18,8 +18,7 @@ class CustomerLedgerController extends Controller
     public function __construct(
         private readonly CustomerLedgerService $customerLedgerService,
         private readonly AuditLogService $auditLogService,
-    ) {
-    }
+    ) {}
 
     /**
      * Kronolojik hareket listesi + güncel bakiye (bkz. docs/15 § Bakiye

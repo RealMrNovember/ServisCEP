@@ -21,9 +21,7 @@ class JobSignatureController extends Controller
 {
     use AcceptsClientGeneratedId;
 
-    public function __construct(private readonly JobMediaService $jobMediaService)
-    {
-    }
+    public function __construct(private readonly JobMediaService $jobMediaService) {}
 
     public function index(Job $job): AnonymousResourceCollection
     {

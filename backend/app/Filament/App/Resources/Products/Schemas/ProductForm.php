@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Resources\Products\Schemas;
 
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;

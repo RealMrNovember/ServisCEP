@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Concerns\AcceptsClientGeneratedId;
-use App\Http\Concerns\CalculatesDocumentTotal;
 use App\Http\Concerns\DetectsSyncConflicts;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Quote\StoreQuoteRequest;
@@ -15,6 +14,7 @@ use App\Http\Resources\SyncConflictResource;
 use App\Models\Quote;
 use App\Services\AuditLogService;
 use App\Services\SyncConflictService;
+use App\Support\DocumentTotal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,14 +24,12 @@ use Illuminate\Support\Facades\Gate;
 class QuoteController extends Controller
 {
     use AcceptsClientGeneratedId;
-    use CalculatesDocumentTotal;
     use DetectsSyncConflicts;
 
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly SyncConflictService $syncConflictService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -59,7 +57,7 @@ class QuoteController extends Controller
         $data = $request->validated();
         $items = $data['items'];
         unset($data['items']);
-        $data['total_minor'] = $this->calculateItemsTotal($items, $data['vat_mode'] ?? 'EXCLUDED');
+        $data['total_minor'] = DocumentTotal::forItems($items, $data['vat_mode'] ?? 'EXCLUDED');
 
         $quote = DB::transaction(function () use ($data, $items) {
             $quote = Quote::create($data);

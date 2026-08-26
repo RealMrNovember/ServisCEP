@@ -16,9 +16,7 @@ use Illuminate\Notifications\Notification;
  */
 class NewPaymentRequestReceived extends Notification
 {
-    public function __construct(private readonly PaymentRequest $paymentRequest)
-    {
-    }
+    public function __construct(private readonly PaymentRequest $paymentRequest) {}
 
     /**
      * @return array<int, string>

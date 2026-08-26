@@ -19,9 +19,7 @@ use Illuminate\Http\Request;
  */
 class CompanyController extends Controller
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
-    }
+    public function __construct(private readonly AuditLogService $auditLogService) {}
 
     public function show(Request $request): CompanyResource
     {

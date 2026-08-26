@@ -28,8 +28,7 @@ class CustomerController extends Controller
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly SyncConflictService $syncConflictService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {

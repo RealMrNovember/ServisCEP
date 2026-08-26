@@ -11,8 +11,8 @@ use App\Http\Resources\JobNoteResource;
 use App\Models\Job;
 use App\Models\JobNote;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 class JobNoteController extends Controller

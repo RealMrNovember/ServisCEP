@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Push;
 
+use App\Models\Company;
 use App\Models\DeviceToken;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,7 +96,7 @@ class DeviceTokenTest extends TestCase
     public function test_device_registration_works_even_when_subscription_expired(): void
     {
         $user = User::factory()->create();
-        \App\Models\Company::whereKey($user->company_id)->update([
+        Company::whereKey($user->company_id)->update([
             'subscription_expires_at' => now()->subDay(),
         ]);
         $this->withToken($user->createToken('test')->plainTextToken);

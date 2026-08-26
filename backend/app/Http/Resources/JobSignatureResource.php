@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\JobSignature;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\URL;
 
 /**
- * @mixin \App\Models\JobSignature
+ * @mixin JobSignature
  */
 class JobSignatureResource extends JsonResource
 {

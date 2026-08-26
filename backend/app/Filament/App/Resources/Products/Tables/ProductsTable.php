@@ -178,7 +178,7 @@ class ProductsTable
                                 'quantity' => $data['quantity'],
                                 'reference_type' => 'warranty',
                                 'reference_id' => $warranty->id,
-                                'note' => "Müşteriye montaj — garanti kaydı oluşturuldu.",
+                                'note' => 'Müşteriye montaj — garanti kaydı oluşturuldu.',
                             ]);
                         });
 

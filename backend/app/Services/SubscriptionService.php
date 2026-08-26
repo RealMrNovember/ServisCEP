@@ -25,9 +25,7 @@ use Illuminate\Support\Facades\Notification;
  */
 class SubscriptionService
 {
-    public function __construct(private readonly FcmService $fcm)
-    {
-    }
+    public function __construct(private readonly FcmService $fcm) {}
 
     /**
      * Uzatmanın başlangıç noktası: süre henüz dolmadıysa üzerine eklenir
@@ -83,7 +81,6 @@ class SubscriptionService
             return $locked->refresh();
         });
     }
-
 
     /**
      * Aboneliği PLANIN tanımladığı süre kadar uzatır.

@@ -17,9 +17,7 @@ use Laravel\Socialite\Facades\Socialite;
  */
 class GoogleAuthController extends Controller
 {
-    public function __construct(private readonly AuthService $authService)
-    {
-    }
+    public function __construct(private readonly AuthService $authService) {}
 
     public function redirect(): RedirectResponse
     {

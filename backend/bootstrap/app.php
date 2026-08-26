@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureSubscriptionIsActive;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             | Request::HEADER_X_FORWARDED_PROTO);
 
         $middleware->alias([
-            'subscription.active' => \App\Http\Middleware\EnsureSubscriptionIsActive::class,
+            'subscription.active' => EnsureSubscriptionIsActive::class,
         ]);
 
         // Laravel'in varsayılanı `redirectGuestsTo(fn () => route('login'))`

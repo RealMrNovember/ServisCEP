@@ -31,9 +31,7 @@ use Illuminate\Support\Facades\Hash;
  */
 class PersonnelController extends Controller
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
-    }
+    public function __construct(private readonly AuditLogService $auditLogService) {}
 
     private function authorizeManage(Request $request): User
     {

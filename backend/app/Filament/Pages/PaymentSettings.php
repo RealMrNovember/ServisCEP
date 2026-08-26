@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Models\Setting;
 use App\Support\PaymentConfig;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -145,15 +146,15 @@ class PaymentSettings extends Page implements HasForms
     {
         $data = $this->form->getState();
 
-        \App\Models\Setting::set(
+        Setting::set(
             PaymentConfig::KEY_PROVIDER,
             (string) ($data['provider'] ?? PaymentConfig::PROVIDER_NONE),
         );
-        \App\Models\Setting::set(
+        Setting::set(
             PaymentConfig::KEY_ENABLED,
             ($data['enabled'] ?? false) ? '1' : '0',
         );
-        \App\Models\Setting::set(
+        Setting::set(
             PaymentConfig::KEY_TEST_MODE,
             ($data['test_mode'] ?? true) ? '1' : '0',
         );

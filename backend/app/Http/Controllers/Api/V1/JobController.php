@@ -31,8 +31,7 @@ class JobController extends Controller
         private readonly CustomerLedgerService $customerLedgerService,
         private readonly AuditLogService $auditLogService,
         private readonly SyncConflictService $syncConflictService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {

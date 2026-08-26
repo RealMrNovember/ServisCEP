@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Log;
 class FcmService
 {
     private const TOKEN_CACHE_KEY = 'fcm:access_token';
+
     private const SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
 
     public function isConfigured(): bool

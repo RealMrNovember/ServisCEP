@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\RolePermissions;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\HasName;
@@ -43,7 +44,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
      */
     public function hasPermission(string $ability): bool
     {
-        return \App\Support\RolePermissions::allows($this->role, $ability);
+        return RolePermissions::allows($this->role, $ability);
     }
 
     public function company(): BelongsTo

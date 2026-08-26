@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\App\Pages\Auth\EditProfile;
 use App\Filament\App\Pages\Auth\RegisterCompany;
+use App\Http\Middleware\EnsureAppPanelSubscriptionIsActive;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -69,7 +70,7 @@ class AppPanelProvider extends PanelProvider
                 // Abonelik süresi dolan şirketi Abonelik sayfasına
                 // yönlendirir (yalnızca GET; Livewire/logout POST'ları
                 // serbest) — bkz. EnsureAppPanelSubscriptionIsActive.
-                \App\Http\Middleware\EnsureAppPanelSubscriptionIsActive::class,
+                EnsureAppPanelSubscriptionIsActive::class,
             ]);
     }
 }

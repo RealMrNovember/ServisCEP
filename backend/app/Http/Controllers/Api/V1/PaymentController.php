@@ -24,8 +24,7 @@ class PaymentController extends Controller
     public function __construct(
         private readonly CustomerLedgerService $customerLedgerService,
         private readonly AuditLogService $auditLogService,
-    ) {
-    }
+    ) {}
 
     public function index(Customer $customer): AnonymousResourceCollection
     {

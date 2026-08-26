@@ -23,9 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class CustomerTaxCertificateController extends Controller
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
-    }
+    public function __construct(private readonly AuditLogService $auditLogService) {}
 
     public function store(StoreCustomerTaxCertificateRequest $request, Customer $customer): JsonResponse
     {

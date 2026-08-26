@@ -6,6 +6,7 @@ namespace App\Http\Requests\Profile;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Validator;
 
 class UpdatePasswordRequest extends FormRequest
 {
@@ -25,9 +26,9 @@ class UpdatePasswordRequest extends FormRequest
      * açık kalan kullanıcının hesabının ele geçirilmesini engelleyen tek
      * kontrol budur.
      */
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function (\Illuminate\Validation\Validator $validator): void {
+        $validator->after(function (Validator $validator): void {
             if ($validator->errors()->has('current_password')) {
                 return;
             }

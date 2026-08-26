@@ -19,9 +19,13 @@ namespace App\Support;
 final class RolePermissions
 {
     public const OWNER = 'OWNER';
+
     public const ADMIN = 'ADMIN';
+
     public const TECHNICIAN = 'TECHNICIAN';
+
     public const ACCOUNTING = 'ACCOUNTING';
+
     public const VIEWER = 'VIEWER';
 
     /** Personel eklerken seçilebilecek roller (OWNER dahil değil — bkz. below). */
@@ -31,18 +35,31 @@ final class RolePermissions
 
     // Yetenekler
     public const CUSTOMERS_VIEW = 'customers.view';
+
     public const CUSTOMERS_MANAGE = 'customers.manage';
+
     public const CUSTOMERS_DELETE = 'customers.delete';
+
     public const JOBS_VIEW = 'jobs.view';
+
     public const JOBS_MANAGE = 'jobs.manage';
+
     public const DOCUMENTS_VIEW = 'documents.view';
+
     public const DOCUMENTS_MANAGE = 'documents.manage';
+
     public const FINANCE_VIEW = 'finance.view';
+
     public const FINANCE_MANAGE = 'finance.manage';
+
     public const LEDGER_ADJUST = 'ledger.adjust';
+
     public const COMPANY_MANAGE = 'company.manage';
+
     public const PERSONNEL_MANAGE = 'personnel.manage';
+
     public const AUDIT_VIEW = 'audit.view';
+
     public const CONFLICTS_RESOLVE = 'conflicts.resolve';
 
     /**
