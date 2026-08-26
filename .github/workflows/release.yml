@@ -142,10 +142,22 @@ jobs:
           SATIR=$(grep -m1 '^version:' mobile/pubspec.yaml | awk '{print $2}')
           SURUM="${SATIR%%+*}"
           YAPI="${SATIR##*+}"
-          NOT=$(cat mobile/whatsnew/whatsnew-tr-TR)
 
           echo "Bildiriliyor: ${SURUM} (${YAPI})"
 
+          # JSON'u python3 üretiyor, jq değil: sürüm notunu zaten python3
+          # hazırlıyor (prepare_release_notes.py), yani yeni bir araç
+          # bağımlılığı eklemeye gerek yok.
+          python3 - "$SURUM" "$YAPI" > /tmp/surum.json <<'PYEOF'
+          import json, sys
+          notlar = open('mobile/whatsnew/whatsnew-tr-TR', encoding='utf-8').read()
+          print(json.dumps({
+              'version': sys.argv[1],
+              'build': int(sys.argv[2]),
+              'notes': notlar,
+          }))
+          PYEOF
+
           # --fail-with-body: HTTP hatasında hem çıkışı kırar hem gövdeyi
           # gösterir; yalnızca --fail olsaydı sunucunun sebebi kaybolurdu.
-          jq -n --arg v "$SURUM" --argjson b "$YAPI" --arg n "$NOT"             '{version:$v, build:$b, notes:$n}'           | curl --fail-with-body --silent --show-error               --retry 3 --retry-delay 5 --retry-connrefused               -X POST https://serviscep.cicibyte.com/api/v1/app/version               -H "Authorization: Bearer ${JETON}"               -H 'Content-Type: application/json'               -H 'Accept: application/json'               --data @-
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 5 --retry-connrefused -X POST https://serviscep.cicibyte.com/api/v1/app/version -H "Authorization: Bearer ${JETON}" -H 'Content-Type: application/json' -H 'Accept: application/json' --data @/tmp/surum.json
