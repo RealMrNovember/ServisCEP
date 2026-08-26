@@ -111,50 +111,58 @@ Backend, iki katmanlı olarak ilerliyor ve **her ikisi de kalıcı, birbirini ta
 |---|---|---|---|
 | **1** | Project Architecture — repo yapısı, ortam kurulumu, temel konvansiyonlar | Sprint 1 | ✅ Tamamlandı |
 | **2** | Database Schema — PostgreSQL şeması, migration altyapısı (bkz. [docs/07](docs/07-api-ve-veritabani.md)) | Sprint 1 | ✅ Tamamlandı |
-| **3** | Laravel API Foundation — proje iskeleti, katman yapısı (bkz. [docs/06 § Backend](docs/06-teknik-mimari.md#7-backend-yapısı-laravel)) | Sprint 1 | 🟡 Derinleşiyor — bkz. yukarıdaki **Backend Mimarisi — Güncel Durum** |
-| **4** | Flutter Foundation — proje iskeleti, state management/routing seçimi | Sprint 1 | 🟡 Temel + M0-M8 tamamlandı, **v0.2.0 yayınlandı** (auth, müşteri, iş, talep, stok/barkod, foto/imza) |
-| **5** | Authentication — token tabanlı kimlik doğrulama | Sprint 1 |
-| **6** | Company Profile — şirket/kullanıcı kurulumu, `company_id` izolasyonunun temeli | Sprint 1 |
-| **7** | Customer Management — müşteri CRUD, tipler, profil (bkz. [docs/02](docs/02-is-alani-ve-veri-modeli.md)) | Sprint 2 |
-| **8** | Service Request — talep modülü, talep→iş dönüşümü | Sprint 2 |
-| **9** | Job / Service Management — iş modülü, durum akışı, iş türleri | Sprint 2 |
-| **10** | Service Form — servis formu oluşturma ve doldurma (bkz. [docs/03](docs/03-servis-ve-belge-yonetimi.md)) | Sprint 3 |
-| **11** | Photo + Signature — fotoğraf sistemi, dijital imza | Sprint 3 |
-| **12** | Quote / Proforma — teklif ve proforma modülleri | Sprint 4 |
-| **13** | PDF Engine — belge PDF üretimi, belge merkezi | Sprint 4 |
-| **14** | Income / Expense — gelir/gider modülleri (bkz. [docs/04](docs/04-finans-ve-stok.md)) | Sprint 5 |
-| **15** | Payments — tahsilat modülü, finans dashboard | Sprint 5 |
-| **16** | Offline Engine — yerel veritabanı, offline CRUD (bkz. [docs/08](docs/08-offline-first-ve-senkronizasyon.md)) | Sprint 6 |
-| **17** | Synchronization — sync queue, conflict handling, backup | Sprint 6 |
-| **18** | Notifications — hatırlatmalar, bildirimler, takvim | Sprint 7 |
-| **19** | WhatsApp Sharing — Android Share entegrasyonu, harita | Sprint 7 |
-| **20** | Real User Testing — gerçek kullanıcı testi, bug fixing, performans, release build | Sprint 8 |
+| **3** | Laravel API Foundation — proje iskeleti, katman yapısı (bkz. [docs/06 § Backend](docs/06-teknik-mimari.md#7-backend-yapısı-laravel)) | Sprint 1 | ✅ Tamamlandı — Laravel 13 + Sanctum + Filament 5.7 (iki panel), 227 test. Üretimde Docker'da çalışıyor. |
+| **4** | Flutter Foundation — proje iskeleti, state management/routing seçimi | Sprint 1 | ✅ Tamamlandı — Riverpod + GoRouter (`StatefulShellRoute`), Drift, 35 ekran, 120 test. Tasarım sistemi v0.7.4'te devreye alındı. |
+| **5** | Authentication — token tabanlı kimlik doğrulama | Sprint 1 | ✅ Tamamlandı — Sanctum token'ları, e-posta/parola ve Google ile giriş, kayıt, çıkışta sunucudaki oturumun da kapatılması. Güvenli depo bozulduğunda uygulamanın kullanılamaz hale gelmesi (v0.7.1) ayrıca giderildi. |
+| **6** | Company Profile — şirket/kullanıcı kurulumu, `company_id` izolasyonunun temeli | Sprint 1 | ✅ Tamamlandı — Şirket kaydı, ayarlar (ünvan/IBAN/antet/logo), `company_id` izolasyonu her uçta zorunlu; başka şirketin verisine erişim testlerle kapatıldı. |
+| **7** | Customer Management — müşteri CRUD, tipler, profil (bkz. [docs/02](docs/02-is-alani-ve-veri-modeli.md)) | Sprint 2 | ✅ Tamamlandı — Bireysel/firma ayrımı, telefon rehberinden ekleme, vergi levhası tarama, cari hesap. Çöp kutusu ve tombstone senkronu dahil. |
+| **8** | Service Request — talep modülü, talep→iş dönüşümü | Sprint 2 | ✅ Mobil tamamlandı — Talep formu ve işe dönüştürme (`/convert`), çevrimdışı kuyrukla. **Web'de yok** (bkz. Sıradaki İşler → W3). |
+| **9** | Job / Service Management — iş modülü, durum akışı, iş türleri | Sprint 2 | ✅ Tamamlandı — Durum akışı, öncelik, kendi iş türlerini tanımlama, tamamlarken ücret alma (cari hesaba otomatik borç). |
+| **10** | Service Form — servis formu oluşturma ve doldurma (bkz. [docs/03](docs/03-servis-ve-belge-yonetimi.md)) | Sprint 3 | ✅ Tamamlandı — `buildServiceFormPdf`; fotoğraf, not ve imzayla birlikte tek belgede. |
+| **11** | Photo + Signature — fotoğraf sistemi, dijital imza | Sprint 3 | ✅ Tamamlandı — Fotoğraflar cihazda saklanıp outbox ile yükleniyor, imza ekranda alınıp belgeye basılıyor. **Web'de görüntülenemiyor** (bkz. W3). |
+| **12** | Quote / Proforma — teklif ve proforma modülleri | Sprint 4 | ✅ Tamamlandı — Ortak form gövdesi, akıllı belge numarası (son kayıttan devam, ön ek ve sıfır dolgusu korunur, yıl değişince başa döner), gün sayısıyla geçerlilik, hazır şablonlar, TL/USD/EUR, +KDV / KDV dahil. |
+| **13** | PDF Engine — belge PDF üretimi, belge merkezi | Sprint 4 | ✅ Mobil tamamlandı — Tek sayfalık kurumsal belge; gömülü Roboto (yerleşik PDF fontları ş/ğ/İ içermiyor), logo kendi oranında, iskonto sütunu yalnızca gerekliyse, KDV oranı satırlardan türetiliyor. **Web'de PDF üretimi YOK** — en büyük eksik (bkz. W3). |
+| **14** | Income / Expense — gelir/gider modülleri (bkz. [docs/04](docs/04-finans-ve-stok.md)) | Sprint 5 | ✅ Tamamlandı — Hem mobil hem web panelde. |
+| **15** | Payments — tahsilat modülü, finans dashboard | Sprint 5 | ✅ Mobil tamamlandı — Tahsilat cari hesaba otomatik ALACAK olarak işliyor, tek transaction. Aynı tahsilatın bakiyeye iki kez yansıması (v0.6.0) giderildi. **Web'de cari/tahsilat yok** (bkz. W3). |
+| **16** | Offline Engine — yerel veritabanı, offline CRUD (bkz. [docs/08](docs/08-offline-first-ve-senkronizasyon.md)) | Sprint 6 | ✅ Tamamlandı — Drift, şema v9. Her yazma önce cihaza gider; internetsiz tam işlevsel. |
+| **17** | Synchronization — sync queue, conflict handling, backup | Sprint 6 | 🟡 Senkron ve çakışma tamamlandı, **yedekleme YOK** — Outbox deseni, sürüm tabanlı iyimser eşzamanlılık, pull bekleyen yerel yazmanın üzerine yazmıyor, tombstone senkronu, çakışma çözüm ekranı. Kullanıcı verisinin cihaz dışına yedeklenmesi henüz yok. |
+| **18** | Notifications — hatırlatmalar, bildirimler, takvim | Sprint 7 | ✅ Tamamlandı — Yerel iş hatırlatmaları (süre ayarlanabilir), FCM push (abonelik onayı/reddi, süre hatırlatması), takvim ekranı. |
+| **19** | WhatsApp Sharing — Android Share entegrasyonu, harita | Sprint 7 | ✅ Tamamlandı — Belge WhatsApp/e-posta ile paylaşılıyor, müşteri adresi haritada açılıyor. |
+| **20** | Real User Testing — gerçek kullanıcı testi, bug fixing, performans, release build | Sprint 8 | 🟡 Sürüyor — Google Play kapalı testte, otomatik sürüm hattı çalışıyor (v0.7.7). Gerçek kullanımdan gelen hatalar sürümlerle gideriliyor. Play'in 12 testçi / 14 gün şartı henüz karşılanmadı. |
 
 ## MVP — Sprint Özeti
 
-### Sprint 1 — Temel Altyapı
+### Sprint 1 — Temel Altyapı ✅
 Flutter projesi · Laravel API · Authentication · Company · User · Database · Temel navigation · Dashboard
 
-### Sprint 2 — Müşteri ve İş Çekirdeği
+### Sprint 2 — Müşteri ve İş Çekirdeği ✅
 Müşteriler · Müşteri profili · Adresler · İşler · Talepler
 
-### Sprint 3 — Sahada Servis
+### Sprint 3 — Sahada Servis ✅
 Servis formu · Fotoğraf · Not · Dijital imza · Servis durumları
 
-### Sprint 4 — Ticari Belgeler
+### Sprint 4 — Ticari Belgeler ✅ (mobil)
 Teklif · Proforma · PDF · Belge merkezi
 
-### Sprint 5 — Finans
+> PDF üretimi web panelde henüz yok — bkz. Sıradaki İşler → W3.
+
+### Sprint 5 — Finans ✅ (mobil)
 Gelir · Gider · Tahsilat · Finans dashboard
 
-### Sprint 6 — Offline & Senkronizasyon
-Offline database · Sync engine · Conflict handling · Backup · Error handling
+> Cari hesap ve tahsilat web panelde henüz yok — bkz. W3.
 
-### Sprint 7 — İletişim ve Zamanlama
+### Sprint 6 — Offline & Senkronizasyon 🟡
+Offline database ✅ · Sync engine ✅ · Conflict handling ✅ · **Backup ❌** · Error handling ✅
+
+> Yedekleme dışında tamamlandı. Kullanıcı verisinin cihaz dışına yedeklenmesi henüz yok.
+
+### Sprint 7 — İletişim ve Zamanlama ✅
 WhatsApp sharing · Bildirimler · Takvim · Harita
 
-### Sprint 8 — Sahaya Çıkış
+### Sprint 8 — Sahaya Çıkış 🟡
 Gerçek kullanıcı testleri · Bug fixing · UX iyileştirmeleri · Performance · Release build
+
+> Kapalı testte sürüyor. Otomatik sürüm hattı çalışıyor; her sürüm tag ile Play'e gidiyor.
 
 > **MVP kabul kriteri:** [docs/11 § Gerçek Hayat Test Senaryosu](docs/11-gelistirme-prensipleri.md#gerçek-hayat-test-senaryosu) uçtan uca, internetsiz başlayıp senkronize ve PDF paylaşımıyla biten senaryo eksiksiz çalışmalıdır.
 
@@ -232,6 +240,15 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 | **Karşılama Akışı (İlk Açılış)** | Uygulama ilk açılışta doğrudan giriş ekranına düşmemeli — kısa, atlanabilir bir tanıtım akışı | Phase 4 (Flutter Foundation) genişletmesi — kullanıcı isteği (2026-08-24) | ✅ Tamamlandı (v0.4.0) — 5 sayfalık, marka kimliğiyle uyumlu (koyu zemin + tek mavi vurgu, docs/14) karşılama akışı; yalnızca oturum YOKKEN ve yalnızca BİR KEZ gösterilir (`welcome_seen_v1`). Var olan oturumla açılış "görüldü" sayılır — çıkış yapan kullanıcı tanıtıma düşmez. |
 | **Abonelik Yaptırımı (Enforcement)** | Süresi dolan/askıya alınan şirketin erişimi nazikçe kesilmeli — yaptırım olmadan abonelik sistemi fiilen dekoratifti (`hasActiveSubscription()` yalnızca gösterimde kullanılıyordu) | docs/10 SaaS Vizyonu — abonelik sisteminin tamamlayıcısı | ✅ Tamamlandı (2026-08-24, v0.3.3) — API: `subscription.active` middleware'i veri uçlarında 402 + `SUBSCRIPTION_EXPIRED` döner; kimlik (me/logout) ve yenileme uçları (plans/subscription/payment-requests) bilinçli olarak açık kalır. Web panel: süresi dolan kullanıcı yalnızca Abonelik sayfasını görür, diğer GET'ler oraya yönlendirilir (Livewire/logout POST'ları serbest — ödeme bildirimi formu çalışmaya devam eder). Mobil: 402'de senkron kuyruğu PENDING kalır (veri kaybolmaz, yenileme sonrası akar), abonelik durumu her senkron döngüsünde tazelenir (banner "sona erdi" kademesine anında geçer); ayrıca pull hatalarının unawaited exception sızdırması boşluğu kapatıldı. |
 | **Hesap Yönetimi (Web Panel)** | Kayıt olan kullanıcılar e-posta adreslerini göremiyor, parolalarını değiştiremiyor, profil fotoğrafı ekleyemiyor — "Hesabım" ekranı eksik | W3 (Web Panel) genişletmesi | ✅ Tamamlandı (2026-08-22) — `EditProfile` sayfası (avatar/isim/parola/e-posta) aslında zaten kuruluydu, yalnızca e-posta değişikliğinin doğrulama akışı (`->emailChangeVerification()`) eksikti, eklendi. Bu arada bağımsız bir sorun bulunup düzeltildi: Filament'in parola sıfırlama + e-posta doğrulama bildirimleri kuyruklu (`ShouldQueue`) ama hiç queue worker yoktu (`QUEUE_CONNECTION=database` → `sync`); ayrıca `MAIL_MAILER=log` bir placeholder'dı (gerçek mail hiç gitmiyordu) — sunucudaki mevcut Postfix/Dovecot mail sunucusunda `serviscep@cicibyte.com` hesabı açılıp gerçek SMTP'ye geçildi, uçtan uca test edildi (kendi kutusuna + gerçek bir Gmail adresine teslim doğrulandı). |
+
+| **Tasarım Sistemi (Mobil)** | Uygulama görsel olarak dağınıktı; koyu tema açık temanın renk çevrimi gibi duruyordu, gövde metni saha koşulları için küçüktü | Phase 4 genişletmesi — dış tasarım desteği (2026-08-25) | ✅ Tamamlandı (v0.7.4–v0.7.6) — 45 renk tokeni `ThemeExtension` olarak, koyu tema kendi yüzey merdiveniyle. İki aksan tokeni bilinçli: marka rengi `#3B82F6` beyaz yazı altında 3.68:1 verip AA'yı geçmiyor, dolgular `accentSolid` kullanıyor. `ColorScheme` artık `fromSeed` yerine paletten üretiliyor — 90 çağrı yerindeki okuma 34 ekranı dolaşmadan yeni renklere geçti. Üç gömülü font (Archivo/Barlow/JetBrains Mono, OFL), 93 ikonluk SVG set, hareket spesifikasyonu. Kontrast iddiaları testle kilitlendi. **JetBrains Mono'da ₺ glifi yok** — tutar stillerine Roboto yedeği bağlandı, aksi halde her tutarda kutucuk çıkacaktı. |
+| **Çevrimdışı Göstergeleri** | Kullanıcı verisinin sunucuya gidip gitmediğini göremiyordu; bir sürümde arayüz saatlerce "her şey eşitlendi" yazdı ama sunucuya hiç ulaşılamıyordu | docs/06 offline-first — güven katmanı (2026-08-25) | ✅ Tamamlandı (v0.7.5–v0.7.6) — Üst şerit dört durumlu: çevrimdışı / eşitleniyor / bekliyor / gizli. "Eşitleniyor" YALNIZCA gerçek bir tur çalışırken yazılıyor; bunun için `SyncService`'e gerçek bir çalışıyor sinyali eklendi. Kuyrukta kayıt olması gönderiliyor olmak değildir. Şerit kaydırarak kapatılabiliyor ama durum değişir ya da bekleyen sayısı ARTARSA geri geliyor. Liste ekranlarının üst çubuğunda bekleyen kayıt rozeti; sayı sıfırken tamamen kayboluyor. Ham exception metni basan altı hata dalı anlaşılır hata ekranına çevrildi. |
+| **Sürüm Takibi (Destek)** | Kullanıcı sorun bildirdiğinde hangi sürümde olduğu sorulmadan bilinemiyordu | Destek ihtiyacı — kullanıcı isteği (2026-08-26) | ✅ Tamamlandı (v0.7.6) — Kök sebep: sunucu `X-App-Version` başlığını zaten okuyup `app_logs`'a yazıyordu ama **mobil uygulama bu başlığı hiç göndermiyordu**; üretimdeki 21 günlük satırının 21'inde de sürüm sütunu boştu. Uygulama artık her isteğe sürüm künyesi ekliyor; bilgi kullanıcıya KALICI yazılıyor (günlükler budandığı için oradan okumak yetmez), 15 dakikada bir tazeleniyor. Panelde kullanıcı listesinde sürüm rozeti + "eski sürümde" filtresi, şirket listesinde "en eski sürüm (N kişi geride)". |
+| **Kartla Abonelik Ödemesi** | Tahsilat IBAN havalesi + elle onayla yürüyordu; ödeme akışı uygulama içine alınmalı | docs/10 SaaS — kullanıcı kararı (2026-08-26, PayTR başvurusu) | ✅ Altyapı tamamlandı — Sağlayıcı anahtarları panelden girilene kadar sistem HAVALE kipinde kalır, girildiği anda kart kipine geçer; kip kodla değil yapılandırmayla değişiyor, anahtarlar geldiğinde yeni sürüm gerekmiyor. "Etkin" işareti tek başına yetmiyor: anahtarlardan biri eksikse kart kipine geçilmiyor. PayTR iFrame API resmî dokümana göre uygulandı, kart bilgisi sunucumuza hiç uğramıyor. Tutar SUNUCUDA hesaplanıyor; doğrulanmamış bildirim hiçbir şeyi değiştirmiyor; mükerrer bildirimde abonelik ikinci kez uzamıyor. **Karşılığı olmayan ama imzası geçerli bildirimler SAHİPSİZ durumuyla kayda alınıyor** — günlükler budanır, para hareketi budanmamalı. Yedi noktada loglama + panelde Kart Ödemeleri tablosu. **Kart ödeme akışı (mobil) henüz yok**: anahtarsız yazmak yalnızca derlendiğini görmek olurdu. |
+| **Plan Süresi (Panelden Yönetim)** | Panelde girilen "Süre (gün)" hiçbir yerde kullanılmıyordu | Abonelik sisteminin düzeltmesi (2026-08-26) | ✅ Tamamlandı — Kod sabit 1 ay / 12 ay ekliyordu: panelde 90 gün yazan bir pakete ödeme yapan müşteri 30 gün alıyor ve kimse fark etmiyordu. Aylık ve yıllık için AYRI alanlar eklendi; tek alan olsaydı yıllık `duration_days × 12` olur, 30 günlük pakette 360 gün ederdi ve müşteri sessizce 5 gün kaybederdi. Üç uzatma yolu (kart, havale onayı, elle uzatma) artık aynı hesaptan geçiyor. |
+| **Ödeme Bildirimleri ve Geçmişi** | Ödeme talebi reddedildiğinde kullanıcı bundan HİÇ haberdar olmuyordu | Kullanıcı isteği (2026-08-26) | ✅ Tamamlandı (v0.7.7) — Onay bildirim gönderiyordu, red göndermiyordu; kullanıcı havalesini yapmış ve cevap bekliyordu, parasının ne olduğunu bilmeden. Red artık bildirim gönderiyor. Yöneticinin notu müşteriye ULAŞIYOR — onayda yazılan açıklama ("gönderdiğin tutar şu pakete yetti") panelde kalıyordu. Not hem bildirimde hem kayıtta duruyor: bildirim kaybolur, kayıt kalır. Mobilde "Ödemelerim" ekranı: kart ve havale bir arada, BEKLEYENLER ayrı bölümde ve üstte — bekleyen talep cevap beklenen bir şey, geçmiş yalnızca referans. |
+| **Marka İşareti Yenileme** | Mevcut logo beğenilmiyordu | Marka (2026-08-26) | ✅ Uygulama simgesi tamamlandı (v0.7.7) — Dört yön arasından "Plaka" seçildi: kesik köşeli ekipman künyesi, negatif alanda T. Gerekçe en yüksek siyah alana sahip olması — PDF antedinde gri tonlamada ve 16px favicon'da en okunaklı kalan bu. Kalan yüzeyler: PDF anteti, favicon, tanıtım sitesi. |
+| **Belge Düzeltmeleri (KDV/Antet)** | Karma KDV oranlı belgede yanlış beyan; "KDV dahil" belgelerde tutar şişmesi | Belge motoru düzeltmeleri (2026-08-25/26) | ✅ Tamamlandı (v0.7.5) — Kalem editörü satır başına KDV oranı seçtiriyordu ama belge tek orandan söz ediyordu; oran artık satırlardan türetiliyor, karma ise "her satırda belirtilen oranda" deniyor. **Sunucu "KDV dahil" belgelerde KDV'yi ikinci kez ekliyordu**: ₺1.200'lük belge senkron sonrası ₺1.440 oluyor ve cihazdaki doğru tutarın üzerine yazılıyordu — mobil bu ayrımı yapıyordu, sunucu yapmıyordu. Mükerrer geçerlilik tarihi kaldırıldı; ödeme bilgisi bloğu artık her belgede yer alıyor (IBAN yoksa iletişim bilgisiyle). |
 
 ## Sıradaki İşler (2026-08-26 itibarıyla)
 
