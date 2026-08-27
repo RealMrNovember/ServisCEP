@@ -148,6 +148,12 @@ jobs:
       # duyurudur ve panelden elle tamamlanabilir. Yine de sessizce
       # geçilmiyor: sessiz geçmek, düzeltmeye çalıştığımız hatanın ta kendisi.
       - name: Sunucuya yayındaki sürümü bildir
+        # `working-directory: .` ZORUNLU — işin varsayılanı `mobile`.
+        # v0.7.8'de bu adım tam olarak bunu atladığı için düştü:
+        # `mobile/pubspec.yaml` yolu `mobile/mobile/pubspec.yaml` oluyordu.
+        # AAB derlenip Play'e çıkmıştı; yalnızca sürüm kaydı yazılamadı ve
+        # elle yazmak gerekti — yani adımın önlemek için var olduğu şey.
+        working-directory: .
         env:
           JETON: ${{ secrets.APP_VERSION_PUBLISH_TOKEN }}
         run: |
