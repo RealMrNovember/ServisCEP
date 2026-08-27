@@ -26,16 +26,22 @@ cp -f deploy/public-placeholder/logo.png logo.png
 # Google, çalışmayan bir gizlilik politikası bağlantısını politika
 # ihlali sayıyor.
 #
-# Çözüm nginx'te DEĞİL dosya düzeninde: vhost aaPanel tarafından
+# Dizinler DOCROOT'a açılıyor (backend/public), site köküne değil:
+# nginx'in kökü orası ve buradaki statik dosyalar oraya elle kurulmuş
+# sembolik linklerle bağlı. Site köküne açılan bir dizin hiç servis
+# edilmiyor — ilk denemede bu yaşandı.
+#
+# Çözüm nginx yapılandırmasında DEĞİL: vhost aaPanel tarafından
 # yönetiliyor ve sitenin PHP sürümü panelden değiştirilirse elle eklenen
 # yönlendirme sessizce siliniyor. Dizin + index.html her nginx
-# yapılandırmasında çalışır ve panel sıfırlamasından etkilenmez.
-# Uzantılı adresler de duruyor — daha önce paylaşılmış bağlantılar
-# kırılmasın.
-for sayfa in privacy account-deletion; do
-  mkdir -p "$sayfa"
-  cp -f "deploy/public-placeholder/$sayfa.html" "$sayfa/index.html"
-done
+# yapılandırmasında çalışır. Uzantılı adresler de duruyor — daha önce
+# paylaşılmış bağlantılar kırılmasın.
+if [ -d backend/public ]; then
+  for sayfa in privacy account-deletion; do
+    mkdir -p "backend/public/$sayfa"
+    cp -f "deploy/public-placeholder/$sayfa.html" "backend/public/$sayfa/index.html"
+  done
+fi
 
 # ── Backend (Laravel + Filament + mobil API) — canlıya alındı (2026-08-21) ──
 # PHP çalışma zamanı 2026-08-22'den itibaren Docker'da (serviscep-php,
