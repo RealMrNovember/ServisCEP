@@ -85,7 +85,7 @@ def kontrol_surum_eslesmesi(etiket: str, surum: str) -> None:
         )
 
 
-def kontrol_yapi_numarasi(yapi: int) -> None:
+def kontrol_yapi_numarasi(yapi: int, etiket: str) -> None:
     """versionCode her yayında ARTMALI.
 
     Play aynı versionCode'u ikinci kez kabul etmiyor. 0.7.8'de tam olarak
@@ -94,10 +94,15 @@ def kontrol_yapi_numarasi(yapi: int) -> None:
     """
     en_yuksek = 0
     kaynak = None
-    for etiket in onceki_etiketler():
-        onceki = etiketin_yapisi(etiket)
+    for aday in onceki_etiketler():
+        # Yayınlanmakta olan etiket "önceki" DEĞİLDİR. Etiket atıldıktan
+        # sonra iş onun üzerinde koştuğu için kendisi de listede görünüyor
+        # ve kontrol kendi kendini engelliyordu.
+        if aday == etiket:
+            continue
+        onceki = etiketin_yapisi(aday)
         if onceki is not None and onceki > en_yuksek:
-            en_yuksek, kaynak = onceki, etiket
+            en_yuksek, kaynak = onceki, aday
 
     if kaynak is None:
         return
@@ -176,7 +181,7 @@ def main() -> None:
     print(f"Etiket: {etiket} | pubspec: {surum}+{yapi}")
 
     kontrol_surum_eslesmesi(etiket, surum)
-    kontrol_yapi_numarasi(yapi)
+    kontrol_yapi_numarasi(yapi, etiket)
     kontrol_kilit_dosyasi()
     kontrol_gevsek_kisitlar()
 
