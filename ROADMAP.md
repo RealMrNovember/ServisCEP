@@ -489,6 +489,12 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 - İş türleri ekranındaki "24 iş kayıtlı" sayacı — işler türe `jobTypeId`
   ile bağlanmıyor, başlık metniyle eşleşiyor; sayı güvenilir çıkmaz.
 
+- [ ] **Sürüm derlemesi ağa bağımlı** — `sqlite3` paketi derleme anında
+      `release-assets.githubusercontent.com` üzerinden hazır ikili
+      indiriyor; v0.8.2'de bağlantı koptu ve yayın hattı düştü (yeniden
+      koşturarak geçildi). Kodla ilgisi yok ama her yayında kumar
+      oynanıyor demek.
+
 ### Belge
 
 - [x] **Uzantısız gizlilik/hesap silme adresleri** (2026-08-27) —
