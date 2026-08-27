@@ -45,10 +45,13 @@ trait HasVersion
                 self::IZ_DISI,
             ));
 
-            if ($alanlar === []) {
-                return;
-            }
-
+            // Alan listesi BOŞ olsa bile satır yazılır. Sürümü artıran ama
+            // anlamlı hiçbir alanı değiştirmeyen bir güncelleme (ör.
+            // `touch()` yalnızca updated_at'i değiştirir) izde boşluk
+            // bırakırdı; boşluk gören birleştirme, kendini güvende
+            // hissetmediği için ÇAKIŞMA kaydeder. Yani sonuç veri kaybı
+            // değil ama gereksiz elle iş olurdu. Boş küme hiçbir şeyle
+            // kesişmediği için birleştirmeyi engellemez.
             FieldChange::create([
                 'subject_type' => $model->getTable(),
                 'subject_id' => (string) $model->getKey(),

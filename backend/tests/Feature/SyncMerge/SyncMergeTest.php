@@ -234,4 +234,42 @@ class SyncMergeTest extends TestCase
 
         $this->assertSame(['notes'], $iz->fields);
     }
+
+    /**
+     * Sürümü artıran ama anlamlı hiçbir alanı değiştirmeyen bir güncelleme
+     * izde BOŞLUK bırakmamalı.
+     *
+     * `touch()` yalnızca updated_at'i değiştiriyor; iz o sürüm için hiç
+     * satır yazmasaydı sonraki birleştirme "iz eksik" diye reddedilir ve
+     * otomatik çözülebilecek bir çakışma gereksiz yere insana giderdi.
+     */
+    public function test_a_version_bump_without_meaningful_changes_does_not_break_the_trail(): void
+    {
+        $user = $this->kullanici();
+        $customer = Customer::factory()->create([
+            'company_id' => $user->company_id,
+            'phone' => '05000000000',
+        ]);
+
+        // Sürüm 1 -> 2: yalnızca zaman damgası.
+        $customer->touch();
+
+        // Sürüm 2 -> 3: ofis telefonu değiştirir.
+        $customer->update(['phone' => '05551112233']);
+
+        // Telefon hâlâ sürüm 1'i biliyor ve NOTU değiştiriyor. Aradaki
+        // anlamsız sürüm atlaması birleştirmeyi engellememeli.
+        $this->putJson("/api/v1/customers/{$customer->id}", [
+            'base_version' => 1,
+            'notes' => 'Sahadan not',
+            'changed_fields' => ['notes'],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'notes' => 'Sahadan not',
+            'phone' => '05551112233',
+        ]);
+        $this->assertDatabaseCount('sync_conflicts', 0);
+    }
 }
