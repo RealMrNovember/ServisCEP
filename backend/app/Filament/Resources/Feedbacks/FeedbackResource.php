@@ -19,6 +19,16 @@ class FeedbackResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
+    /**
+     * Slug AÇIKÇA veriliyor.
+     *
+     * Laravel "feedback"i sayılamayan isim sayıyor; Filament dizin adını
+     * ön ek, model adını slug yapıp `admin/feedbacks/feedback` gibi bir
+     * adres üretiyordu. E-postadaki "Panelde aç" bağlantısı da bu yüzden
+     * kırıktı.
+     */
+    protected static ?string $slug = 'feedbacks';
+
     protected static ?string $modelLabel = 'Geri Bildirim';
 
     protected static ?string $pluralModelLabel = 'Geri Bildirimler';
