@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -54,7 +56,7 @@ class _FinanceScreenState extends State<FinanceScreen>
               onPressed: () => _tabController.index == 1
                   ? _showAddIncomeDialog(context)
                   : _showAddExpenseDialog(context),
-              icon: const Icon(Icons.add),
+              icon: const TcIcon(TcIcons.plus),
               label: Text(
                 _tabController.index == 1 ? 'Gelir Ekle' : 'Gider Ekle',
               ),
@@ -379,7 +381,7 @@ class _IncomeTab extends ConsumerWidget {
         if (entries.isEmpty) {
           return _EmptyFinanceState(
             text: 'Henüz gelir kaydı yok',
-            icon: Icons.trending_up,
+            icon: TcIcons.trendUp,
           );
         }
         return ListView.separated(
@@ -390,7 +392,7 @@ class _IncomeTab extends ConsumerWidget {
             final e = entries[index];
             return Card(
               child: ListTile(
-                leading: const Icon(Icons.arrow_downward, color: Colors.green),
+                leading: const TcIcon(TcIcons.arrowDown, color: Colors.green),
                 title: Text(e.description),
                 subtitle: Text(
                   '${e.category} · ${DateFormat('d MMM y', 'tr_TR').format(e.date)}',
@@ -424,7 +426,7 @@ class _ExpenseTab extends ConsumerWidget {
         if (entries.isEmpty) {
           return _EmptyFinanceState(
             text: 'Henüz gider kaydı yok',
-            icon: Icons.trending_down,
+            icon: TcIcons.trendDown,
           );
         }
         return ListView.separated(
@@ -435,7 +437,7 @@ class _ExpenseTab extends ConsumerWidget {
             final e = entries[index];
             return Card(
               child: ListTile(
-                leading: const Icon(Icons.arrow_upward, color: Colors.red),
+                leading: const TcIcon(TcIcons.arrowUp, color: Colors.red),
                 title: Text(e.description),
                 subtitle: Text(
                   '${e.category} · ${DateFormat('d MMM y', 'tr_TR').format(e.date)}',
@@ -459,7 +461,9 @@ class _ExpenseTab extends ConsumerWidget {
 class _EmptyFinanceState extends StatelessWidget {
   const _EmptyFinanceState({required this.text, required this.icon});
   final String text;
-  final IconData icon;
+
+  /// [TcIcons] adı.
+  final String icon;
 
   @override
   Widget build(BuildContext context) {
@@ -470,7 +474,7 @@ class _EmptyFinanceState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: scheme.onSurfaceVariant),
+            TcIcon(icon, size: 56, color: scheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               text,

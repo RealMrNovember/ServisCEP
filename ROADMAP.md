@@ -373,7 +373,32 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 
 - [x] Tasarım sistemi tokenları, bileşen katmanı, yeni alt menü
 - [x] Yeni marka işareti — uygulama simgesi
-- [ ] **42 ekranın yeniden düzeni** — Asıl iş. Tasarımcının teslimatı hazır.
+- [x] **38 ekranın yeniden düzeni** (2026-08-27) — Teslimattaki ekranların
+      tamamı yeni tasarımda. Yol boyunca ortaya çıkan ve tasarımla ilgisi
+      olmayan dört hata da düzeldi:
+      **(1)** Ana sayfadaki ve menüdeki "Barkod Tara" taramadan sonra
+      okunan kodu hiçbir yere bağlamıyordu — tarayıcı kapanıyor, kullanıcı
+      boş ekranda kalıyordu. Stok listesindeki çalışan akış ortak bir
+      yardımcıya (`scanBarcodeAndOpen`) çıkarıldı.
+      **(2)** İş tamamlama diyaloğu var olan tutarı `(minor / 100).toString()`
+      ile yazıyordu; çıkan `"2400.0"` metnini `Money.parseToMinor` noktayı
+      binlik ayıracı sanıp okuyor ve tutar HER KAYDEDİŞTE ON KATINA
+      çıkıyordu. `formatMinorPlain` eklendi.
+      **(3)** Belge toplamında iskonto hiç toplanmıyordu (`LineAmounts`
+      indirimi hesaba katıyor ama dışarı vermiyordu).
+      **(4)** İş ve talep formlarında müşteri seçilmeden kaydete basınca
+      düğme sessizce hiçbir şey yapmıyordu.
+- [x] **Servis talebini reddetme** (2026-08-27) — Tasarımda talep kartında
+      iki eylem var; kodda yalnızca "işe çevir" vardı ve istenmeyen bir
+      talebi kapatmanın yolu yoktu, liste hiç boşalmıyordu. Uçtan uca
+      bağlandı (depo → outbox `UPDATE` → `PUT /service-requests/{id}`);
+      backend `REDDEDILDI` durumunu zaten kabul ediyordu. Talep
+      SİLİNMİYOR, durumu değişiyor: müşteriden gelen bir talebin izi
+      kalmalı.
+- [x] **Tema seçimi** (2026-08-27) — `themeMode` koda sabit `system`
+      yazılmıştı. Açık/koyu/sistem seçilebiliyor. Tercih güvenli depoda
+      tutuluyor: uygulamada başka anahtar–değer deposu yok ve bunun için
+      ayrı bir Drift göçü açmak tercihin ağırlığına göre fazlaydı.
 - [ ] **Yeniden düzenden SONRA mağaza ekran görüntülerini tazele** — Play
       listesindeki görüntüler uygulamanın gerçek ekranları; arayüz
       değişince bayatlıyorlar ve mağazada eski tasarım görünüyor. Tam da
@@ -420,16 +445,71 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
       yukarı baktığı için (TickerMode) bu tanımsız davranış; hata
       ayıklamada assert, yayında sessiz. Denetleyici artık `initState`'te
       kuruluyor, gecikme de iptal edilebilir bir Timer.
-- [ ] Adımlı teklif formu (4 adım)
-- [ ] İkon göçü — 176 çağrı yeri Material'dan tasarım setine
+- [x] Adımlı teklif formu (4 adım) (2026-08-27) — Müşteri → Kalemler →
+      Şartlar → Gönder. Göstergede yalnızca GERİYE dokunulabiliyor: ileri
+      adım öncekinin verisine dayanıyor ve atlanırsa boş form gösterirdi.
+      Adım göstergesi kayıt formuyla ortak bileşen.
+- [x] **İkon göçü** (2026-08-27) — 150 çağrı yeri Material'dan tasarım
+      setine geçti; `lib/` içinde tek bir `Icons.` kalmadı. `AppEmptyState`,
+      `StatusPill` ve `InfoRowTile` artık `IconData` değil ikon ADI (String)
+      alıyor. Geri sızmayı bir test engelliyor
+      (`test/design/icon_set_test.dart`): derleyici bunu yakalayamaz,
+      yalnızca o ekranda başka kalınlıkta bir çizgi belirir ve gözden
+      kaçıp yayına gider.
+- [x] **Güncelleme uyarısı şeride döndü** (2026-08-27) — İsteğe bağlı
+      güncelleme her açılışta diyalog açıyordu; sahada işe yetişmeye
+      çalışan kullanıcının önünü kesiyor ve "yine ne var" tepkisi
+      doğuruyordu. Artık Ayarlar'ın üstünde kapatılabilir bir şerit.
+      Diyalog YALNIZCA sunucu `min_build` ile eski istemciyi dışarıda
+      bıraktığında ve o zaman kapatılamaz halde geliyor; metni cihazda
+      bekleyen kayıt sayısını söyleyerek "kayıtlarım ne olacak" korkusunu
+      karşılıyor.
+- [x] **Beyaz logo uyarısı** (2026-08-27) — Kırpma ekranı, görselin
+      saydam olmayan piksellerinin ortalama parlaklığını ölçüyor; açık
+      renkli bir logo açık zeminle birlikte seçildiğinde uyarıyor. Böyle
+      bir logo teklif PDF'inin beyaz zeminine basılınca kayboluyor ve
+      kullanıcı bunu ancak müşteriye gönderdiği belgede fark ediyordu.
+
+**Tasarımda olup KODA GİRMEYENLER** (veri yok, uydurulmadı):
+- Belge detayındaki "Belge geçmişi" zaman çizelgesi (oluşturuldu / PDF
+  gönderildi / müşteri görüntüledi) — belge olayları hiçbir yerde
+  tutulmuyor. Boş bir zaman çizelgesi göstermek yerine bırakıldı.
+- Belge detayındaki "Düzenle" — oluşmuş bir belgeyi düzenleme akışı yok.
+- Müşteri seçicideki "Telefon rehberinden ekle" satırı — rehber
+  tümleşmesi yalnızca müşteri FORMUNDA var.
+- Giriş ekranındaki "Şifremi unuttum" — **backend'de parola sıfırlama ucu
+  YOK** (`routes/api.php` yalnızca oturum içi `PUT /auth/password`
+  taşıyor). Şifresini unutan bir kullanıcının bugün Google ile giriş
+  dışında yolu yok; bu gerçek bir boşluk (aşağıya alındı).
+- Bildirimler ekranındaki altı ayrı anahtar (vadesi gelen alacak, kritik
+  stok, teklif süresi, eşitleme tamamlandı…) — arkalarında bildirim türü
+  ayrımı yok, hepsi tek kanaldan gidiyor.
+- Kayıt formundaki vergi dairesi/no ve şehir alanları — kayıt uçları bu
+  alanları almıyor; kullanıcıya Ayarlar'dan gireceği söyleniyor.
+- İş türleri ekranındaki "24 iş kayıtlı" sayacı — işler türe `jobTypeId`
+  ile bağlanmıyor, başlık metniyle eşleşiyor; sayı güvenilir çıkmaz.
 
 ### Belge
 
+- [ ] **Play listesindeki gizlilik bağlantısı 404 veriyor** —
+      [docs/17](docs/17-play-store-listesi.md) `…/privacy` diyor ama sunucu
+      yalnızca `…/privacy.html` servis ediyor (`/privacy` → 404, doğrulandı
+      2026-08-27). Google, çalışmayan bir gizlilik politikası bağlantısını
+      politika ihlali sayıyor. Uygulama içindeki yeni bağlantı `.html`'li
+      hâli kullanıyor; Play Console'daki adres ya düzeltilmeli ya da
+      nginx'e `/privacy` → `/privacy.html` yönlendirmesi eklenmeli.
+- [ ] **Parola sıfırlama** — Backend'de uç yok. Şifresini unutan
+      kullanıcının bugün tek yolu Google ile giriş; e-postayla kayıt olmuş
+      bir kullanıcı tamamen kilitli kalıyor. Public release öncesi
+      kapatılmalı.
 - [ ] **Ücretsiz pakette belge altbilgisi** — "TeknikCEP ile hazırlandı".
       Sıfır maliyetli müşteri kanalı + paket yükseltme sebebi.
 - [ ] **Yüzde iskonto** — Backend hazır (`discount_rate`), mobil Drift
       şeması v9 → v10 bekliyor. Altbilgiyle aynı göçte yapılacak.
-- [ ] Toplam iskonto satırı — Tasarımda var, PDF'te yok.
+- [x] Toplam iskonto satırı (2026-08-27) — Uygulama içindeki toplam
+      kutusunda artık var (`LineAmounts.discountMinor` dışarı verildi ve
+      `DocumentTotals.from` topluyor). **PDF'te hâlâ yok** — PDF üreticisi
+      ayrı bir yerde toplam hesaplıyor.
 - [ ] **Belge şablonları** — Dört tasarım (klasik/sade/kurumsal/kompakt),
       şirket varsayılanı + belge bazında istisna. Tam tasarım:
       [docs/21](docs/21-belge-sablonlari.md). Altı adıma bölünmüş ve her

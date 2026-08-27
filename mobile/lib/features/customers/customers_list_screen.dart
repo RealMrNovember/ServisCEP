@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/palette.dart';
@@ -67,7 +69,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Müşteri ara...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const TcIcon(TcIcons.search),
                 filled: true,
               ),
               onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
@@ -119,7 +121,7 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/customers/new'),
-        icon: const Icon(Icons.add),
+        icon: const TcIcon(TcIcons.plus),
         label: const Text('Yeni Müşteri'),
       ),
     );
@@ -238,11 +240,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.people_outline_rounded,
-              size: 56,
-              color: scheme.onSurfaceVariant,
-            ),
+            TcIcon(TcIcons.users, size: 56, color: scheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               'Henüz müşterin yok',
@@ -261,7 +259,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: onAdd,
-              icon: const Icon(Icons.add),
+              icon: const TcIcon(TcIcons.plus),
               label: const Text('Müşteri Ekle'),
             ),
           ],

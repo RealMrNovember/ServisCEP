@@ -9,6 +9,7 @@ import '../../app/theme.dart';
 import '../../app/typography.dart';
 import '../../core/constants/job_constants.dart';
 import '../../core/utils/customer_display.dart';
+import '../../shared/tc_icon.dart';
 import '../../shared/ui.dart';
 import '../jobs/data/jobs_repository.dart';
 
@@ -128,7 +129,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               Expanded(
                 child: secilenler.isEmpty
                     ? const AppEmptyState(
-                        icon: Icons.event_available_outlined,
+                        icon: TcIcons.calendar,
                         title: 'Bu günde iş yok',
                         message:
                             'Randevu verdiğin işler burada saat sırasıyla '

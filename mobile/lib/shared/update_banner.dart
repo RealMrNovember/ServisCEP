@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/services/apk_updater.dart';
@@ -78,10 +80,7 @@ class _UpdateBannerState extends ConsumerState<UpdateBanner> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.system_update_alt_rounded,
-                color: scheme.onPrimaryContainer,
-              ),
+              TcIcon(TcIcons.download, color: scheme.onPrimaryContainer),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

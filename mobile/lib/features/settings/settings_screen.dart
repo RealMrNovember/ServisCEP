@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -48,23 +50,23 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          const UpdateBanner(),
+          const UpdateNoticeBanner(),
           const MenuGroupHeader('Hesap'),
           ListTile(
-            leading: const Icon(Icons.person_outline_rounded),
+            leading: const TcIcon(TcIcons.user),
             title: const Text('Profilim'),
             subtitle: Text(session?.fullName ?? 'Ad, telefon, parola'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
           ),
           if (isOwner) ...[
             ListTile(
-              leading: const Icon(Icons.business_outlined),
+              leading: const TcIcon(TcIcons.building),
               title: const Text('Şirket ayarları'),
               subtitle: const Text('Antet, logo, vergi bilgileri, IBAN'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const TcIcon(TcIcons.chevronRight),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const CompanySettingsScreen(),
@@ -72,10 +74,10 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.people_alt_outlined),
+              leading: const TcIcon(TcIcons.users),
               title: const Text('Kullanıcılar ve yetkiler'),
               subtitle: const Text('Personel ekle, rollerini belirle'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const TcIcon(TcIcons.chevronRight),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const PersonnelScreen()),
               ),
@@ -84,19 +86,19 @@ class SettingsScreen extends ConsumerWidget {
 
           const MenuGroupHeader('Uygulama'),
           ListTile(
-            leading: const Icon(Icons.category_outlined),
+            leading: const TcIcon(TcIcons.category),
             title: const Text('İş türleri'),
             subtitle: const Text('Kendi türlerini ekle'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const JobTypesScreen())),
           ),
           ListTile(
-            leading: const Icon(Icons.notifications_outlined),
+            leading: const TcIcon(TcIcons.bell),
             title: const Text('Bildirimler'),
             subtitle: const Text('Hatırlatma süresi'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => const NotificationSettingsScreen(),
@@ -104,10 +106,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           ListTile(
-            leading: Icon(
-              (pending > 0 || failed > 0)
-                  ? Icons.cloud_sync_rounded
-                  : Icons.cloud_done_outlined,
+            leading: TcIcon(
+              (pending > 0 || failed > 0) ? TcIcons.sync : TcIcons.cloudOk,
               color: failed > 0 ? palet.dangerText : null,
             ),
             title: const Text('Senkron durumu'),
@@ -118,35 +118,35 @@ class SettingsScreen extends ConsumerWidget {
                   ? '$pending kayıt bekliyor'
                   : 'Her şey eşitlendi',
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const SyncStatusScreen())),
           ),
           ListTile(
-            leading: const Icon(Icons.brightness_6_outlined),
+            leading: const TcIcon(TcIcons.sun),
             title: const Text('Tema'),
             subtitle: Text(themeModeLabel(temaKipi)),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => _temaSec(context, ref, temaKipi),
           ),
           const _UpdateTile(),
 
           const MenuGroupHeader('Destek'),
           ListTile(
-            leading: const Icon(Icons.forum_outlined),
+            leading: const TcIcon(TcIcons.mail),
             title: const Text('Bize yaz'),
             subtitle: const Text('Öneri, sorun ya da soru gönder'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const FeedbackScreen())),
           ),
           ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
+            leading: const TcIcon(TcIcons.shield),
             title: const Text('Gizlilik ve sözleşmeler'),
             subtitle: const Text('Tarayıcıda açılır'),
-            trailing: const Icon(Icons.open_in_new),
+            trailing: const TcIcon(TcIcons.arrowRight),
             onTap: () =>
                 launchUrl(_gizlilikUri, mode: LaunchMode.externalApplication),
           ),
@@ -175,7 +175,7 @@ class SettingsScreen extends ConsumerWidget {
             for (final kip in ThemeMode.values)
               ListTile(
                 title: Text(themeModeLabel(kip)),
-                trailing: kip == secili ? const Icon(Icons.check) : null,
+                trailing: kip == secili ? const TcIcon(TcIcons.check) : null,
                 onTap: () => Navigator.pop(sheetContext, kip),
               ),
           ],
@@ -250,7 +250,7 @@ class _UpdateTileState extends ConsumerState<_UpdateTile> {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.system_update_alt_rounded),
+      leading: const TcIcon(TcIcons.download),
       title: const Text('Güncellemeleri kontrol et'),
       subtitle: Text(_version == null ? 'Sürüm okunuyor…' : 'Sürüm $_version'),
       trailing: _checking
@@ -259,7 +259,7 @@ class _UpdateTileState extends ConsumerState<_UpdateTile> {
               width: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.chevron_right),
+          : const TcIcon(TcIcons.chevronRight),
       onTap: _checking ? null : _check,
     );
   }

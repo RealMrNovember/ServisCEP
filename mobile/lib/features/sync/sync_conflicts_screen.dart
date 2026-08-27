@@ -281,7 +281,7 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AppEmptyState(
-      icon: Icons.check_circle_outline_rounded,
+      icon: TcIcons.checkCircle,
       title: 'Bekleyen çakışma yok',
       message: 'Bu cihazdaki tüm değişiklikler sunucuyla uyumlu.',
     );
@@ -300,7 +300,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_off_rounded, size: 48),
+            const TcIcon(TcIcons.cloudOff, size: 48),
             const SizedBox(height: 14),
             const Text(
               'Çakışmalar alınamadı',

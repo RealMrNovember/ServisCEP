@@ -41,7 +41,7 @@ class PaymentsScreen extends ConsumerWidget {
         data: (kayitlar) {
           if (kayitlar.isEmpty) {
             return const AppEmptyState(
-              icon: Icons.receipt_long_outlined,
+              icon: TcIcons.pdf,
               title: 'Henüz ödeme yok',
               message:
                   'Abonelik ödemeleriniz burada tarih ve tutarıyla listelenir.',

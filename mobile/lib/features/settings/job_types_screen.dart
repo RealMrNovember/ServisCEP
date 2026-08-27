@@ -108,7 +108,7 @@ class JobTypesScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addDialog(context, ref),
-        icon: const Icon(Icons.add),
+        icon: const TcIcon(TcIcons.plus),
         label: const Text('Tür ekle'),
       ),
       body: ListView(
@@ -148,7 +148,7 @@ class JobTypesScreen extends ConsumerWidget {
             ...custom.map(
               (type) => ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.label_outline_rounded),
+                leading: const TcIcon(TcIcons.tag),
                 title: Text(type.name),
                 subtitle: Text(type.category),
                 trailing: IconButton(

@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
@@ -45,7 +47,7 @@ Future<void> showDocumentShareSheet(
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.send_outlined),
+            leading: const TcIcon(TcIcons.send),
             title: const Text('Gönder'),
             subtitle: const Text('WhatsApp, e-posta ve diğer uygulamalar'),
             onTap: () async {
@@ -56,7 +58,7 @@ Future<void> showDocumentShareSheet(
             },
           ),
           ListTile(
-            leading: const Icon(Icons.download_outlined),
+            leading: const TcIcon(TcIcons.download),
             title: const Text('Telefona indir'),
             subtitle: const Text('Yazdırma ekranında "PDF olarak kaydet"'),
             onTap: () async {
@@ -69,7 +71,7 @@ Future<void> showDocumentShareSheet(
             },
           ),
           ListTile(
-            leading: const Icon(Icons.visibility_outlined),
+            leading: const TcIcon(TcIcons.eye),
             title: const Text('Önizle'),
             subtitle: const Text('Göndermeden önce belgeyi kontrol et'),
             onTap: () async {

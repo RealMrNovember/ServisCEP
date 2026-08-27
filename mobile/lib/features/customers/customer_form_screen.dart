@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -204,7 +206,7 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
                   alignment: Alignment.centerLeft,
                   child: OutlinedButton.icon(
                     onPressed: _pickFromContacts,
-                    icon: const Icon(Icons.contacts_outlined, size: 20),
+                    icon: const TcIcon(TcIcons.users, size: 20),
                     label: const Text('Rehberden seç'),
                   ),
                 ),
@@ -293,7 +295,9 @@ class _CustomerFormScreenState extends ConsumerState<CustomerFormScreen> {
               const SizedBox(height: AppSpacing.sm),
               TextButton.icon(
                 onPressed: () => setState(() => _showMore = !_showMore),
-                icon: Icon(_showMore ? Icons.expand_less : Icons.expand_more),
+                icon: TcIcon(
+                  _showMore ? TcIcons.chevronUp : TcIcons.chevronDown,
+                ),
                 label: Text(_showMore ? 'Notu gizle' : 'Not ekle'),
               ),
               if (_showMore)

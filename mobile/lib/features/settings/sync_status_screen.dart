@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -51,18 +53,18 @@ class SyncStatusScreen extends ConsumerWidget {
         DateTime.now().difference(lastSync).abs() < syncFreshnessWindow;
     final allClear = kuyrukTemiz && taze;
 
-    final (String baslik, IconData ikon) = switch ((kuyrukTemiz, taze)) {
-      (true, true) => ('Her şey eşitlendi', Icons.cloud_done_rounded),
+    final (String baslik, String ikon) = switch ((kuyrukTemiz, taze)) {
+      (true, true) => ('Her şey eşitlendi', TcIcons.cloudOk),
       (true, false) when lastSync == null => (
         'Henüz eşitlenmedi',
-        Icons.cloud_off_rounded,
+        TcIcons.cloudOff,
       ),
-      (true, false) => ('Bir süredir eşitlenemedi', Icons.cloud_off_rounded),
-      _ => ('Bekleyen değişiklikler var', Icons.cloud_sync_rounded),
+      (true, false) => ('Bir süredir eşitlenemedi', TcIcons.cloudOff),
+      _ => ('Bekleyen değişiklikler var', TcIcons.sync),
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Senkron durumu')),
+      appBar: AppBar(title: const Text('Eşitleme durumu')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: [
@@ -70,7 +72,7 @@ class SyncStatusScreen extends ConsumerWidget {
             accent: allClear,
             child: Column(
               children: [
-                Icon(
+                TcIcon(
                   ikon,
                   size: 40,
                   color: allClear ? palet.successText : palet.warningText,
@@ -90,7 +92,7 @@ class SyncStatusScreen extends ConsumerWidget {
 
           const SizedBox(height: 20),
           _StatusRow(
-            icon: online == false ? Icons.wifi_off_rounded : Icons.wifi_rounded,
+            icon: online == false ? TcIcons.cloudOff : TcIcons.wifi,
             label: 'Bağlantı',
             value: switch (online) {
               true => 'Çevrimiçi',
@@ -100,14 +102,14 @@ class SyncStatusScreen extends ConsumerWidget {
             warn: online == false,
           ),
           _StatusRow(
-            icon: Icons.upload_rounded,
+            icon: TcIcons.upload,
             label: 'Gönderilmeyi bekleyen',
             value: '$pending kayıt',
             warn: pending > 0,
           ),
           if (failed > 0)
             _StatusRow(
-              icon: Icons.error_outline_rounded,
+              icon: TcIcons.alertCircle,
               label: 'Gönderilemeyen',
               value: '$failed kayıt — dokun, yeniden dene',
               warn: true,
@@ -120,7 +122,7 @@ class SyncStatusScreen extends ConsumerWidget {
             ),
           if (conflicts > 0)
             _StatusRow(
-              icon: Icons.sync_problem_rounded,
+              icon: TcIcons.syncProblem,
               label: 'Çakışma',
               value: '$conflicts kayıt',
               warn: true,
@@ -138,7 +140,7 @@ class SyncStatusScreen extends ConsumerWidget {
               .watch(deviceStorageProvider)
               .when(
                 loading: () => const _StatusRow(
-                  icon: Icons.storage_rounded,
+                  icon: TcIcons.layers,
                   label: 'Yerel veritabanı',
                   value: 'hesaplanıyor…',
                 ),
@@ -146,12 +148,12 @@ class SyncStatusScreen extends ConsumerWidget {
                 data: (yer) => Column(
                   children: [
                     _StatusRow(
-                      icon: Icons.storage_rounded,
+                      icon: TcIcons.layers,
                       label: 'Yerel veritabanı',
                       value: formatBytes(yer.databaseBytes),
                     ),
                     _StatusRow(
-                      icon: Icons.perm_media_outlined,
+                      icon: TcIcons.image,
                       label: 'Fotoğraf ve imzalar',
                       value: formatBytes(yer.mediaBytes),
                     ),
@@ -200,7 +202,8 @@ class _StatusRow extends StatelessWidget {
     this.onTap,
   });
 
-  final IconData icon;
+  /// [TcIcons] adı.
+  final String icon;
   final String label;
   final String value;
   final bool warn;
@@ -213,7 +216,7 @@ class _StatusRow extends StatelessWidget {
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: color, size: 22),
+      leading: TcIcon(icon, color: color, size: 22),
       title: Text(label, style: const TextStyle(fontSize: 14.5)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -225,7 +228,7 @@ class _StatusRow extends StatelessWidget {
               color: warn ? scheme.error : scheme.onSurface,
             ),
           ),
-          if (onTap != null) const Icon(Icons.chevron_right, size: 20),
+          if (onTap != null) const TcIcon(TcIcons.chevronRight, size: 20),
         ],
       ),
       onTap: onTap,
@@ -293,7 +296,7 @@ class _SyncNowButtonState extends ConsumerState<_SyncNowButton> {
               width: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.sync_rounded),
+          : const TcIcon(TcIcons.sync),
       label: Text(_calisiyor ? 'Senkronlanıyor…' : 'Şimdi senkronla'),
     );
   }

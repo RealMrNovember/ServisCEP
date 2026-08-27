@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -242,7 +244,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.send_rounded, size: 18),
+              : const TcIcon(TcIcons.send, size: 18),
           label: const Text('Ödeme Bildirimi Gönder'),
         ),
       ],
@@ -475,8 +477,8 @@ class _PlanCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.check_circle_outline,
+                  TcIcon(
+                    TcIcons.checkCircle,
                     size: 15,
                     color: Colors.green.shade600,
                   ),
@@ -494,7 +496,7 @@ class _PlanCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               children: [
-                Icon(Icons.people_outline, size: 15, color: scheme.primary),
+                TcIcon(TcIcons.users, size: 15, color: scheme.primary),
                 const SizedBox(width: 6),
                 Text(
                   plan.maxUsers != null
@@ -582,7 +584,7 @@ class _BankInfoCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.copy_rounded, size: 18),
+                icon: const TcIcon(TcIcons.copy, size: 18),
                 tooltip: 'IBAN\'ı kopyala',
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: info.iban!));
@@ -634,11 +636,7 @@ class _PaymentNoticeCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            size: 20,
-            color: scheme.onTertiaryContainer,
-          ),
+          TcIcon(TcIcons.alert, size: 20, color: scheme.onTertiaryContainer),
           const SizedBox(width: 10),
           Expanded(
             child: Text.rich(
@@ -801,7 +799,7 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 40),
+          const TcIcon(TcIcons.cloudOff, size: 40),
           const SizedBox(height: 12),
           const Text('Abonelik bilgileri yüklenemedi.'),
           const SizedBox(height: 4),

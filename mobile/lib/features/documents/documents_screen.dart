@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../app/palette.dart';
@@ -77,7 +79,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
             );
           }
         },
-        icon: const Icon(Icons.add),
+        icon: const TcIcon(TcIcons.plus),
         label: Text(isQuotesTab ? 'Yeni Teklif' : 'Yeni Proforma'),
       ),
     );
@@ -99,10 +101,7 @@ class _QuotesTab extends ConsumerWidget {
       ),
       data: (quotes) {
         if (quotes.isEmpty) {
-          return _EmptyDocsState(
-            icon: Icons.description_outlined,
-            text: 'Henüz teklif yok',
-          );
+          return _EmptyDocsState(icon: TcIcons.file, text: 'Henüz teklif yok');
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -145,10 +144,7 @@ class _ProformasTab extends ConsumerWidget {
       ),
       data: (proformas) {
         if (proformas.isEmpty) {
-          return _EmptyDocsState(
-            icon: Icons.receipt_long_outlined,
-            text: 'Henüz proforma yok',
-          );
+          return _EmptyDocsState(icon: TcIcons.pdf, text: 'Henüz proforma yok');
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
@@ -178,7 +174,9 @@ class _ProformasTab extends ConsumerWidget {
 
 class _EmptyDocsState extends StatelessWidget {
   const _EmptyDocsState({required this.icon, required this.text});
-  final IconData icon;
+
+  /// [TcIcons] adı.
+  final String icon;
   final String text;
 
   @override
@@ -190,7 +188,7 @@ class _EmptyDocsState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: scheme.onSurfaceVariant),
+            TcIcon(icon, size: 56, color: scheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               text,

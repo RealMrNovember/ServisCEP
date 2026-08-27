@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -183,7 +185,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         title: const Text('Hesap Oluştur'),
         leading: _adim > _ilkAdim
             ? IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const TcIcon(TcIcons.arrowLeft),
                 onPressed: () => setState(() => _adim -= 1),
               )
             : null,

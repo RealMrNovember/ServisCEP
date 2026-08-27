@@ -164,11 +164,7 @@ class _UpdateDialog extends ConsumerWidget {
           color: palet.dangerText.withValues(alpha: 0.14),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.system_update_alt_rounded,
-          color: palet.dangerText,
-          size: 26,
-        ),
+        child: TcIcon(TcIcons.download, color: palet.dangerText, size: 26),
       ),
       title: Text(
         info.latestVersion == null
@@ -230,8 +226,13 @@ final _seritKapatildiProvider = StateProvider<bool>((ref) => false);
 /// tepkisi doğuruyor. Aksan tonunda, kapatılabilir ve işin akışını
 /// kesmiyor. Zorunlu güncelleme bunun tersi: kapatılamayan diyalog
 /// (bkz. [UpdatePromptGate]).
-class UpdateBanner extends ConsumerWidget {
-  const UpdateBanner({super.key});
+///
+/// `shared/update_banner.dart` içindeki `UpdateBanner` ile KARIŞTIRMA: o,
+/// Play dışı (GitHub sideload) kurulumlar için APK indiren eski akış ve
+/// Play'den kurulmuş uygulamada kendini gizliyor. Bu ise Play In-App
+/// Update akışını başlatıyor.
+class UpdateNoticeBanner extends ConsumerWidget {
+  const UpdateNoticeBanner({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -66,7 +66,7 @@ class _JobDetailContent extends ConsumerWidget {
               ListTile(
                 title: Text(entry.value),
                 trailing: job.status == entry.key
-                    ? const Icon(Icons.check)
+                    ? const TcIcon(TcIcons.check)
                     : null,
                 onTap: () => Navigator.pop(context, entry.key),
               ),
@@ -128,7 +128,7 @@ class _JobDetailContent extends ConsumerWidget {
         title: Text(job.code),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined),
+            icon: const TcIcon(TcIcons.share),
             tooltip: 'Servis Formu PDF Paylaş',
             onPressed: () => _shareServiceFormPdf(context, ref),
           ),
@@ -214,7 +214,7 @@ class _JobDetailContent extends ConsumerWidget {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () => _tamamla(context),
-            icon: const Icon(Icons.task_alt_outlined, size: 18),
+            icon: const TcIcon(TcIcons.checkCircle, size: 18),
             label: const Text('İşi tamamla'),
           ),
           const SizedBox(height: 28),
@@ -296,7 +296,7 @@ class _NotesSection extends ConsumerWidget {
             ),
             const Spacer(),
             IconButton(
-              icon: const Icon(Icons.add_circle_outline),
+              icon: const TcIcon(TcIcons.plus),
               onPressed: () => _addNote(context, ref),
             ),
           ],
@@ -389,7 +389,7 @@ class _PhotosSection extends ConsumerWidget {
             ),
             const Spacer(),
             IconButton(
-              icon: const Icon(Icons.add_a_photo_outlined),
+              icon: const TcIcon(TcIcons.camera),
               onPressed: () => _pickCategoryAndCapture(context, ref),
             ),
           ],
@@ -494,7 +494,7 @@ class _SignatureSection extends ConsumerWidget {
             if (signatures.isEmpty) {
               return OutlinedButton.icon(
                 onPressed: () => _capture(context, ref),
-                icon: const Icon(Icons.draw_outlined),
+                icon: const TcIcon(TcIcons.signature),
                 label: const Text('İmza Al'),
               );
             }

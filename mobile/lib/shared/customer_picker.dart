@@ -103,7 +103,7 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
                       autofocus: false,
                       decoration: const InputDecoration(
                         hintText: 'İsim, firma, telefon veya kod ara',
-                        prefixIcon: Icon(Icons.search),
+                        prefixIcon: TcIcon(TcIcons.search),
                         isDense: true,
                       ),
                       onChanged: (value) =>
@@ -122,7 +122,7 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
                     final filtered = customers.where(_matches).toList();
                     if (filtered.isEmpty) {
                       return AppEmptyState(
-                        icon: Icons.person_off_outlined,
+                        icon: TcIcons.userOff,
                         title: _query.isEmpty
                             ? 'Henüz müşteri yok'
                             : 'Eşleşen müşteri yok',
@@ -131,7 +131,7 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
                             : '"$_query" için sonuç bulunamadı.',
                         action: FilledButton.icon(
                           onPressed: () => _yeniMusteri(context),
-                          icon: const Icon(Icons.person_add_alt),
+                          icon: const TcIcon(TcIcons.userPlus),
                           label: const Text('Yeni müşteri ekle'),
                         ),
                       );
@@ -244,7 +244,7 @@ class CustomerSlot extends ConsumerWidget {
                 color: scheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: Icon(Icons.person_search_outlined, color: scheme.primary),
+              child: TcIcon(TcIcons.userSearch, color: scheme.primary),
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
@@ -266,7 +266,7 @@ class CustomerSlot extends ConsumerWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+            TcIcon(TcIcons.chevronRight, color: scheme.onSurfaceVariant),
           ],
         ),
       );
@@ -341,7 +341,7 @@ class _CustomerSummary extends StatelessWidget {
             ],
           ),
         ),
-        Icon(Icons.swap_horiz, size: 20, color: scheme.onSurfaceVariant),
+        TcIcon(TcIcons.swap, size: 20, color: scheme.onSurfaceVariant),
       ],
     );
   }

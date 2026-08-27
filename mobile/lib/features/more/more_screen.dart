@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/palette.dart';
@@ -51,10 +53,10 @@ class MoreScreen extends ConsumerWidget {
           const MenuGroupHeader('İşletme'),
 
           ListTile(
-            leading: const Icon(Icons.calendar_month_outlined),
+            leading: const TcIcon(TcIcons.calendar),
             title: const Text('Takvim'),
             subtitle: const Text('Randevular ve iş planı'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const CalendarScreen())),
@@ -63,45 +65,45 @@ class MoreScreen extends ConsumerWidget {
           // göremez (bkz. backend RolePermissions).
           if (session?.canSeeFinance ?? false)
             ListTile(
-              leading: const Icon(Icons.account_balance_wallet_outlined),
+              leading: const TcIcon(TcIcons.wallet),
               title: const Text('Finans'),
               subtitle: const Text('Gelir, gider, aylık özet'),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const TcIcon(TcIcons.chevronRight),
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const FinanceScreen())),
             ),
           ListTile(
-            leading: const Icon(Icons.inventory_2_outlined),
+            leading: const TcIcon(TcIcons.box),
             title: const Text('Stok Yönetimi'),
             subtitle: const Text('Ürünler, barkod, stok durumu'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ProductsListScreen()),
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.qr_code_scanner_outlined),
+            leading: const TcIcon(TcIcons.barcode),
             title: const Text('Barkod Tara'),
             subtitle: const Text('Ürünü hızlı bul veya ekle'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => scanBarcodeAndOpen(context, ref),
           ),
           const MenuGroupHeader('Hesap'),
           ListTile(
-            leading: const Icon(Icons.workspace_premium_outlined),
+            leading: const TcIcon(TcIcons.star),
             title: const Text('Abonelik'),
             subtitle: const Text('Paketin ve kalan süren'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.receipt_long_outlined),
+            leading: const TcIcon(TcIcons.pdf),
             title: const Text('Ödemelerim'),
             subtitle: const Text('Geçmiş ödemeler, tarih ve tutarlar'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const PaymentsScreen())),
@@ -114,7 +116,7 @@ class MoreScreen extends ConsumerWidget {
                   ref.watch(localConflictCountProvider).valueOrNull ?? 0;
               if (count == 0) return const SizedBox.shrink();
               return ListTile(
-                leading: Icon(Icons.sync_problem_outlined, color: scheme.error),
+                leading: TcIcon(TcIcons.syncProblem, color: scheme.error),
                 title: const Text('Senkron çakışmaları'),
                 subtitle: const Text('Hangi halin kalacağını seç'),
                 trailing: Row(
@@ -138,7 +140,7 @@ class MoreScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const Icon(Icons.chevron_right),
+                    const TcIcon(TcIcons.chevronRight),
                   ],
                 ),
                 onTap: () => Navigator.of(context).push(
@@ -155,18 +157,14 @@ class MoreScreen extends ConsumerWidget {
               final bekleyen =
                   ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
               return ListTile(
-                leading: Icon(
-                  bekleyen > 0
-                      ? Icons.cloud_sync_rounded
-                      : Icons.cloud_done_outlined,
-                ),
+                leading: TcIcon(bekleyen > 0 ? TcIcons.sync : TcIcons.cloudOk),
                 title: const Text('Eşitleme durumu'),
                 subtitle: Text(
                   bekleyen > 0
                       ? '$bekleyen kayıt bekliyor'
                       : 'Her şey eşitlendi',
                 ),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const TcIcon(TcIcons.chevronRight),
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SyncStatusScreen()),
                 ),
@@ -176,16 +174,16 @@ class MoreScreen extends ConsumerWidget {
 
           const Divider(height: 24),
           ListTile(
-            leading: const Icon(Icons.settings_outlined),
+            leading: const TcIcon(TcIcons.settings),
             title: const Text('Ayarlar'),
             subtitle: const Text('Profil, işletme, bildirim, senkron'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const TcIcon(TcIcons.chevronRight),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
           ),
           ListTile(
-            leading: Icon(Icons.logout_rounded, color: scheme.error),
+            leading: TcIcon(TcIcons.logout, color: scheme.error),
             title: Text('Çıkış yap', style: TextStyle(color: scheme.error)),
             onTap: () async {
               await ref.read(sessionControllerProvider.notifier).logout();

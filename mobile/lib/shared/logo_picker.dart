@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
+import '../shared/tc_icon.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../app/theme.dart';
@@ -76,19 +78,19 @@ class _LogoPickerFieldState extends State<LogoPickerField> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const TcIcon(TcIcons.image),
               title: const Text('Galeriden seç'),
               onTap: () => Navigator.pop(context, 'gallery'),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
+              leading: const TcIcon(TcIcons.camera),
               title: const Text('Kamerayla çek'),
               onTap: () => Navigator.pop(context, 'camera'),
             ),
             if (hasLogo)
               ListTile(
-                leading: Icon(
-                  Icons.delete_outline,
+                leading: TcIcon(
+                  TcIcons.trash,
                   color: Theme.of(context).colorScheme.error,
                 ),
                 title: Text(
@@ -162,7 +164,7 @@ class _LogoPickerFieldState extends State<LogoPickerField> {
                       ),
                     ),
                     onPressed: _busy ? null : _openSourceSheet,
-                    icon: const Icon(Icons.image_outlined, size: 18),
+                    icon: const TcIcon(TcIcons.image, size: 18),
                     label: Text(path == null ? 'Logo ekle' : 'Değiştir'),
                   ),
                 ],
@@ -207,18 +209,13 @@ class _LogoThumb extends StatelessWidget {
                 ),
               )
             : path == null
-            ? Icon(
-                Icons.add_photo_alternate_outlined,
-                color: scheme.onSurfaceVariant,
-              )
+            ? TcIcon(TcIcons.image, color: scheme.onSurfaceVariant)
             : Image.file(
                 File(path!),
                 fit: BoxFit.cover,
                 // Dosya silinmiş/bozulmuşsa ekran çökmemeli.
-                errorBuilder: (_, _, _) => Icon(
-                  Icons.broken_image_outlined,
-                  color: scheme.onSurfaceVariant,
-                ),
+                errorBuilder: (_, _, _) =>
+                    TcIcon(TcIcons.imageBroken, color: scheme.onSurfaceVariant),
               ),
       ),
     );

@@ -116,7 +116,7 @@ class _PlayUpdateReadyBanner extends StatelessWidget {
       content: const Text(
         'Güncelleme indirildi. Uygulamayı yeniden başlatmak için devam et.',
       ),
-      leading: const Icon(Icons.system_update_alt_rounded),
+      leading: const TcIcon(TcIcons.download),
       actions: [
         TextButton(
           onPressed: () => playUpdateService.completeUpdate(),

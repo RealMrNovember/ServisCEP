@@ -153,7 +153,7 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
                     controller: _searchController,
                     decoration: const InputDecoration(
                       hintText: 'Ürün adı veya barkod',
-                      prefixIcon: Icon(Icons.search),
+                      prefixIcon: TcIcon(TcIcons.search),
                       filled: true,
                       isDense: true,
                     ),
@@ -282,7 +282,7 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ProductFormScreen()),
               ),
-              icon: const Icon(Icons.add),
+              icon: const TcIcon(TcIcons.plus),
               label: const Text('Yeni Ürün'),
             ),
     );
@@ -395,11 +395,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 56,
-              color: scheme.onSurfaceVariant,
-            ),
+            TcIcon(TcIcons.box, size: 56, color: scheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               'Stokta ürün yok',
@@ -421,13 +417,13 @@ class _EmptyState extends StatelessWidget {
               children: [
                 OutlinedButton.icon(
                   onPressed: onScan,
-                  icon: const Icon(Icons.qr_code_scanner),
+                  icon: const TcIcon(TcIcons.barcode),
                   label: const Text('Barkod Tara'),
                 ),
                 const SizedBox(width: 12),
                 FilledButton.icon(
                   onPressed: onAdd,
-                  icon: const Icon(Icons.add),
+                  icon: const TcIcon(TcIcons.plus),
                   label: const Text('Ekle'),
                 ),
               ],

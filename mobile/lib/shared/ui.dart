@@ -153,7 +153,11 @@ class StatusPill extends StatelessWidget {
 
   final String label;
   final Color? color;
-  final IconData? icon;
+
+  /// [TcIcons] adı. Tasarım sistemi ikon seti dışına çıkılmıyor:
+  /// Material'ın yuvarlak ikonları, setin 1.7 kalınlığındaki çizgileriyle
+  /// yan yana geldiğinde iki farklı uygulamadan toplanmış gibi duruyor.
+  final String? icon;
   final bool dense;
 
   @override
@@ -175,7 +179,7 @@ class StatusPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: dense ? 12 : 14, color: base),
+            TcIcon(icon!, size: dense ? 12 : 14, color: base),
             const SizedBox(width: 4),
           ],
           Text(
@@ -202,7 +206,8 @@ class AppEmptyState extends StatelessWidget {
     this.action,
   });
 
-  final IconData icon;
+  /// [TcIcons] adı.
+  final String icon;
   final String title;
   final String? message;
   final Widget? action;
@@ -224,7 +229,7 @@ class AppEmptyState extends StatelessWidget {
                 color: scheme.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 38, color: scheme.primary),
+              child: TcIcon(icon, size: 38, color: scheme.primary),
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
@@ -365,7 +370,9 @@ class InfoRowTile extends StatelessWidget {
 
   final String label;
   final String value;
-  final IconData? icon;
+
+  /// [TcIcons] adı.
+  final String? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -377,7 +384,7 @@ class InfoRowTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 18, color: scheme.onSurfaceVariant),
+            TcIcon(icon!, size: 18, color: scheme.onSurfaceVariant),
             const SizedBox(width: AppSpacing.md),
           ],
           Expanded(

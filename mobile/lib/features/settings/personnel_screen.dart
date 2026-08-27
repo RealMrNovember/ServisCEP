@@ -24,7 +24,7 @@ class PersonnelScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Kullanıcılar ve yetkiler')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddSheet(context, ref),
-        icon: const Icon(Icons.person_add_alt_1),
+        icon: const TcIcon(TcIcons.userPlus),
         label: const Text('Personel ekle'),
       ),
       body: listAsync.when(
@@ -110,7 +110,7 @@ class _PersonnelTile extends ConsumerWidget {
                     style: const TextStyle(fontSize: 12),
                   ),
                   trailing: role == person.role
-                      ? const Icon(Icons.check, size: 18)
+                      ? const TcIcon(TcIcons.check, size: 18)
                       : null,
                 ),
               ),
@@ -426,7 +426,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_off_rounded, size: 48),
+            const TcIcon(TcIcons.cloudOff, size: 48),
             const SizedBox(height: 14),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -85,6 +86,13 @@ class _LogoCropperScreenState extends State<LogoCropperScreen> {
   Size _viewport = Size.zero;
   bool _exporting = false;
 
+  /// Görselin ağırlıklı olarak açık renkli olup olmadığı.
+  ///
+  /// Açık renkli bir logo, teklif PDF'inin beyaz zeminine basılınca
+  /// kayboluyor ve kullanıcı bunu ancak müşteriye gönderdiği belgede fark
+  /// ediyordu. null = henüz ölçülmedi.
+  bool? _acikRenkli;
+
   @override
   void initState() {
     super.initState();
@@ -106,9 +114,35 @@ class _LogoCropperScreenState extends State<LogoCropperScreen> {
         return;
       }
       setState(() => _image = frame.image);
+      unawaited(_parlaklikOlc(frame.image));
     } on Object {
       if (mounted) setState(() => _error = 'Görsel açılamadı.');
     }
+  }
+
+  /// Saydam olmayan piksellerin ortalama parlaklığını ölçer.
+  ///
+  /// Tam çözünürlükte gezinmek gereksiz; her 8. piksel yeterli bir
+  /// tahmin veriyor ve büyük logolarda bile bir kareyi geçmiyor.
+  /// Saydam pikseller sayılmıyor: PNG logoların çoğu saydam zeminli ve
+  /// onları da hesaba katmak her logoyu "koyu" gösterirdi.
+  Future<void> _parlaklikOlc(ui.Image image) async {
+    final veri = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (veri == null) return;
+
+    final bayt = veri.buffer.asUint8List();
+    var toplam = 0.0;
+    var sayi = 0;
+    for (var i = 0; i + 3 < bayt.length; i += 32) {
+      final alfa = bayt[i + 3];
+      if (alfa < 32) continue;
+      // Algısal parlaklık (Rec. 601) — insan gözü yeşili daha parlak
+      // görüyor, düz ortalama beyaz bir logoyu koyu sayabiliyordu.
+      toplam += 0.299 * bayt[i] + 0.587 * bayt[i + 1] + 0.114 * bayt[i + 2];
+      sayi++;
+    }
+    if (sayi == 0 || !mounted) return;
+    setState(() => _acikRenkli = (toplam / sayi) > 200);
   }
 
   /// Çerçevenin oranı — "Serbest" seçiliyse görselin kendi oranı.
@@ -339,6 +373,48 @@ class _LogoCropperScreenState extends State<LogoCropperScreen> {
                         ),
                     ],
                   ),
+
+                  // Açık renkli logo + açık zemin: belgede kaybolur.
+                  // Uyarı yalnızca bu iki koşul birlikteyken çıkıyor;
+                  // koyu zemin seçildiğinde sorun kalmıyor.
+                  if (_acikRenkli == true &&
+                      _background != LogoBackground.koyu) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger.withValues(alpha: 0.16),
+                        borderRadius: AppRadius.field,
+                        border: Border.all(
+                          color: AppColors.danger.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Logon açık renkli — antette kaybolur',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Teklif PDF\'i beyaz zemine basılır. Zemini '
+                            '"Koyu" seç ya da logonun koyu renkli sürümünü '
+                            'yükle.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12.5,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: AppSpacing.sm),
                   const Text(

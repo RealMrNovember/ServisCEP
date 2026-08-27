@@ -75,7 +75,7 @@ class _JobsListScreenState extends State<JobsListScreen>
             );
           }
         },
-        icon: const Icon(Icons.add),
+        icon: const TcIcon(TcIcons.plus),
         label: Text(isJobsTab ? 'Yeni İş' : 'Yeni Talep'),
       ),
     );
@@ -177,7 +177,7 @@ class _RequestsTab extends ConsumerWidget {
       data: (requests) {
         if (requests.isEmpty) {
           return const AppEmptyState(
-            icon: Icons.inbox_outlined,
+            icon: TcIcons.inbox,
             title: 'Talepler müşteriden gelir',
             message: 'Onayladığın talep otomatik olarak iş listesine düşer.',
           );
@@ -568,11 +568,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.work_outline_rounded,
-              size: 56,
-              color: scheme.onSurfaceVariant,
-            ),
+            TcIcon(TcIcons.briefcase, size: 56, color: scheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               'Henüz iş yok',
@@ -591,7 +587,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: onAdd,
-              icon: const Icon(Icons.add),
+              icon: const TcIcon(TcIcons.plus),
               label: const Text('İş Oluştur'),
             ),
           ],

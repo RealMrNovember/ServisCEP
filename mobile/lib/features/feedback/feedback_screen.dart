@@ -148,7 +148,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             data: (kayitlar) {
               if (kayitlar.isEmpty) {
                 return const AppEmptyState(
-                  icon: Icons.forum_outlined,
+                  icon: TcIcons.mail,
                   title: 'Henüz geri bildirim göndermediniz',
                   message: 'Yazdıklarınız ve gelen yanıtlar burada durur.',
                 );

@@ -111,7 +111,7 @@ class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _addFromStock,
-                icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                icon: const TcIcon(TcIcons.box, size: 18),
                 label: const Text('Stoktan'),
               ),
             ),
@@ -119,7 +119,7 @@ class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
             Expanded(
               child: FilledButton.icon(
                 onPressed: _addManual,
-                icon: const Icon(Icons.add, size: 18),
+                icon: const TcIcon(TcIcons.plus, size: 18),
                 label: const Text('Serbest satır'),
               ),
             ),
@@ -131,8 +131,8 @@ class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
           AppCard(
             child: Row(
               children: [
-                Icon(
-                  Icons.playlist_add_outlined,
+                TcIcon(
+                  TcIcons.listPlus,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: AppSpacing.md),

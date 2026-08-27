@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 /// Kamera ile barkod tarama — bkz. docs/16 § Barkod Okuma Akışı.
@@ -54,7 +56,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         title: const Text('Barkod Tara'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.flash_on),
+            icon: const TcIcon(TcIcons.flash),
             tooltip: 'Işık',
             onPressed: () => _controller.toggleTorch(),
           ),

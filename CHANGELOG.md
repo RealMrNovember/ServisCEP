@@ -20,10 +20,13 @@ Kurallar:
 ## v0.8.0
 
 Yenilikler:
-• Uygulama baştan aşağı yenilendi. Ana Sayfa artık günü tek bakışta gösteriyor: kaç iş, kaçı bitti, ne kadar tahsilat.
-• Sıradaki işiniz öne çıkıyor; müşteriyi aramak ve yol tarifi almak tek dokunuş.
-• Yeni iş, teklif, müşteri ve barkod için ana ekrandan kısayollar.
-• İş, müşteri ve belge listeleri yeniden tasarlandı; gönderilmemiş kayıtlar artık açıkça işaretli.
+• Uygulama baştan aşağı yenilendi: 38 ekranın tamamı yeni tasarımda.
+• Ana Sayfa günü tek bakışta gösteriyor; sıradaki işi aramak ve yol tarifi almak tek dokunuş.
+• Teklif formu dört adıma bölündü.
+• İş tamamlama artık kontrol listesi, tahsilat ve ödeme türü içeriyor.
+• Açık/koyu tema seçimi geldi; servis talebini artık reddedebiliyorsunuz.
+• Cari hesapta borç, tahsilat ve kalan bakiye bir arada.
+• Güncelleme uyarısı işinizi kesmiyor; kapatılabilir bir şerit oldu.
 
 ## v0.7.8
 

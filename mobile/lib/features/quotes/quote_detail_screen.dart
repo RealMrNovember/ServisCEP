@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -57,7 +59,7 @@ class QuoteDetailScreen extends ConsumerWidget {
               ListTile(
                 title: Text(entry.value),
                 trailing: quote.status == entry.key
-                    ? const Icon(Icons.check)
+                    ? const TcIcon(TcIcons.check)
                     : null,
                 onTap: () => Navigator.pop(context, entry.key),
               ),
@@ -159,7 +161,7 @@ class QuoteDetailScreen extends ConsumerWidget {
               statusPill: StatusPill(
                 label: _quoteStatusLabels[quote.status] ?? quote.status,
                 color: _statusColor(quote.status, palet),
-                icon: Icons.expand_more,
+                icon: TcIcons.chevronDown,
               ),
               onChangeStatus: () => _changeStatus(context, ref, quote),
               onShare: () => _sharePdf(context, ref, quote),

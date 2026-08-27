@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../shared/tc_icon.dart';
+
 import '../app/theme.dart';
 import '../core/models/document_templates.dart';
 import 'ui.dart';
@@ -119,7 +121,7 @@ class TemplateField extends StatelessWidget {
             ),
             TextButton.icon(
               onPressed: () => _pickTemplate(context),
-              icon: const Icon(Icons.auto_awesome_outlined, size: 17),
+              icon: const TcIcon(TcIcons.sparkle, size: 17),
               label: const Text('Hazır ifade'),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
             ),

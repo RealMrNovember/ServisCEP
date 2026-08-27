@@ -543,7 +543,7 @@ class _BugununIsleri extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         child: AppEmptyState(
-          icon: Icons.event_available_outlined,
+          icon: TcIcons.calendar,
           title: 'Bugün için planlanmış iş yok',
           message: 'Yeni bir iş oluşturarak günü planla.',
           action: FilledButton(

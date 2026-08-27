@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/palette.dart';
@@ -156,7 +158,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             AppCard(
               padding: EdgeInsets.zero,
               child: ListTile(
-                leading: const Icon(Icons.lock_outline_rounded),
+                leading: const TcIcon(TcIcons.lock),
                 title: const Text('Şifre'),
                 subtitle: const Text('Diğer cihazlardaki oturumlar kapanır'),
                 trailing: TextButton(

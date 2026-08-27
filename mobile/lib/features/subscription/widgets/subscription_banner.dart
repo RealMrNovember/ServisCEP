@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/core_providers.dart';
@@ -80,7 +82,7 @@ class SubscriptionBanner extends ConsumerWidget {
 
     return switch (tier) {
       _BannerTier.expired => _BannerCard(
-        icon: Icons.error_outline_rounded,
+        icon: TcIcons.alertCircle,
         background: scheme.errorContainer,
         foreground: scheme.onErrorContainer,
         title: '$noun sona erdi',
@@ -88,7 +90,7 @@ class SubscriptionBanner extends ConsumerWidget {
         onTap: () => _openSubscription(context),
       ),
       _BannerTier.urgent => _BannerCard(
-        icon: Icons.timer_outlined,
+        icon: TcIcons.clock,
         background: scheme.tertiaryContainer,
         foreground: scheme.onTertiaryContainer,
         title: days == 0
@@ -98,7 +100,7 @@ class SubscriptionBanner extends ConsumerWidget {
         onTap: () => _openSubscription(context),
       ),
       _BannerTier.soon => _BannerCard(
-        icon: Icons.info_outline_rounded,
+        icon: TcIcons.info,
         background: scheme.secondaryContainer,
         foreground: scheme.onSecondaryContainer,
         title: '$noun $days gün sonra doluyor',
@@ -133,7 +135,8 @@ class _BannerCard extends StatelessWidget {
     this.onDismiss,
   });
 
-  final IconData icon;
+  /// [TcIcons] adı.
+  final String icon;
   final Color background;
   final Color foreground;
   final String title;
@@ -153,7 +156,7 @@ class _BannerCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
           child: Row(
             children: [
-              Icon(icon, color: foreground, size: 22),
+              TcIcon(icon, color: foreground, size: 22),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -180,15 +183,15 @@ class _BannerCard extends StatelessWidget {
               ),
               if (onDismiss != null)
                 IconButton(
-                  icon: Icon(Icons.close_rounded, color: foreground, size: 18),
+                  icon: TcIcon(TcIcons.x, color: foreground, size: 18),
                   onPressed: onDismiss,
                   tooltip: 'Bugünlük kapat',
                 )
               else
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
+                  child: TcIcon(
+                    TcIcons.chevronRight,
                     color: foreground,
                     size: 20,
                   ),

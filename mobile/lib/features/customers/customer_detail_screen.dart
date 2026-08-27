@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -115,7 +117,7 @@ class _CustomerDetailContent extends StatelessWidget {
           title: Text(customer.displayName),
           actions: [
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
+              icon: const TcIcon(TcIcons.edit),
               onPressed: () => context.push(
                 '/customers/${customer.id}/edit',
                 extra: customer,
@@ -152,68 +154,60 @@ class _GeneralTab extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       children: [
         _InfoRow(
-          icon: Icons.badge_outlined,
+          icon: TcIcons.badge,
           label: 'Müşteri no',
           value: customer.code,
         ),
         _InfoRow(
-          icon: Icons.category_outlined,
+          icon: TcIcons.category,
           label: 'Tip',
           value: customerTypeLabels[customer.type] ?? customer.type,
         ),
         if (customer.contactName?.isNotEmpty == true)
           _InfoRow(
-            icon: Icons.person_outline,
+            icon: TcIcons.user,
             label: 'Yetkili adı soyadı',
             value: customer.contactName!,
           ),
         if (customer.companyName?.isNotEmpty == true)
           _InfoRow(
-            icon: Icons.apartment_outlined,
+            icon: TcIcons.building,
             label: 'Firma adı',
             value: customer.companyName!,
           ),
         if (customer.iban?.isNotEmpty == true)
-          _InfoRow(
-            icon: Icons.account_balance_outlined,
-            label: 'IBAN',
-            value: customer.iban!,
-          ),
+          _InfoRow(icon: TcIcons.bank, label: 'IBAN', value: customer.iban!),
         if (customer.phone?.isNotEmpty == true)
           _InfoRow(
-            icon: Icons.phone_outlined,
+            icon: TcIcons.phone,
             label: 'Telefon',
             value: customer.phone!,
           ),
         if (customer.email?.isNotEmpty == true)
           _InfoRow(
-            icon: Icons.email_outlined,
+            icon: TcIcons.mail,
             label: 'E-posta',
             value: customer.email!,
           ),
         if (customer.address?.isNotEmpty == true)
           _InfoRow(
-            icon: Icons.location_on_outlined,
+            icon: TcIcons.pin,
             label: 'Adres',
             value: customer.address!,
             trailing: IconButton(
-              icon: const Icon(Icons.map_outlined, size: 20),
+              icon: const TcIcon(TcIcons.map, size: 20),
               tooltip: 'Haritada Aç',
               onPressed: () => MapLauncher.openAddress(customer.address!),
             ),
           ),
         if (customer.taxInfo?.isNotEmpty == true)
           _InfoRow(
-            icon: Icons.receipt_long_outlined,
+            icon: TcIcons.pdf,
             label: 'Vergi bilgisi',
             value: customer.taxInfo!,
           ),
         if (customer.notes?.isNotEmpty == true)
-          _InfoRow(
-            icon: Icons.notes_outlined,
-            label: 'Notlar',
-            value: customer.notes!,
-          ),
+          _InfoRow(icon: TcIcons.note, label: 'Notlar', value: customer.notes!),
 
         // GEÇMİŞ İŞLER burada, ayrı sekmede değil (tasarım ekran 04).
         // Kullanıcı müşteriye baktığında ilk merak ettiği şey onunla daha
@@ -629,10 +623,8 @@ class _DocumentsTabState extends ConsumerState<_DocumentsTab> {
             ),
             child: Row(
               children: [
-                Icon(
-                  hasAny
-                      ? Icons.cloud_done_outlined
-                      : Icons.description_outlined,
+                TcIcon(
+                  hasAny ? TcIcons.cloudOk : TcIcons.file,
                   color: scheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 12),
@@ -661,7 +653,7 @@ class _DocumentsTabState extends ConsumerState<_DocumentsTab> {
                   width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.document_scanner_outlined),
+              : const TcIcon(TcIcons.scan),
           label: Text(hasAny ? 'Yeniden tara' : 'Kamerayla tara'),
         ),
         const SizedBox(height: 10),
@@ -699,7 +691,9 @@ class _InfoRow extends StatelessWidget {
     required this.value,
     this.trailing,
   });
-  final IconData icon;
+
+  /// [TcIcons] adı.
+  final String icon;
   final String label;
   final String value;
   final Widget? trailing;
@@ -712,7 +706,7 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: scheme.onSurfaceVariant),
+          TcIcon(icon, size: 20, color: scheme.onSurfaceVariant),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
