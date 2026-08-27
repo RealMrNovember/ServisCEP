@@ -97,6 +97,11 @@ jobs:
       # pubspec.lock güncellenmemişti. Buradaki kontroller o üçünün birebir
       # karşılığı; AAB derlenmeden önce kırılır.
       - name: Sürüm ön kontrolü
+        # `working-directory: .` ZORUNLU: işin varsayılanı `mobile` ve
+        # betik depo kökünde. Bir alt adımda (sürüm notu) aynı geçersiz
+        # kılma zaten vardı; burada eksikti ve ilk denemede sürüm tam bu
+        # yüzden düştü.
+        working-directory: .
         run: python3 .github/scripts/release_preflight.py "${GITHUB_REF_NAME}"
 
       - name: Sürüm notunu CHANGELOG'dan hazırla
