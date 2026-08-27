@@ -9,6 +9,7 @@ import '../../shared/tc_icon.dart';
 import '../../shared/ui.dart';
 import '../../shared/wordmark.dart';
 import 'data/auth_repository.dart';
+import 'forgot_password_screen.dart';
 import 'data/google_auth_service.dart';
 import 'data/session_controller.dart';
 
@@ -159,7 +160,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: TextStyle(color: palet.dangerText),
                       ),
                     ],
-                    const SizedBox(height: AppSpacing.xl),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ForgotPasswordScreen(
+                              // Yazdığı adres taşınıyor: ekranı ancak
+                              // parolasını hatırlamayan biri açıyor,
+                              // e-postasını iki kez yazdırmanın anlamı yok.
+                              initialEmail: _emailController.text.trim(),
+                            ),
+                          ),
+                        ),
+                        child: const Text('Şifremi unuttum'),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
                     FilledButton(
                       onPressed: _isSubmitting ? null : _submit,
                       child: _isSubmitting

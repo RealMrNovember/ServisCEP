@@ -19,6 +19,24 @@ cp -f deploy/public-placeholder/favicon.ico favicon.ico
 cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png
 cp -f deploy/public-placeholder/logo.png logo.png
 
+# Uzantısız adresler de çalışsın: /privacy ve /account-deletion.
+#
+# Play Console'a verilen adresler uzantısız ("…/privacy") ama sunucu
+# yalnızca "privacy.html" servis ediyordu; ikisi de 404 dönüyordu ve
+# Google, çalışmayan bir gizlilik politikası bağlantısını politika
+# ihlali sayıyor.
+#
+# Çözüm nginx'te DEĞİL dosya düzeninde: vhost aaPanel tarafından
+# yönetiliyor ve sitenin PHP sürümü panelden değiştirilirse elle eklenen
+# yönlendirme sessizce siliniyor. Dizin + index.html her nginx
+# yapılandırmasında çalışır ve panel sıfırlamasından etkilenmez.
+# Uzantılı adresler de duruyor — daha önce paylaşılmış bağlantılar
+# kırılmasın.
+for sayfa in privacy account-deletion; do
+  mkdir -p "$sayfa"
+  cp -f "deploy/public-placeholder/$sayfa.html" "$sayfa/index.html"
+done
+
 # ── Backend (Laravel + Filament + mobil API) — canlıya alındı (2026-08-21) ──
 # PHP çalışma zamanı 2026-08-22'den itibaren Docker'da (serviscep-php,
 # bkz. /www/dk_project/serviscep) — composer/artisan artık host'un php'si

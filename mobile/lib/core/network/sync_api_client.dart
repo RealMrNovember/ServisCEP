@@ -89,6 +89,18 @@ abstract interface class SyncApiClient {
   /// bunu yakalayıp onboarding'e yönlendirmesi).
   Future<AuthTokenResult> loginWithGoogle(String idToken);
 
+  /// Parola sıfırlama kodu ister. Hesap yoksa da hata vermez — sunucu
+  /// bilinçli olarak aynı yanıtı döner (kullanıcı sayımını engellemek
+  /// için, bkz. AuthController::forgotPassword).
+  Future<void> forgotPassword(String email);
+
+  /// Kodu ve yeni parolayı gönderir.
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  });
+
   /// Onboarding'in Google akışı — hesap ZATEN varsa backend 422 döner.
   Future<AuthTokenResult> registerWithGoogle({
     required String idToken,
@@ -263,6 +275,36 @@ class DioSyncApiClient implements SyncApiClient {
         data: {'email': email, 'password': password},
       );
       return AuthTokenResult.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> forgotPassword(String email) async {
+    try {
+      await _dio.post('/auth/password/forgot', data: {'email': email});
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  }) async {
+    try {
+      await _dio.post(
+        '/auth/password/reset',
+        data: {
+          'email': email,
+          'code': code,
+          'password': password,
+          'password_confirmation': password,
+        },
+      );
     } on DioException catch (e) {
       _client.throwApiException(e);
     }

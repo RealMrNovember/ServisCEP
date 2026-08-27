@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Models\AppLog;
 use App\Models\Company;
 use App\Models\User;
+use App\Notifications\PasswordResetCode;
+use Carbon\Carbon;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +20,9 @@ use Laravel\Socialite\Two\User as SocialiteUser;
 
 class AuthService
 {
+    /** Parola sıfırlama kodunun geçerlilik süresi (dakika). */
+    private const PAROLA_KODU_DAKIKA = 15;
+
     /**
      * Yeni şirketi ve şirketin ilk (OWNER) kullanıcısını birlikte oluşturur —
      * bkz. ROADMAP.md M2, mobil onboarding akışıyla (şirket bilgileri +
@@ -262,5 +267,101 @@ class AuthService
         AppLog::event('Yeni kayıt', ['yontem' => 'google'], $user);
 
         return ['user' => $user->load('company'), 'token' => $token];
+    }
+
+    /**
+     * Parola sıfırlama kodunu üretir ve e-postayla gönderir.
+     *
+     * Hesap YOKSA da sessizce başarılı dönülür (çağıran taraf zaten aynı
+     * mesajı gösterir): aksi halde bu uç, bir e-postanın sistemde kayıtlı
+     * olup olmadığını sorgulamanın ücretsiz yoluna dönüşür.
+     *
+     * Kod veritabanında AÇIK DEĞİL hash'li tutuluyor. Sıfırlama kodu, o
+     * dakikalar boyunca parolaya eşdeğer bir sırdır; veritabanı kopyası
+     * sızarsa açık kod, doğrudan hesap devri demektir.
+     */
+    public function sendPasswordResetCode(string $email): void
+    {
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            AppLog::event(
+                'Parola sıfırlama istendi',
+                ['email' => $email, 'sonuc' => 'kullanıcı yok'],
+                null,
+                'warning',
+            );
+
+            return;
+        }
+
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => Hash::make($code), 'created_at' => now()],
+        );
+
+        $user->notify(new PasswordResetCode($code, self::PAROLA_KODU_DAKIKA));
+
+        AppLog::event('Parola sıfırlama kodu gönderildi', [], $user);
+    }
+
+    /**
+     * Kodu doğrular ve parolayı değiştirir.
+     *
+     * @param  array{email: string, code: string, password: string}  $data
+     */
+    public function resetPassword(array $data): void
+    {
+        $satir = DB::table('password_reset_tokens')
+            ->where('email', $data['email'])
+            ->first();
+
+        // Süre kontrolü FARK ALARAK yapılmıyor.
+        //
+        // Carbon 3'te diffInMinutes işaretli dönüyor: geçmiş bir tarih
+        // için negatif. `now()->diffInMinutes($gecmis) >= 15` bu yüzden
+        // hiçbir zaman doğru olmuyor ve süresi dolmuş kod kabul ediliyordu
+        // (testle yakalandı). Son geçerlilik anını hesaplayıp geçip
+        // geçmediğine bakmak yön hatasına kapalı.
+        $suresiDoldu = $satir !== null
+            && Carbon::parse($satir->created_at)
+                ->addMinutes(self::PAROLA_KODU_DAKIKA)
+                ->isPast();
+
+        if ($satir === null || $suresiDoldu || ! Hash::check($data['code'], $satir->token)) {
+            AppLog::event(
+                'Parola sıfırlama başarısız',
+                ['email' => $data['email'], 'sebep' => $satir === null ? 'kod yok' : ($suresiDoldu ? 'süre doldu' : 'kod hatalı')],
+                null,
+                'warning',
+            );
+
+            throw ValidationException::withMessages([
+                'code' => ['Kod geçersiz ya da süresi dolmuş. Yeniden kod iste.'],
+            ]);
+        }
+
+        $user = User::where('email', $data['email'])->firstOrFail();
+
+        DB::transaction(function () use ($user, $data): void {
+            // Parola AÇIK veriliyor: User modelinde 'password' cast'i
+            // 'hashed' ve hash'lemeyi o yapıyor (bkz. register).
+            $user->update(['password' => $data['password']]);
+
+            // Kod tek kullanımlık.
+            DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+
+            // TÜM oturumlar kapatılıyor — mevcut cihaz dahil.
+            //
+            // Parola sıfırlamanın sebebi çoğu zaman "hesabıma başkası
+            // erişmiş olabilir"dir. Açık kalan bir jeton bırakmak, o
+            // ihtimalde sıfırlamayı anlamsız kılar. Kullanıcı yeni
+            // parolasıyla yeniden giriş yapar.
+            $user->tokens()->delete();
+        });
+
+        AppLog::event('Parola sıfırlandı', [], $user);
     }
 }

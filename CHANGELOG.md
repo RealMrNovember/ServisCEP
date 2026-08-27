@@ -17,6 +17,16 @@ Kurallar:
 
 ---
 
+## v0.8.1
+
+Yenilikler:
+• Şifreni unuttuysan artık giriş ekranından sıfırlayabilirsin: e-postana 6 haneli kod gelir.
+• Kayıt ekranı şifre kuralını doğru söylüyor (en az 8 karakter).
+
+Düzeltmeler:
+• Tamamlanan bir işin tutarını düzeltmek müşteriye ikinci kez borç yazıyordu.
+• Gizlilik politikası ve hesap silme sayfaları artık her adresten açılıyor.
+
 ## v0.8.0
 
 Yenilikler:

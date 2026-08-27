@@ -48,6 +48,17 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
         Route::post('/auth/google/register', [AuthController::class, 'googleRegister'])->name('auth.google.register');
     });
 
+    // Parola sıfırlama — giriş yapılamadan çağrılır, bu yüzden kimlik
+    // doğrulaması yok. Sınır grubun geri kalanından DAHA DAR: her istek
+    // bir e-posta gönderiyor ve bu uç, kısıtlanmazsa üçüncü bir kişinin
+    // posta kutusunu doldurmanın ücretsiz yoluna dönüşür.
+    Route::middleware('throttle:5,10')->group(function (): void {
+        Route::post('/auth/password/forgot', [AuthController::class, 'forgotPassword'])
+            ->name('auth.password.forgot');
+        Route::post('/auth/password/reset', [AuthController::class, 'resetPassword'])
+            ->name('auth.password.reset');
+    });
+
     // Yayındaki sürüm — kimlik doğrulaması yok (bkz. AppVersionController).
     // Uygulama güncel mi sorusu, giriş yapılamadığında da sorulabilmeli.
     Route::get('/app/version', [AppVersionController::class, 'show'])->name('app.version');

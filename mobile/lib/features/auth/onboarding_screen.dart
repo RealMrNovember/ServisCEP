@@ -239,9 +239,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Şifre'),
-                      validator: (v) => (v == null || v.length < 6)
-                          ? 'En az 6 karakter olmalı'
+                      decoration: const InputDecoration(
+                        labelText: 'Şifre',
+                        helperText: 'En az 8 karakter.',
+                      ),
+                      // Sunucu min:8 istiyor. İstemci 6 diyordu: 7
+                      // karakterlik bir parola formdan geçiyor, sunucu
+                      // reddediyor ve kullanıcı sebebini göremiyordu.
+                      validator: (v) => (v == null || v.length < 8)
+                          ? 'En az 8 karakter olmalı'
                           : null,
                     ),
                     const SizedBox(height: AppSpacing.md),

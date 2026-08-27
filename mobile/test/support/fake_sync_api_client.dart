@@ -12,6 +12,8 @@ class FakeSyncApiClient implements SyncApiClient {
 
   final List<Map<String, dynamic>> createServiceRequestCalls = [];
   final List<(String, Map<String, dynamic>)> updateServiceRequestCalls = [];
+  final List<String> forgotPasswordCalls = [];
+  final List<(String, String, String)> resetPasswordCalls = [];
   final List<(String, String)> convertCalls = [];
   final List<Map<String, dynamic>> createQuoteCalls = [];
   final List<(String, Map<String, dynamic>)> updateQuoteCalls = [];
@@ -112,6 +114,20 @@ class FakeSyncApiClient implements SyncApiClient {
   @override
   Future<void> logout() async {
     logoutCalls++;
+  }
+
+  @override
+  Future<void> forgotPassword(String email) async {
+    forgotPasswordCalls.add(email);
+  }
+
+  @override
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  }) async {
+    resetPasswordCalls.add((email, code, password));
   }
 
   @override
