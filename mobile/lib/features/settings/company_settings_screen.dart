@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/palette.dart';
 import '../../app/theme.dart';
 import '../../core/database/app_database.dart';
 import '../../shared/logo_picker.dart';
@@ -155,7 +156,6 @@ class _CompanyFormState extends ConsumerState<_CompanyForm> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final repository = ref.read(companyRepositoryProvider);
 
     return Form(
@@ -320,7 +320,9 @@ class _CompanyFormState extends ConsumerState<_CompanyForm> {
             'Değişiklikler önce cihazına kaydedilir, bağlantı olduğunda '
             'sunucuyla eşitlenir.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: context.palette.textMuted),
           ),
         ],
       ),

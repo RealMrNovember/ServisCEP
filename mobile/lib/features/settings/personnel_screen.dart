@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/palette.dart';
+import '../../app/theme.dart';
 import '../../core/network/api_client.dart';
+import '../../core/utils/customer_display.dart';
+import '../../shared/tc_icon.dart';
+import '../../shared/ui.dart';
 import 'data/personnel_repository.dart';
 
 /// Kullanıcılar ve yetkiler — bkz. docs/09 § 1.
@@ -60,26 +65,19 @@ class _Explainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    final palet = context.palette;
+    return AppCard(
       child: Row(
         children: [
-          Icon(Icons.shield_outlined, color: scheme.onSecondaryContainer),
-          const SizedBox(width: 12),
+          TcIcon(TcIcons.shield, size: 18, color: palet.accent),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
-              'Eklediğin kişi, verdiğin e-posta ve parolayla uygulamaya '
+              'Eklediğin kişi, verdiğin e-posta ve şifreyle uygulamaya '
               'girer. Teknisyen rolü işletmenin finansal verilerini görmez.',
-              style: TextStyle(
-                color: scheme.onSecondaryContainer,
-                fontSize: 13,
-                height: 1.4,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
             ),
           ),
         ],
@@ -182,52 +180,44 @@ class _PersonnelTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: scheme.primary.withValues(alpha: 0.12),
+        leading: Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: palet.accent.withValues(alpha: 0.12),
+            borderRadius: AppRadius.field,
+          ),
           child: Text(
-            person.fullName.isNotEmpty ? person.fullName[0].toUpperCase() : '?',
-            style: TextStyle(
-              color: scheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
+            initialsOf(person.fullName),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(color: palet.accent),
           ),
         ),
         title: Text(
           person.fullName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(person.email, style: const TextStyle(fontSize: 12)),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: person.isOwner
-                    ? scheme.primaryContainer
-                    : scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                person.roleLabel,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: person.isOwner
-                      ? scheme.onPrimaryContainer
-                      : scheme.onSurfaceVariant,
-                ),
-              ),
+            Text(
+              person.email,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            StatusPill(
+              label: person.roleLabel,
+              color: person.isOwner ? palet.accent : palet.textMuted,
+              dense: true,
             ),
           ],
         ),

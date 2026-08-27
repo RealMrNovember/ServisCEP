@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../../shared/tc_icon.dart';
+import '../../shared/ui.dart';
+import '../../app/palette.dart';
+import '../../app/theme.dart';
 import '../../core/services/notification_service.dart';
 
 const _leadKey = 'reminder_lead_minutes';
@@ -58,27 +62,20 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     final selected = ref.watch(reminderLeadProvider).valueOrNull;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Bildirimler')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
-          Text(
-            'İş randevusu hatırlatması',
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          const SectionHeader(
+            'İş hatırlatmaları',
+            subtitle:
+                'Planlanmış bir işin randevu saatinden ne kadar önce '
+                'hatırlatılmak istersin?',
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Planlanmış bir işin randevu saatinden ne kadar önce '
-            'hatırlatılmak istersin?',
-            style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 12),
 
           if (selected == null)
             const Padding(
@@ -108,54 +105,40 @@ class NotificationSettingsScreen extends ConsumerWidget {
             ),
 
           if (selected == 0)
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: scheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
+            AppCard(
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.notifications_off_outlined,
-                    size: 20,
-                    color: scheme.onTertiaryContainer,
-                  ),
-                  const SizedBox(width: 10),
+                  TcIcon(TcIcons.bellOff, size: 18, color: palet.warningText),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
                       'Randevu hatırlatmaları kapalı. Yeni oluşturduğun '
                       'işler için hatırlatma zamanlanmayacak.',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: scheme.onTertiaryContainer,
-                        height: 1.4,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
                     ),
                   ),
                 ],
               ),
             ),
 
-          const Divider(height: 36),
-
-          Text(
-            'Sunucu bildirimleri',
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          const SizedBox(height: AppSpacing.xxl),
+          const SectionHeader(
+            'Sistem bildirimleri',
+            subtitle: 'Uygulama kapalıyken de telefonuna iletilenler.',
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Abonelik onayı ve süre hatırlatması gibi bildirimler, uygulama '
-            'kapalıyken de telefonuna iletilir. Bu bildirimleri tamamen '
-            'kapatmak istersen telefonunun Ayarlar → Uygulamalar → TeknikCEP '
-            '→ Bildirimler bölümünü kullanabilirsin.',
-            style: TextStyle(
-              fontSize: 13,
-              color: scheme.onSurfaceVariant,
-              height: 1.5,
+          AppCard(
+            child: Text(
+              'Abonelik onayı ve süre hatırlatması gibi bildirimler, uygulama '
+              'kapalıyken de telefonuna iletilir. Bu bildirimleri tamamen '
+              'kapatmak istersen telefonunun Ayarlar → Uygulamalar → '
+              'TeknikCEP → Bildirimler bölümünü kullanabilirsin.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: palet.textMuted,
+                height: 1.5,
+              ),
             ),
           ),
         ],

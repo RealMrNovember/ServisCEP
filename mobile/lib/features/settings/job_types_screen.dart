@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/job_constants.dart';
+import '../../app/palette.dart';
+import '../../app/theme.dart';
+import '../../shared/tc_icon.dart';
+import '../../shared/ui.dart';
 import '../auth/data/session_controller.dart';
 import 'data/job_types_repository.dart';
 
@@ -72,11 +76,36 @@ class JobTypesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     final custom = ref.watch(customJobTypesProvider).valueOrNull ?? const [];
+    final hazirSayisi = jobTypeCatalog.values.fold<int>(
+      0,
+      (toplam, liste) => toplam + liste.length,
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('İş türleri')),
+      appBar: AppBar(
+        title: const Text('İş türleri'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(20),
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.xl,
+              right: AppSpacing.xl,
+              bottom: AppSpacing.sm,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${custom.length + hazirSayisi} tür',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+              ),
+            ),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addDialog(context, ref),
         icon: const Icon(Icons.add),
@@ -85,48 +114,34 @@ class JobTypesScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: scheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
+          AppCard(
             child: Row(
               children: [
-                Icon(
-                  Icons.lightbulb_outline_rounded,
-                  color: scheme.onSecondaryContainer,
-                ),
-                const SizedBox(width: 12),
+                TcIcon(TcIcons.bulb, size: 18, color: palet.accent),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
-                    'Buradaki türler, iş oluştururken "İş türü / başlık" '
-                    'alanında öneri olarak çıkar.',
-                    style: TextStyle(
-                      color: scheme.onSecondaryContainer,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
+                    'Buradaki türler, iş oluştururken "İş başlığı" alanında '
+                    'öneri olarak çıkar.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
-          Text(
-            'Kendi türlerin',
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
+          const SectionHeader('Kendi türlerin'),
           if (custom.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
                 'Henüz kendi iş türünü eklemedin.',
-                style: TextStyle(color: scheme.onSurfaceVariant),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: palet.textMuted),
               ),
             )
           else
@@ -137,7 +152,11 @@ class JobTypesScreen extends ConsumerWidget {
                 title: Text(type.name),
                 subtitle: Text(type.category),
                 trailing: IconButton(
-                  icon: Icon(Icons.delete_outline, color: scheme.error),
+                  icon: TcIcon(
+                    TcIcons.trash,
+                    size: 18,
+                    color: palet.dangerText,
+                  ),
                   tooltip: 'Sil',
                   onPressed: () =>
                       ref.read(jobTypesRepositoryProvider).remove(type.id),
@@ -145,19 +164,11 @@ class JobTypesScreen extends ConsumerWidget {
               ),
             ),
 
-          const Divider(height: 32),
-          Text(
+          const SizedBox(height: AppSpacing.xxl),
+          const SectionHeader(
             'Hazır katalog',
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            subtitle: 'Uygulamayla birlikte gelir, değiştirilemez.',
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Uygulamayla birlikte gelir, değiştirilemez.',
-            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 12),
           ...jobTypeCatalog.entries.map(
             (entry) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
@@ -166,11 +177,9 @@ class JobTypesScreen extends ConsumerWidget {
                 children: [
                   Text(
                     entry.key,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleSmall?.copyWith(color: palet.textMuted),
                   ),
                   const SizedBox(height: 8),
                   Wrap(

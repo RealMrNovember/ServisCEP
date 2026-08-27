@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/sync/sync_trigger.dart';
+import '../../app/palette.dart';
+import '../../app/theme.dart';
+import '../../shared/tc_icon.dart';
+import '../../shared/ui.dart';
 import 'data/sync_conflict_repository.dart';
 
 /// Senkron çakışmalarını çözme ekranı — bkz. ROADMAP.md § B10.
@@ -17,7 +21,7 @@ class SyncConflictsScreen extends ConsumerWidget {
     final conflictsAsync = ref.watch(pendingConflictsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Senkron Çakışmaları')),
+      appBar: AppBar(title: const Text('Eşitleme Çakışmaları')),
       body: conflictsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _ErrorState(
@@ -48,28 +52,22 @@ class _Explainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
+    final palet = context.palette;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, color: scheme.onSecondaryContainer),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Bu kayıtlar hem telefonda hem ofiste değiştirilmiş. '
-              'Hangi halin kalacağını sen seç — hiçbir veri senin onayın '
-              'olmadan üzerine yazılmaz.',
-              style: TextStyle(
-                color: scheme.onSecondaryContainer,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
+          Text(
+            'Aynı kayıt iki yerde değişmiş',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Hangisinin kalacağını sen seç. Seçmediğin sürüm silinmez, '
+            'geçmişte kalır.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
           ),
         ],
       ),
@@ -114,30 +112,24 @@ class _ConflictCardState extends ConsumerState<_ConflictCard> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     final conflict = widget.conflict;
     final diffs = conflict.differences;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
+    return AppCard(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.sync_problem_rounded, size: 20, color: scheme.error),
-                const SizedBox(width: 8),
-                Text(
-                  conflict.subjectLabel,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                TcIcon(TcIcons.syncProblem, size: 18, color: palet.warningText),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    conflict.subjectLabel,
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
               ],
@@ -148,11 +140,9 @@ class _ConflictCardState extends ConsumerState<_ConflictCard> {
               Text(
                 'İki hal arasında görünür bir alan farkı yok — sürüm '
                 'numaraları ayrıştığı için kayıt beklemeye alındı.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: scheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
               )
             else
               ...diffs.map((diff) => _DiffRow(diff: diff)),
@@ -175,14 +165,14 @@ class _ConflictCardState extends ConsumerState<_ConflictCard> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => _resolve('SUNUCU_TUTULDU'),
-                      child: const Text('Ofistekini tut'),
+                      child: const Text('Sunucudakini tut'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: FilledButton(
                       onPressed: () => _resolve('MOBIL_TUTULDU'),
-                      child: const Text('Benimkini tut'),
+                      child: const Text('Bu cihazdakini tut'),
                     ),
                   ),
                 ],
@@ -200,18 +190,17 @@ class _DiffRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            diff.label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurfaceVariant,
+            diff.label.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: palet.textMuted,
+              letterSpacing: 1.1,
             ),
           ),
           const SizedBox(height: 6),
@@ -220,19 +209,19 @@ class _DiffRow extends StatelessWidget {
             children: [
               Expanded(
                 child: _ValueBox(
-                  caption: 'Ofis',
+                  caption: 'Sunucu',
                   value: diff.server,
-                  background: scheme.surfaceContainerHighest,
-                  foreground: scheme.onSurface,
+                  background: palet.surfaceAlt,
+                  foreground: palet.text,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _ValueBox(
-                  caption: 'Telefon',
+                  caption: 'Bu cihaz',
                   value: diff.mine,
-                  background: scheme.primaryContainer,
-                  foreground: scheme.onPrimaryContainer,
+                  background: palet.accent.withValues(alpha: 0.12),
+                  foreground: palet.text,
                 ),
               ),
             ],
@@ -291,32 +280,10 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline_rounded,
-              size: 56,
-              color: scheme.primary,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Bekleyen çakışma yok',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Telefonundaki tüm değişiklikler ofisle uyumlu.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: scheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
+    return const AppEmptyState(
+      icon: Icons.check_circle_outline_rounded,
+      title: 'Bekleyen çakışma yok',
+      message: 'Bu cihazdaki tüm değişiklikler sunucuyla uyumlu.',
     );
   }
 }
