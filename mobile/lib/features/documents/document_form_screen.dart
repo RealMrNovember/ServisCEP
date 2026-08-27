@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/palette.dart';
 import '../../app/theme.dart';
+import '../../shared/tc_icon.dart';
 import '../../core/database/app_database.dart';
 import '../../core/models/doc_item_draft.dart';
 import '../../core/utils/customer_display.dart';
@@ -102,6 +104,59 @@ class DocumentFormScreen extends ConsumerStatefulWidget {
 }
 
 class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
+  /// Görünen adım (0..3) — tasarım teslimatı ekran 05-08.
+  ///
+  /// Tek uzun form dört adıma bölündü. Sebebi ölçü: form yedi bölüm ve
+  /// yirmiden fazla alan taşıyordu; telefonda kullanıcı nerede olduğunu
+  /// kaybediyor ve en alttaki "oluştur" düğmesine ulaşmadan vazgeçiyordu.
+  int _adim = 0;
+
+  /// İleri düğmesinin metni — nereye gidildiğini söylüyor.
+  ///
+  /// "İleri" yerine hedefin adı yazıyor: kullanıcı bir sonraki adımda ne
+  /// göreceğini biliyor ve tereddüt etmiyor.
+  String get _ileriEtiketi => switch (_adim) {
+    0 => 'Kalemlere Geç',
+    1 => 'Şartlara Geç',
+    _ => 'Gönderime Geç',
+  };
+
+  /// Doğrulamadan geçmemiş adımlar — göstergede daireleri kırmızıya döner.
+  final Set<int> _hataliAdimlar = {};
+
+  /// Adımın eksiği varsa nedenini döner, yoksa null.
+  ///
+  /// Son adımın kendi kontrolü yok: oradaki düğme zaten [_submit]'i
+  /// çağırıyor ve eksikleri o tek tek bildiriyor.
+  String? _adimEksigi(int adim) => switch (adim) {
+    0 when _customerId == null => 'Önce bir müşteri seç.',
+    0 => DocumentNumbering.validate(_codeController.text.trim()),
+    1 when _items.isEmpty =>
+      'En az bir kalem ekle — "Serbest satır" ya da "Stoktan" ile '
+          'ekleyebilirsin.',
+    _ => null,
+  };
+
+  /// Eksik varsa adımı kırmızıya boyayıp nedenini söyler; yoksa ilerler.
+  ///
+  /// Düğmeyi sönük bırakmak yerine basılmasına izin verilip neden
+  /// geçilemediğinin yazılması bilinçli: sönük düğme kullanıcıya eksiğin
+  /// ne olduğunu söylemiyor.
+  void _ileriGit() {
+    final eksik = _adimEksigi(_adim);
+    if (eksik != null) {
+      setState(() => _hataliAdimlar.add(_adim));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(eksik)));
+      return;
+    }
+    setState(() {
+      _hataliAdimlar.remove(_adim);
+      _adim += 1;
+    });
+  }
+
   static final _dateFormat = DateFormat('d MMMM y', 'tr_TR');
 
   late DocumentKind _kind = widget.initialKind;
@@ -392,239 +447,318 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(_kind.label)),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+      body: Column(
         children: [
-          const SectionHeader(
-            'Belge',
-            subtitle: 'Belgenin başlığı ve numarası müşteriye böyle gider.',
+          _AdimGostergesi(
+            adim: _adim,
+            hataliAdimlar: _hataliAdimlar,
+            onGit: (i) => setState(() => _adim = i),
           ),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Divider(height: 1, color: Theme.of(context).dividerColor),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.xl),
               children: [
-                SegmentedButton<DocumentKind>(
-                  segments: [
-                    for (final kind in DocumentKind.values)
-                      ButtonSegment(value: kind, label: Text(kind.label)),
-                  ],
-                  selected: {_kind},
-                  onSelectionChanged: (value) => _changeKind(value.first),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                TextField(
-                  controller: _codeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Belge numarası',
-                    isDense: true,
-                    helperText:
-                        'Değiştirebilirsin; sonraki belgeler buradan devam '
-                        'eder.',
-                    helperMaxLines: 2,
+                if (_adim == 0) ...[
+                  const SectionHeader(
+                    'Belge',
+                    subtitle:
+                        'Belgenin başlığı ve numarası müşteriye böyle gider.',
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.xxl),
-          const SectionHeader(
-            'Müşteri',
-            subtitle: 'Belgenin üstünde bu bilgiler görünecek.',
-          ),
-          _CustomerSlot(customerId: _customerId, onPick: _pickCustomer),
-
-          const SizedBox(height: AppSpacing.xxl),
-          const SectionHeader(
-            'Para birimi ve KDV',
-            subtitle: 'Fiyatları hangi birimde ve nasıl yazacağını seç.',
-          ),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SegmentedButton<Currency>(
-                  segments: [
-                    for (final currency in Currency.values)
-                      ButtonSegment(
-                        value: currency,
-                        label: Text('${currency.symbol} ${currency.code}'),
-                      ),
-                  ],
-                  selected: {_currency},
-                  onSelectionChanged: (value) =>
-                      setState(() => _currency = value.first),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                SegmentedButton<VatMode>(
-                  segments: [
-                    for (final mode in VatMode.values)
-                      ButtonSegment(value: mode, label: Text(mode.label)),
-                  ],
-                  selected: {_vatMode},
-                  onSelectionChanged: (value) =>
-                      setState(() => _vatMode = value.first),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 110,
-                      child: TextField(
-                        controller: _vatRateController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'KDV %',
-                          isDense: true,
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SegmentedButton<DocumentKind>(
+                          segments: [
+                            for (final kind in DocumentKind.values)
+                              ButtonSegment(
+                                value: kind,
+                                label: Text(kind.label),
+                              ),
+                          ],
+                          selected: {_kind},
+                          onSelectionChanged: (value) =>
+                              _changeKind(value.first),
                         ),
-                        onChanged: (value) {
-                          final previous = _vatRate;
-                          final parsed = int.tryParse(value.trim());
-                          if (parsed == null || parsed < 0 || parsed > 100) {
-                            return;
-                          }
-                          _applyVatRateToItems(previous, parsed);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: Text(
-                          _vatMode == VatMode.included
-                              ? 'Girdiğin fiyatların içinde KDV var kabul '
-                                    'edilir, belgede ayrıştırılıp gösterilir.'
-                              : 'Girdiğin fiyatlara KDV eklenir ve belgede '
-                                    'ayrı satırda gösterilir.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.4,
-                            color: scheme.onSurfaceVariant,
+                        const SizedBox(height: AppSpacing.lg),
+                        TextField(
+                          controller: _codeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Belge numarası',
+                            isDense: true,
+                            helperText:
+                                'Değiştirebilirsin; sonraki belgeler buradan devam '
+                                'eder.',
+                            helperMaxLines: 2,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxl),
+                  const SectionHeader(
+                    'Müşteri',
+                    subtitle: 'Belgenin üstünde bu bilgiler görünecek.',
+                  ),
+                  _CustomerSlot(customerId: _customerId, onPick: _pickCustomer),
+                ],
+                if (_adim == 1) ...[
+                  const SizedBox(height: AppSpacing.xxl),
+                  DocumentItemsEditor(
+                    items: _items,
+                    currency: _currency,
+                    vatMode: _vatMode,
+                    defaultVatRate: _vatRate,
+                    onChanged: (items) => setState(() {
+                      _items
+                        ..clear()
+                        ..addAll(items);
+                    }),
+                  ),
+                ],
+                if (_adim == 2) ...[
+                  const SizedBox(height: AppSpacing.xxl),
+                  const SectionHeader(
+                    'Para birimi ve KDV',
+                    subtitle:
+                        'Fiyatları hangi birimde ve nasıl yazacağını seç.',
+                  ),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SegmentedButton<Currency>(
+                          segments: [
+                            for (final currency in Currency.values)
+                              ButtonSegment(
+                                value: currency,
+                                label: Text(
+                                  '${currency.symbol} ${currency.code}',
+                                ),
+                              ),
+                          ],
+                          selected: {_currency},
+                          onSelectionChanged: (value) =>
+                              setState(() => _currency = value.first),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        SegmentedButton<VatMode>(
+                          segments: [
+                            for (final mode in VatMode.values)
+                              ButtonSegment(
+                                value: mode,
+                                label: Text(mode.label),
+                              ),
+                          ],
+                          selected: {_vatMode},
+                          onSelectionChanged: (value) =>
+                              setState(() => _vatMode = value.first),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              child: TextField(
+                                controller: _vatRateController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'KDV %',
+                                  isDense: true,
+                                ),
+                                onChanged: (value) {
+                                  final previous = _vatRate;
+                                  final parsed = int.tryParse(value.trim());
+                                  if (parsed == null ||
+                                      parsed < 0 ||
+                                      parsed > 100) {
+                                    return;
+                                  }
+                                  _applyVatRateToItems(previous, parsed);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.lg),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: AppSpacing.sm,
+                                ),
+                                child: Text(
+                                  _vatMode == VatMode.included
+                                      ? 'Girdiğin fiyatların içinde KDV var kabul '
+                                            'edilir, belgede ayrıştırılıp gösterilir.'
+                                      : 'Girdiğin fiyatlara KDV eklenir ve belgede '
+                                            'ayrı satırda gösterilir.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.4,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxl),
+                  const SectionHeader(
+                    'Geçerlilik',
+                    subtitle:
+                        'Kaç gün geçerli olacak? Belgeye tarih olarak basılır.',
+                  ),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            for (final days in _quickValidityOptions)
+                              ChoiceChip(
+                                label: Text('$days gün'),
+                                selected: _validityDays == days,
+                                onSelected: (_) => _setValidityDays(days),
+                              ),
+                            ChoiceChip(
+                              label: const Text('Süresiz'),
+                              selected: _validityDays == null,
+                              onSelected: (_) => _setValidityDays(null),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 128,
+                              child: TextField(
+                                controller: _customDaysController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Başka gün',
+                                  isDense: true,
+                                  suffixText: 'gün',
+                                ),
+                                onChanged: (value) {
+                                  final days = int.tryParse(value.trim());
+                                  if (days != null && days > 0 && days <= 365) {
+                                    setState(() => _validityDays = days);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.lg),
+                            Expanded(
+                              child: Text(
+                                _validUntil == null
+                                    ? 'Belgede geçerlilik tarihi yazmayacak.'
+                                    : 'Belgeye yazılacak tarih: '
+                                          '${_dateFormat.format(_validUntil!)}',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w600,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxl),
+                  const SectionHeader(
+                    'Belge metinleri',
+                    subtitle:
+                        'Şirket ayarlarındaki varsayılanlar geldi; bu belgeye özel '
+                        'değiştirebilir ya da hazır ifadelerden seçebilirsin.',
+                  ),
+                  DocumentTextsSection(
+                    intro: _introController,
+                    paymentTerms: _paymentTermsController,
+                    deliveryTime: _deliveryTimeController,
+                    warrantyTerms: _warrantyTermsController,
+                    notes: _notesController,
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxl),
+                ],
+                if (_adim == 3) ...[
+                  const SectionHeader(
+                    'Özet',
+                    subtitle:
+                        "Belge oluşturulunca detay ekranına geçilir; PDF'i "
+                        'oradan paylaşabilirsin.',
+                  ),
+                  _OzetKarti(
+                    kind: _kind,
+                    kod: _codeController.text.trim(),
+                    musteriId: _customerId,
+                    kalemSayisi: _items.length,
+                    gecerlilik: _validUntil,
+                    totals: totals,
+                    currency: _currency,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.xxl),
               ],
             ),
           ),
-
-          const SizedBox(height: AppSpacing.xxl),
-          DocumentItemsEditor(
-            items: _items,
-            currency: _currency,
-            vatMode: _vatMode,
-            defaultVatRate: _vatRate,
-            onChanged: (items) => setState(() {
-              _items
-                ..clear()
-                ..addAll(items);
-            }),
-          ),
-
-          const SizedBox(height: AppSpacing.xxl),
-          const SectionHeader(
-            'Geçerlilik',
-            subtitle: 'Kaç gün geçerli olacak? Belgeye tarih olarak basılır.',
-          ),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    for (final days in _quickValidityOptions)
-                      ChoiceChip(
-                        label: Text('$days gün'),
-                        selected: _validityDays == days,
-                        onSelected: (_) => _setValidityDays(days),
-                      ),
-                    ChoiceChip(
-                      label: const Text('Süresiz'),
-                      selected: _validityDays == null,
-                      onSelected: (_) => _setValidityDays(null),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 128,
-                      child: TextField(
-                        controller: _customDaysController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Başka gün',
-                          isDense: true,
-                          suffixText: 'gün',
-                        ),
-                        onChanged: (value) {
-                          final days = int.tryParse(value.trim());
-                          if (days != null && days > 0 && days <= 365) {
-                            setState(() => _validityDays = days);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: Text(
-                        _validUntil == null
-                            ? 'Belgede geçerlilik tarihi yazmayacak.'
-                            : 'Belgeye yazılacak tarih: '
-                                  '${_dateFormat.format(_validUntil!)}',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.4,
-                          fontWeight: FontWeight.w600,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.xxl),
-          const SectionHeader(
-            'Belge metinleri',
-            subtitle:
-                'Şirket ayarlarındaki varsayılanlar geldi; bu belgeye özel '
-                'değiştirebilir ya da hazır ifadelerden seçebilirsin.',
-          ),
-          DocumentTextsSection(
-            intro: _introController,
-            paymentTerms: _paymentTermsController,
-            deliveryTime: _deliveryTimeController,
-            warrantyTerms: _warrantyTermsController,
-            notes: _notesController,
-          ),
-
-          const SizedBox(height: AppSpacing.xxl),
         ],
       ),
-      bottomNavigationBar: _SubmitBar(
-        totals: totals,
-        currency: _currency,
-        label: 'Belgeyi oluştur',
-        isSubmitting: _isSubmitting,
-        // Buton BİLİNÇLİ olarak hiç devre dışı bırakılmıyor.
-        //
-        // Sessizce sönük duran bir düğme, kullanıcıya neyin eksik
-        // olduğunu söylemiyor; ekranı baştan sona kontrol etmek zorunda
-        // kalıyor ve çoğu zaman da bulamıyor. Eksik varsa basıldığında
-        // tam olarak ne eksik olduğu yazılır (bkz. [_submit]).
-        onSubmit: _submit,
-      ),
+      // Son adımda belge oluşturuluyor; öncekilerde bir sonraki adıma
+      // geçiliyor. Tek düğme yerine iki farklı davranış, kullanıcının
+      // "bitirdim mi?" sorusunu ortadan kaldırıyor.
+      bottomNavigationBar: _adim == 3
+          ? _SubmitBar(
+              totals: totals,
+              currency: _currency,
+              label: 'Belgeyi oluştur',
+              isSubmitting: _isSubmitting,
+              // Buton BİLİNÇLİ olarak hiç devre dışı bırakılmıyor.
+              //
+              // Sessizce sönük duran bir düğme, kullanıcıya neyin eksik
+              // olduğunu söylemiyor; ekranı baştan sona kontrol etmek
+              // zorunda kalıyor ve çoğu zaman da bulamıyor. Eksik varsa
+              // basıldığında tam olarak ne eksik olduğu yazılır.
+              onSubmit: _submit,
+            )
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  children: [
+                    if (_adim > 0) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => setState(() => _adim -= 1),
+                          child: const Text('Geri'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton(
+                        onPressed: _ileriGit,
+                        child: Text(_ileriEtiketi),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }
@@ -825,6 +959,212 @@ class _SubmitBar extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Adım göstergesi — tasarım teslimatı ekran 05-08.
+///
+/// Dört adım tek satırda: kullanıcı nerede olduğunu ve kaç adım kaldığını
+/// her an görüyor. Tamamlanan adımlar geri dönülebilir; ileri adıma
+/// dokunarak atlanamaz çünkü sonraki adım öncekinin verisine dayanıyor.
+class _AdimGostergesi extends StatelessWidget {
+  const _AdimGostergesi({
+    required this.adim,
+    required this.hataliAdimlar,
+    required this.onGit,
+  });
+
+  /// Sıfır tabanlı geçerli adım.
+  final int adim;
+
+  /// Doğrulamadan geçmemiş adımlar — daireleri tehlike rengine döner.
+  final Set<int> hataliAdimlar;
+
+  final ValueChanged<int> onGit;
+
+  static const _etiketler = ['Müşteri', 'Kalemler', 'Şartlar', 'Gönder'];
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < _etiketler.length; i++) ...[
+            if (i > 0)
+              Expanded(
+                child: Container(
+                  height: 1,
+                  margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                  color: i <= adim ? palet.accent : palet.border,
+                ),
+              ),
+            _AdimDairesi(
+              sira: i,
+              etiket: _etiketler[i],
+              gecerli: i == adim,
+              tamamlandi: i < adim,
+              hatali: hataliAdimlar.contains(i),
+              // Yalnızca GERİYE dokunulabiliyor: ileri adım öncekinin
+              // verisine dayanıyor ve atlanırsa boş form gösterilirdi.
+              onTap: i < adim ? () => onGit(i) : null,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AdimDairesi extends StatelessWidget {
+  const _AdimDairesi({
+    required this.sira,
+    required this.etiket,
+    required this.gecerli,
+    required this.tamamlandi,
+    required this.hatali,
+    this.onTap,
+  });
+
+  final int sira;
+  final String etiket;
+  final bool gecerli;
+  final bool tamamlandi;
+  final bool hatali;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+
+    final renk = hatali
+        ? palet.dangerText
+        : (gecerli || tamamlandi ? palet.accent : palet.textMuted);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: gecerli || hatali
+                    ? renk.withValues(alpha: 0.16)
+                    : Colors.transparent,
+                border: Border.all(color: renk, width: 1.4),
+              ),
+              child: Center(
+                child: tamamlandi && !hatali
+                    ? TcIcon(TcIcons.check, size: 14, color: renk)
+                    : Text(
+                        '${sira + 1}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: renk,
+                          fontSize: 12,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              etiket,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: renk, fontSize: 10),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Gönder adımının özeti — tasarım teslimatı ekran 08.
+///
+/// Kullanıcı üç adım boyunca girdiği bilgiyi son bir kez tek ekranda
+/// görür. Amaç "oluştur"a basmadan önce yanlış müşteri ya da eksik kalem
+/// yakalanabilsin: belge oluştuktan sonra düzeltmek çok daha pahalı.
+class _OzetKarti extends ConsumerWidget {
+  const _OzetKarti({
+    required this.kind,
+    required this.kod,
+    required this.musteriId,
+    required this.kalemSayisi,
+    required this.gecerlilik,
+    required this.totals,
+    required this.currency,
+  });
+
+  final DocumentKind kind;
+  final String kod;
+  final String? musteriId;
+  final int kalemSayisi;
+  final DateTime? gecerlilik;
+  final DocumentTotals totals;
+  final Currency currency;
+
+  static final _tarih = DateFormat('d MMMM y', 'tr_TR');
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palet = context.palette;
+    final id = musteriId;
+    final musteri = id == null
+        ? null
+        : ref.watch(customerByIdProvider(id)).valueOrNull;
+
+    final satirlar = <(String, String)>[
+      ('Belge', '${kind.label} · $kod'),
+      ('Müşteri', musteri?.displayName ?? 'Seçilmedi'),
+      ('Kalem', '$kalemSayisi adet'),
+      if (gecerlilik != null) ('Geçerlilik', _tarih.format(gecerlilik!)),
+      (
+        'Genel toplam',
+        Money.formatMinor(totals.grossMinor, currency: currency),
+      ),
+    ];
+
+    return AppCard(
+      child: Column(
+        children: [
+          for (var i = 0; i < satirlar.length; i++) ...[
+            if (i > 0) Divider(height: AppSpacing.xl, color: palet.border),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 104,
+                  child: Text(
+                    satirlar[i].$1,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    satirlar[i].$2,
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
