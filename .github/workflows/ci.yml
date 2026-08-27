@@ -1,0 +1,48 @@
+name: CI
+
+# Mobil kodun derlenebilirliğini ve testlerini her itmede doğrular.
+#
+# Neden gerekli: depoda sürüm yayınlayan iş (release.yml) vardı ama kodu
+# DENETLEYEN hiçbir iş yoktu — bir derleme hatası ancak sürüm etiketi
+# atıldığında, yani Play'e çıkarken fark ediliyordu.
+#
+# Üretilmiş dosyalar (*.g.dart) depoda TUTULUYOR, bu yüzden build_runner
+# adımı yok; şema değişikliği yapan biri üretimi yerelde çalıştırmayı
+# unutursa `flutter analyze` zaten hata verir.
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobil:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+
+      - name: Bağımlılıklar
+        run: flutter pub get
+
+      - name: Statik analiz
+        run: flutter analyze
+
+      - name: Testler
+        run: flutter test

@@ -77,6 +77,10 @@ dependencies:
   in_app_update: ^5.0.0
   firebase_core: ^4.14.0
   firebase_messaging: ^16.6.0
+  # Uygulama KAPALIYKEN outbox'i gonderen arka plan gorevi.
+  # Dart'in Timer.periodic'i arka planda askiya alindigi icin sart —
+  # bkz. lib/core/sync/background_sync.dart
+  workmanager: '>=0.5.2 <1.0.0'
 
 dev_dependencies:
   flutter_test:

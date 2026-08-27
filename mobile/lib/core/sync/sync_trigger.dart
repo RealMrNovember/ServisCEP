@@ -12,6 +12,13 @@ import 'sync_status.dart';
 
 const _periodicSyncInterval = Duration(minutes: 3);
 
+/// Yeni bir yazma kuyruğa düştükten sonra senkronun beklediği süre.
+///
+/// Sıfır değil: tek bir kullanıcı eylemi (ör. iş kaydı + fotoğrafları)
+/// arka arkaya birkaç outbox satırı üretir; hepsi için ayrı tur açmak yerine
+/// kısa bir süre toplanıp tek turda gönderilir.
+const _outboxDebounceInterval = Duration(seconds: 2);
+
 /// Bağlantı geldiğinde / uygulama öne geldiğinde / periyodik olarak /
 /// oturum yeni AÇILDIĞINDA `SyncService.runOnce()`'u tetikler. Oturum
 /// yoksa (henüz giriş yapılmamışsa) hiçbir şey yapmaz.
@@ -33,7 +40,9 @@ class SyncTrigger with WidgetsBindingObserver {
   final Ref _ref;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   Timer? _periodicTimer;
+  Timer? _outboxDebounce;
   String? _lastSyncedUserId;
+  int _sonKuyrukSayisi = 0;
 
   void start() {
     WidgetsBinding.instance.addObserver(this);
@@ -54,7 +63,33 @@ class SyncTrigger with WidgetsBindingObserver {
       // isteği 401 alıyordu. Artık SessionController.logout() içinde,
       // jeton hâlâ geçerliyken yapılıyor.
     });
+
+    // YAZMA SONRASI ANINDA SENKRON.
+    //
+    // Hiçbir repository yazmadan sonra senkron tetiklemiyordu: kullanıcı
+    // ÇEVRİMİÇİYKEN bile yeni kaydı 3 dakikalık periyodik tura kadar
+    // "gönderilmedi" olarak görüyordu — "otomatik eşitlemedi" şikâyetinin
+    // en görünür sebebi buydu. Outbox tablosunu izlemek, sekiz ayrı
+    // repository'ye dokunmadan tek noktadan çözer.
+    _ref.listen(pendingSyncCountProvider, (previous, next) {
+      final sayi = next.valueOrNull;
+      if (sayi == null) return;
+      final artti = sayi > _sonKuyrukSayisi;
+      _sonKuyrukSayisi = sayi;
+      if (!artti) return;
+      _outboxDebounce?.cancel();
+      _outboxDebounce = Timer(_outboxDebounceInterval, _trigger);
+    });
+
     _trigger();
+  }
+
+  /// Kalıcı hata almış kayıtları yeniden kuyruğa alır ve hemen bir tur
+  /// başlatır. Yeniden denemeye alınan kayıt sayısını döndürür.
+  Future<int> retryFailed() async {
+    final adet = await _ref.read(syncServiceProvider).retryFailed();
+    if (adet > 0) _trigger();
+    return adet;
   }
 
   @override
@@ -118,6 +153,7 @@ class SyncTrigger with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _connectivitySub?.cancel();
     _periodicTimer?.cancel();
+    _outboxDebounce?.cancel();
   }
 }
 
