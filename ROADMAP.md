@@ -491,17 +491,28 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 
 ### Belge
 
-- [ ] **Play listesindeki gizlilik bağlantısı 404 veriyor** —
-      [docs/17](docs/17-play-store-listesi.md) `…/privacy` diyor ama sunucu
-      yalnızca `…/privacy.html` servis ediyor (`/privacy` → 404, doğrulandı
-      2026-08-27). Google, çalışmayan bir gizlilik politikası bağlantısını
-      politika ihlali sayıyor. Uygulama içindeki yeni bağlantı `.html`'li
-      hâli kullanıyor; Play Console'daki adres ya düzeltilmeli ya da
-      nginx'e `/privacy` → `/privacy.html` yönlendirmesi eklenmeli.
-- [ ] **Parola sıfırlama** — Backend'de uç yok. Şifresini unutan
-      kullanıcının bugün tek yolu Google ile giriş; e-postayla kayıt olmuş
-      bir kullanıcı tamamen kilitli kalıyor. Public release öncesi
-      kapatılmalı.
+- [x] **Uzantısız gizlilik/hesap silme adresleri** (2026-08-27) —
+      `…/privacy` ve `…/account-deletion` 404 veriyordu; Google,
+      çalışmayan bir gizlilik politikası bağlantısını politika ihlali
+      sayıyor. Düzeltme nginx'te DEĞİL dosya düzeninde: vhost aaPanel
+      tarafından yönetiliyor ve sitenin PHP sürümü panelden
+      değiştirilirse elle eklenen yönlendirme sessizce siliniyor.
+      `apply.sh` artık docroot'ta (`backend/public`) dizin + `index.html`
+      üretiyor. **Not:** ilk denemede dizinler site köküne açıldı ve hiç
+      servis edilmedi — nginx'in kökü site dizini değil
+      `backend/public`; oradaki statik dosyalar site köküne elle
+      kurulmuş sembolik linklerle bağlı.
+- [x] **Parola sıfırlama** (2026-08-27, v0.8.1) — Bağlantı değil 6
+      haneli KOD: bağlantı kullanıcıyı tarayıcıya, oradan uygulamaya
+      geri dönmeye zorluyor ve o yolculuğun her adımı kayıp kullanıcı.
+      Kararlar: hesabı olmayan e-posta da aynı yanıtı alıyor (aksi halde
+      uç, "bu adres kayıtlı mı?" sorgusuna dönüşür); kod veritabanında
+      hash'li (o dakikalar boyunca parolaya eşdeğer bir sır); sıfırlama
+      TÜM oturumları kapatıyor, mevcut cihaz dahil; uç 5/10dk ile
+      sınırlı (her istek bir e-posta gönderiyor). Test, süre
+      kontrolünde gerçek bir hata yakaladı: Carbon 3'te `diffInMinutes`
+      işaretli dönüyor ve geçmiş tarih için negatif — süresi dolmuş kod
+      kabul ediliyordu.
 - [ ] **Ücretsiz pakette belge altbilgisi** — "TeknikCEP ile hazırlandı".
       Sıfır maliyetli müşteri kanalı + paket yükseltme sebebi.
 - [ ] **Yüzde iskonto** — Backend hazır (`discount_rate`), mobil Drift
