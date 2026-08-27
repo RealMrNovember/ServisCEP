@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/palette.dart';
+import '../../app/theme.dart';
 
 import '../../shared/app_version_label.dart';
 import '../../shared/brand_footer.dart';

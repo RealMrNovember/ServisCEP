@@ -17,15 +17,6 @@ import '../quotes/data/quotes_repository.dart';
 import '../quotes/quote_detail_screen.dart';
 import '../quotes/quote_form_screen.dart';
 
-const _quoteStatusLabels = {
-  'TASLAK': 'Taslak',
-  'GONDERILDI': 'Gönderildi',
-  'BEKLEMEDE': 'Beklemede',
-  'KABUL_EDILDI': 'Kabul Edildi',
-  'REDDEDILDI': 'Reddedildi',
-  'SURESI_DOLDU': 'Süresi Doldu',
-};
-
 /// Belge Merkezi — bkz. docs/03 § Belge Merkezi.
 ///
 /// NOT: Servis formu/fatura/tahsilat belgeleri ve PDF üretimi sonraki

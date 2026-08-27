@@ -121,7 +121,6 @@ class _JobDetailContent extends ConsumerWidget {
     final customerAsync = ref
         .watch(customersRepositoryProvider)
         .byId(job.customerId);
-    final statusColor = jobStatusColors[job.status] ?? Colors.grey;
 
     return Scaffold(
       appBar: AppBar(
@@ -557,51 +556,6 @@ class _SignatureSection extends ConsumerWidget {
           },
         ),
       ],
-    );
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.trailing,
-  });
-  final IconData icon;
-  final String label;
-  final String value;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: scheme.onSurfaceVariant),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 15)),
-              ],
-            ),
-          ),
-          ?trailing,
-        ],
-      ),
     );
   }
 }

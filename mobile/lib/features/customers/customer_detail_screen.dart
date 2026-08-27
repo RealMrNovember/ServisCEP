@@ -12,7 +12,6 @@ import '../../app/theme.dart';
 import 'package:open_filex/open_filex.dart';
 
 import '../../core/constants/customer_types.dart';
-import '../../core/constants/job_constants.dart';
 import '../../core/database/app_database.dart';
 import '../../core/utils/customer_display.dart';
 import '../../core/utils/map_launcher.dart';
@@ -558,21 +557,6 @@ class _DocumentsTabState extends ConsumerState<_DocumentsTab> {
               .removeLogo(widget.customer.id),
         ),
       ],
-    );
-  }
-}
-
-class _EmptyTab extends StatelessWidget {
-  const _EmptyTab({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        text,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
     );
   }
 }
