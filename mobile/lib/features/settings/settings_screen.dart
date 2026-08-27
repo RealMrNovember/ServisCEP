@@ -48,6 +48,7 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
+          const UpdateBanner(),
           const MenuGroupHeader('Hesap'),
           ListTile(
             leading: const Icon(Icons.person_outline_rounded),

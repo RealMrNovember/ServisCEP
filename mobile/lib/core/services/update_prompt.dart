@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/palette.dart';
 import '../../app/theme.dart';
+import '../../shared/tc_icon.dart';
+import '../../shared/ui.dart';
+import '../sync/sync_status.dart';
 import 'app_version_service.dart';
 import 'play_update_service.dart';
 
@@ -64,17 +68,21 @@ class _UpdatePromptGateState extends ConsumerState<UpdatePromptGate> {
     if (!controller.shouldAsk) return;
     controller.markAsked();
 
-    final info = await ref.read(appVersionServiceProvider).check();
+    final info = await ref.read(availableUpdateProvider.future);
     if (info == null || !info.hasUpdate || !mounted) return;
+
+    // İsteğe bağlı güncellemede DİYALOG AÇILMAZ.
+    //
+    // Her açılışta çıkan bir pencere, sahada işe yetişmeye çalışan
+    // kullanıcının önünü kesiyordu. Haber yine veriliyor ama araya
+    // girmeyen bir şeritle (bkz. [UpdateBanner]).
+    if (!info.isMandatory) return;
 
     final accepted = await showDialog<bool>(
       context: context,
-      // Zorunlu güncellemede pencere kapatılamaz.
-      barrierDismissible: !info.isMandatory,
-      builder: (context) => PopScope(
-        canPop: !info.isMandatory,
-        child: _UpdateDialog(info: info),
-      ),
+      barrierDismissible: false,
+      builder: (context) =>
+          PopScope(canPop: false, child: _UpdateDialog(info: info)),
     );
 
     if (accepted != true || !mounted) return;
@@ -133,73 +141,170 @@ Future<void> startUpdate(
   }
 }
 
-class _UpdateDialog extends StatelessWidget {
+/// Zorunlu güncelleme diyaloğu — tasarım teslimatı ekran 38.
+///
+/// Yalnızca sunucu `min_build` ile bu kurulumu dışarıda bıraktığında
+/// çıkar. Kapatılamaz ve tek çıkış yolu mağaza; bu yüzden tehlike
+/// tonunda. Kullanıcının ilk korkusu "cihazımdaki kayıtlar ne olacak"
+/// olduğu için cevabı metnin içinde yazıyor.
+class _UpdateDialog extends ConsumerWidget {
   const _UpdateDialog({required this.info});
 
   final AppVersionInfo info;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final notes = info.notes?.trim();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palet = context.palette;
+    final bekleyen = ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
 
     return AlertDialog(
       icon: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: scheme.primaryContainer,
+          color: palet.dangerText.withValues(alpha: 0.14),
           shape: BoxShape.circle,
         ),
         child: Icon(
           Icons.system_update_alt_rounded,
-          color: scheme.onPrimaryContainer,
-          size: 28,
+          color: palet.dangerText,
+          size: 26,
         ),
       ),
       title: Text(
         info.latestVersion == null
-            ? 'Yeni sürüm hazır'
-            : 'Yeni sürüm hazır (${info.latestVersion})',
+            ? 'Güncelleme zorunlu'
+            : 'Güncelleme zorunlu · ${info.latestVersion}',
         textAlign: TextAlign.center,
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            info.isMandatory
-                ? 'Devam edebilmek için uygulamayı güncellemen gerekiyor.'
-                : 'TeknikCEP\'in yeni bir sürümü var.',
+            bekleyen > 0
+                ? 'Bu sürüm artık sunucuyla eşitlenemiyor. Cihazdaki '
+                      '$bekleyen kaydın korunuyor; güncelledikten sonra '
+                      'gönderilecek.'
+                : 'Bu sürüm artık sunucuyla eşitlenemiyor. Devam edebilmek '
+                      'için güncellemen gerekiyor.',
             textAlign: TextAlign.center,
           ),
-          if (notes != null && notes.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: AppRadius.field,
-              ),
-              child: Text(
-                notes,
-                style: const TextStyle(fontSize: 13, height: 1.45),
-              ),
-            ),
-          ],
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Bu pencere kapatılamaz',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+          ),
         ],
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        if (!info.isMandatory)
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Sonra'),
-          ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Şimdi güncelle'),
+          child: const Text('Mağazaya Git'),
         ),
       ],
+    );
+  }
+}
+
+/// Açılışta yapılan güncelleme kontrolünün sonucu.
+///
+/// Hem şerit hem de zorunlu diyalog aynı sonucu okuyor; iki ayrı istek
+/// atmak, uygulama her açıldığında sunucuya iki kez sormak demekti.
+final availableUpdateProvider = FutureProvider<AppVersionInfo?>((ref) async {
+  return ref.read(appVersionServiceProvider).check();
+});
+
+/// Bu oturumda şeridi kapattı mı?
+///
+/// Kalıcı saklanmıyor: kullanıcı bir dahaki açılışta yeniden görsün
+/// isteniyor (kullanıcı isteği) ama aynı oturumda tekrar tekrar
+/// çıkmasın.
+final _seritKapatildiProvider = StateProvider<bool>((ref) => false);
+
+/// İsteğe bağlı güncelleme şeridi — tasarım teslimatı ekran 37.
+///
+/// Diyalog DEĞİL şerit: her açılışta ortaya çıkan bir diyalog, sahada
+/// işe yetişmeye çalışan kullanıcının önünü kesiyor ve "yine ne var"
+/// tepkisi doğuruyor. Aksan tonunda, kapatılabilir ve işin akışını
+/// kesmiyor. Zorunlu güncelleme bunun tersi: kapatılamayan diyalog
+/// (bkz. [UpdatePromptGate]).
+class UpdateBanner extends ConsumerWidget {
+  const UpdateBanner({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palet = context.palette;
+    final info = ref.watch(availableUpdateProvider).valueOrNull;
+    final kapatildi = ref.watch(_seritKapatildiProvider);
+
+    // Zorunlu güncellemede şerit çizilmiyor: onu diyalog karşılıyor ve
+    // ikisinin aynı anda görünmesi kullanıcıyı iki kez uyarırdı.
+    if (info == null || !info.hasUpdate || info.isMandatory || kapatildi) {
+      return const SizedBox.shrink();
+    }
+
+    final notlar = info.notes?.trim();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
+      ),
+      child: AppCard(
+        accent: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                TcIcon(TcIcons.sparkle, size: 18, color: palet.accent),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    info.latestVersion == null
+                        ? 'Yeni sürüm hazır'
+                        : 'Yeni sürüm hazır · ${info.latestVersion}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    iconSize: 16,
+                    tooltip: 'Kapat',
+                    icon: const TcIcon(TcIcons.x, size: 16),
+                    onPressed: () =>
+                        ref.read(_seritKapatildiProvider.notifier).state = true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              notlar == null || notlar.isEmpty
+                  ? 'Uygun bir zamanda güncelle; işin yarıda kalmaz.'
+                  : notlar,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton(
+                onPressed: () => startUpdate(context, ref, info),
+                child: const Text('Güncelle'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

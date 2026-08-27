@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme.dart';
 import '../../core/constants/job_constants.dart';
-import '../../core/utils/customer_display.dart';
 import '../auth/data/session_controller.dart';
+import '../../shared/customer_picker.dart';
+import '../../shared/ui.dart';
 import '../customers/data/customers_repository.dart';
 import 'data/service_requests_repository.dart';
 
@@ -32,10 +34,24 @@ class _ServiceRequestFormScreenState
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _customerId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    if (!_formKey.currentState!.validate()) return;
+    if (_customerId == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Önce bir müşteri seç.')),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     final session = ref.read(sessionControllerProvider).valueOrNull;
-    if (session == null) return;
+    if (session == null) {
+      setState(() => _isSubmitting = false);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Oturum bulunamadı, yeniden giriş yap.')),
+      );
+      return;
+    }
 
     try {
       await ref
@@ -55,70 +71,99 @@ class _ServiceRequestFormScreenState
     }
   }
 
+  /// Müşteri seçici — açılır liste yerine aramalı alt sayfa.
+  Future<void> _pickCustomer() async {
+    final id = await showCustomerPicker(context);
+    if (id != null && mounted) setState(() => _customerId = id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final customersAsync = ref.watch(customersListProvider);
+    final musteriYok = (customersAsync.valueOrNull ?? const []).isEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Yeni Talep')),
+      appBar: AppBar(title: const Text('Servis Talebi')),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           children: [
-            customersAsync.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => Text('Müşteriler yüklenemedi: $e'),
-              data: (customers) => DropdownButtonFormField<String>(
-                initialValue: _customerId,
-                decoration: const InputDecoration(labelText: 'Müşteri'),
-                items: [
-                  for (final c in customers)
-                    DropdownMenuItem(value: c.id, child: Text(c.displayName)),
-                ],
-                onChanged: (v) => setState(() => _customerId = v),
-                validator: (v) => v == null ? 'Müşteri seçmelisin' : null,
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SectionHeader('Müşteri', subtitle: 'Talebi kim iletti?'),
+            if (customersAsync.isLoading)
+              const LinearProgressIndicator()
+            else if (musteriYok)
+              const AppCard(
+                child: Text(
+                  'Talep kaydetmek için önce bir müşteri eklemelisin.',
+                ),
+              )
+            else
+              CustomerSlot(customerId: _customerId, onPick: _pickCustomer),
+
+            const SizedBox(height: AppSpacing.xxl),
+            const SectionHeader('Talep'),
             TextFormField(
               controller: _descriptionController,
               maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'Talep',
+                labelText: 'Ne oldu?',
                 hintText: 'ör. 3 kamera görüntü vermiyor',
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             TextFormField(
               controller: _addressController,
-              decoration: const InputDecoration(labelText: 'Adres (opsiyonel)'),
+              decoration: const InputDecoration(
+                labelText: 'Adres',
+                helperText: 'Boş bırakırsan müşterinin adresi kullanılır.',
+                helperMaxLines: 2,
+              ),
             ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _priority,
-              decoration: const InputDecoration(labelText: 'Öncelik'),
-              items: jobPriorityLabels.entries
-                  .map(
-                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => _priority = v ?? _priority),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Talebi Kaydet'),
+
+            const SizedBox(height: AppSpacing.xxl),
+            const SectionHeader('Öncelik'),
+            SegmentedButton<String>(
+              segments: [
+                for (final entry in jobPriorityLabels.entries)
+                  ButtonSegment(value: entry.key, label: Text(entry.value)),
+              ],
+              selected: {_priority},
+              onSelectionChanged: (secim) =>
+                  setState(() => _priority = secim.first),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('İptal'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                flex: 2,
+                child: FilledButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Talebi Kaydet'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

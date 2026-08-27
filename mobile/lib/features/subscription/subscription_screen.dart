@@ -3,8 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/palette.dart';
+import '../../app/theme.dart';
+import '../../app/typography.dart';
 import '../../core/network/api_client.dart';
 import '../../core/utils/money.dart';
+import '../../shared/ui.dart';
 import 'data/subscription_models.dart';
 import 'data/subscription_repository.dart';
 
@@ -251,141 +255,77 @@ class _StatusCard extends StatelessWidget {
 
   final SubscriptionStatus status;
 
+  static final _tarih = DateFormat('d MMMM y', 'tr_TR');
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final active = status.hasActiveSubscription;
-    final days = status.daysRemaining;
+    final palet = context.palette;
+    final aktif = status.hasActiveSubscription;
+    final gun = status.daysRemaining;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
+    final baslik = status.isTrial
+        ? 'DENEME SÜRÜMÜ'
+        : (status.plan?.name ?? 'PAKET SEÇİLMEDİ').toUpperCase();
+
+    final buyukSatir = switch (gun) {
+      null => aktif ? 'Süresiz' : 'Pasif',
+      <= 0 => 'Süresi doldu',
+      _ => '$gun gün kaldı',
+    };
+
+    // Son üç güne girildiyse tehlike, son haftada uyarı: kullanıcı
+    // "daha çok var" sanıp kesintiye uğramasın.
+    final renk = switch (gun) {
+      null => palet.accent,
+      <= 0 => palet.dangerText,
+      <= 3 => palet.dangerText,
+      <= 7 => palet.warningText,
+      _ => palet.accent,
+    };
+
+    return AppCard(
+      accent: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.workspace_premium_outlined, color: scheme.primary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Aktif Paketin',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      status.plan?.name ?? 'Paket seçilmedi',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: active
-                      ? Colors.green.withValues(alpha: 0.12)
-                      : scheme.errorContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  active ? 'Aktif' : 'Pasif',
-                  style: TextStyle(
-                    color: active ? Colors.green.shade700 : scheme.error,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            baslik,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: palet.textMuted,
+              letterSpacing: 1.1,
+            ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _StatusMetric(
-                  label: 'Bitiş Tarihi',
-                  value: status.expiresAt != null
-                      ? DateFormat(
-                          'd MMM y',
-                          'tr_TR',
-                        ).format(status.expiresAt!.toLocal())
-                      : 'Süresiz',
-                ),
-              ),
-              Expanded(
-                child: _StatusMetric(
-                  label: 'Kalan Süre',
-                  value: days == null
-                      ? '—'
-                      : days <= 0
-                      ? 'Süresi doldu'
-                      : '$days gün',
-                  valueColor: days != null && days <= 3 ? scheme.error : null,
-                ),
-              ),
-            ],
+          const SizedBox(height: 2),
+          Text(
+            buyukSatir,
+            style: AppTypography.monoLarge.copyWith(fontSize: 26, color: renk),
           ),
-          if (status.isTrial && active) ...[
-            const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            // "Verilerin silinmez" cümlesi BİLİNÇLİ olarak burada:
+            // süresi dolmak üzere olan kullanıcının ilk korkusu
+            // kayıtlarını kaybetmek ve bu korku ödeme kararını
+            // bozuyor.
+            status.expiresAt == null
+                ? 'Verilerin cihazında ve sunucuda duruyor; silinmez.'
+                : '${_tarih.format(status.expiresAt!.toLocal())} tarihinde '
+                      'sona eriyor. Verilerin silinmez.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+          ),
+          if (status.isTrial && aktif) ...[
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              'Deneme sürümünü kullanıyorsun — tüm özellikler açık. '
-              'Süre bitmeden bir paket seçersen kesinti yaşamazsın.',
+              'Tüm özellikler açık. Süre bitmeden bir paket seçersen '
+              'kesinti yaşamazsın.',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
             ),
           ],
         ],
       ),
-    );
-  }
-}
-
-class _StatusMetric extends StatelessWidget {
-  const _StatusMetric({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: valueColor,
-          ),
-        ),
-      ],
     );
   }
 }
