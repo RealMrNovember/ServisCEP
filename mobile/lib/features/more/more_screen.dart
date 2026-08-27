@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/palette.dart';
 
 import '../../shared/app_version_label.dart';
 import '../../shared/brand_footer.dart';
@@ -35,26 +36,11 @@ class MoreScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           if (session != null)
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: scheme.primary.withValues(alpha: 0.12),
-                child: Text(
-                  session.fullName.isNotEmpty
-                      ? session.fullName[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              title: Text(
-                session.fullName,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Text(session.companyName),
+            _ProfilBasligi(
+              adSoyad: session.fullName,
+              sirket: session.companyName,
             ),
-          const Divider(height: 24),
+          const _GrupBasligi('İşletme'),
 
           ListTile(
             leading: const Icon(Icons.calendar_month_outlined),
@@ -86,6 +72,7 @@ class MoreScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const ProductsListScreen()),
             ),
           ),
+          const _GrupBasligi('Hesap'),
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
             title: const Text('Abonelik'),
@@ -178,6 +165,116 @@ class MoreScreen extends ConsumerWidget {
           const BrandFooter(),
           const AppVersionLabel(),
         ],
+      ),
+    );
+  }
+}
+
+/// Profil başlığı — tasarım teslimatı ekran 10.
+///
+/// Kullanıcı, şirket ve abonelik durumu bir arada: "Daha Fazla" ekranını
+/// açan kullanıcı çoğu zaman "hangi hesaptayım, ne kadar sürem kaldı"
+/// sorusuyla geliyor.
+class _ProfilBasligi extends StatelessWidget {
+  const _ProfilBasligi({required this.adSoyad, required this.sirket});
+
+  final String adSoyad;
+  final String sirket;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: palet.accent.withValues(alpha: 0.12),
+              borderRadius: AppRadius.card,
+            ),
+            child: Center(
+              child: Text(
+                _basHarfler(adSoyad),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: palet.accent),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  adSoyad,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  sirket,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _basHarfler(String ad) {
+    final temiz = ad.trim();
+    if (temiz.isEmpty) return '?';
+    final parcalar = temiz.split(RegExp(r'\s+'));
+    if (parcalar.length >= 2) {
+      return (parcalar[0][0] + parcalar[1][0]).toUpperCase();
+    }
+    return temiz.length >= 2
+        ? temiz.substring(0, 2).toUpperCase()
+        : temiz.toUpperCase();
+  }
+}
+
+/// Menü grubu başlığı.
+///
+/// Gruplama olmadan liste on bir satırlık düz bir yığındı ve kullanıcı
+/// aradığını gözüyle taramak zorunda kalıyordu.
+class _GrupBasligi extends StatelessWidget {
+  const _GrupBasligi(this.metin);
+
+  final String metin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Text(
+        metin.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: context.palette.textMuted,
+          letterSpacing: 1.1,
+        ),
       ),
     );
   }

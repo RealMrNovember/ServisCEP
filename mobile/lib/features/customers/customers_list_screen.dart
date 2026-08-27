@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/palette.dart';
 
 import '../../app/theme.dart';
 import '../../core/constants/customer_types.dart';
@@ -36,7 +37,23 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Müşteriler'),
+        // Kayıt sayısı başlığın altında: kullanıcı listeyi süzerken kaç
+        // kayıt arasında gezindiğini bilmeli.
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Müşteriler'),
+            customersAsync.maybeWhen(
+              data: (m) => Text(
+                '${m.length} kayıt',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.palette.textMuted,
+                ),
+              ),
+              orElse: () => const SizedBox.shrink(),
+            ),
+          ],
+        ),
         actions: const [
           PendingBadge(),
           SizedBox(width: AppSpacing.md),
@@ -109,54 +126,113 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
   }
 }
 
+/// Müşteri satırı — tasarım teslimatı ekran 09.
+///
+/// Baş harfler İKİ harf: tek harf listede çok fazla tekrar ediyor ve
+/// kullanıcı satırları birbirinden ayırt edemiyordu ("A" ile başlayan
+/// yedi müşteri).
+///
+/// NOT: tasarımda satırın sağında cari bakiye var. Bakiye liste
+/// sorgusunda yok ve her satır için ayrı sorgu açmak listeyi yavaşlatır;
+/// eklenene kadar müşteri türü rozeti duruyor (bkz. ROADMAP).
 class _CustomerTile extends StatelessWidget {
   const _CustomerTile({required this.customer});
+
   final Customer customer;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
+    final bekliyor = customer.syncStatus == 'PENDING';
 
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        onTap: () => context.push('/customers/${customer.id}'),
-        leading: CircleAvatar(
-          backgroundColor: scheme.primary.withValues(alpha: 0.12),
-          child: Text(
-            customer.displayName.isNotEmpty
-                ? customer.displayName[0].toUpperCase()
-                : '?',
-            style: TextStyle(
-              color: scheme.primary,
-              fontWeight: FontWeight.w700,
+    return AppCard(
+      pending: bekliyor,
+      onTap: () => context.push('/customers/${customer.id}'),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: palet.accent.withValues(alpha: 0.12),
+              borderRadius: AppRadius.field,
+            ),
+            child: Center(
+              child: Text(
+                _basHarfler(customer.displayName),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: palet.accent),
+              ),
             ),
           ),
-        ),
-        title: Text(
-          customer.displayName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          customer.phone?.isNotEmpty == true ? customer.phone! : customer.code,
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: scheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            customerTypeLabels[customer.type] ?? customer.type,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSecondaryContainer,
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  customer.displayName,
+                  style: Theme.of(context).textTheme.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _altSatir(customer),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
-        ),
+          const SizedBox(width: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 3,
+            ),
+            decoration: BoxDecoration(
+              color: palet.surfaceAlt,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: palet.border),
+            ),
+            child: Text(
+              customerTypeLabels[customer.type] ?? customer.type,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: palet.textMuted,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  /// İki kelimeli adlarda her kelimenin ilk harfi, tek kelimede ilk iki
+  /// harf. Boşsa soru işareti — hiçbir zaman boş kutu görünmüyor.
+  static String _basHarfler(String ad) {
+    final temiz = ad.trim();
+    if (temiz.isEmpty) return '?';
+    final parcalar = temiz.split(RegExp(r'\s+'));
+    if (parcalar.length >= 2) {
+      return (parcalar[0][0] + parcalar[1][0]).toUpperCase();
+    }
+    return temiz.length >= 2
+        ? temiz.substring(0, 2).toUpperCase()
+        : temiz.toUpperCase();
+  }
+
+  /// "0216 412 88 90 · Ümraniye" — telefon yoksa müşteri kodu.
+  static String _altSatir(Customer c) {
+    final telefon = (c.phone ?? '').trim();
+    final ilce = (c.ilce ?? '').trim();
+    final sol = telefon.isEmpty ? c.code : telefon;
+    return ilce.isEmpty ? sol : '$sol · $ilce';
   }
 }
 
