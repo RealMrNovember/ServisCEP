@@ -278,6 +278,43 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 Bu bölüm aktif takip içindir. Biten madde işaretlenir, açıklaması
 yukarıdaki tablolara taşınır.
 
+### Cihaz Değiştirme — Medya Geri Yükleme
+
+Kullanıcı hangi cihazdan girerse girsin aynı şeyleri görmeli (kullanıcı
+kararı, 2026-08-27). Bugün göremiyor.
+
+**Boşluk: medya PUSH-ONLY.** Fotoğraf ve imzalar sunucuya gidiyor ama
+pull'da geri gelmiyor (bkz. `sync_service.dart` sınıf notu). Yeni bir
+cihazda giriş yapan kullanıcı müşterilerini, işlerini ve tekliflerini
+görüyor; o işlerin fotoğraflarını ve imzalarını GÖRMÜYOR.
+
+Manifest'teki "yedeklemeden vazgeçmenin maliyeti yok, tüm veri
+sunucuyla eşitleniyor" notu bu yüzden eksik — metin için doğru, medya
+için değil.
+
+- [ ] **Medya üstverisi pull'a eklensin** — `_pullJobs` sırasında her
+      işin fotoğraf/imza kayıtları da çekilsin (sunucuda uç hazır:
+      `GET /jobs/{job}/photos`).
+- [ ] **Baytlar TALEP ÜZERİNE insin** — girişte toplu indirme YAPILMAZ.
+      Sahada yüzlerce fotoğrafı olan bir kullanıcının ilk açılışta
+      yüzlerce megabayt indirmesi kabul edilemez. Kayıt yerelde
+      referansla durur, iş detayı açıldığında indirilir ve önbelleğe
+      alınır.
+- [ ] **Önbellek sınırı** — indirilen medya sınırsız büyümemeli; en son
+      kullanılanlar tutulup gerisi atılmalı (kayıt kalır, bayt yeniden
+      indirilebilir).
+
+**`allowBackup` AÇILMAYACAK.** Bu bir çözüm değil: Android Auto Backup
+şifreli güvenli depoyu geri yüklüyor ama onu açan Keystore anahtarını
+yüklemiyor; sonuç çözülemeyen veri ve "internet gerekli" hatasında
+kilitlenen bir uygulama (yaşandı, bkz. AndroidManifest.xml notu). Cihaz
+taşımanın doğru mekanizması bizim senkronumuz, Android'in yedeklemesi
+değil.
+
+Not: Google'ın 2026-08-27 tarihli "yeni uygulama kalitesi şartları"
+duyurusunda **cihaz taşıma** ayrı bir başlık. Bu iş o şartın da
+karşılığı; yaptırım takvimi gelmeden bitirilmeli.
+
 ### W3 — Web/Mobil Eşitliği
 
 Ayrıntılı envanter: [docs/20-web-mobil-esitlik.md](docs/20-web-mobil-esitlik.md)
