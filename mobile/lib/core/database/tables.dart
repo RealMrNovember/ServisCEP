@@ -266,6 +266,14 @@ class QuoteItems extends Table {
   IntColumn get taxRate => integer().withDefault(const Constant(20))();
   IntColumn get discountMinor => integer().withDefault(const Constant(0))();
 
+  /// Yuzde iskonto (0-100). 0 ise TUTAR iskontosu (`discountMinor`)
+  /// gecerlidir; ikisi birden girilemez cunku arayuzde tek bir secici var
+  /// (TL / $ / EUR / %).
+  ///
+  /// Ikisi birden dolu gelirse YUZDE kazanir — sunucu tarafi da ayni
+  /// kurali uyguluyor (bkz. backend App\Support\DocumentTotal).
+  IntColumn get discountRate => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -314,6 +322,14 @@ class ProformaItems extends Table {
   IntColumn get unitPriceMinor => integer().withDefault(const Constant(0))();
   IntColumn get taxRate => integer().withDefault(const Constant(20))();
   IntColumn get discountMinor => integer().withDefault(const Constant(0))();
+
+  /// Yuzde iskonto (0-100). 0 ise TUTAR iskontosu (`discountMinor`)
+  /// gecerlidir; ikisi birden girilemez cunku arayuzde tek bir secici var
+  /// (TL / $ / EUR / %).
+  ///
+  /// Ikisi birden dolu gelirse YUZDE kazanir — sunucu tarafi da ayni
+  /// kurali uyguluyor (bkz. backend App\Support\DocumentTotal).
+  IntColumn get discountRate => integer().withDefault(const Constant(0))();
 
   @override
   Set<Column> get primaryKey => {id};

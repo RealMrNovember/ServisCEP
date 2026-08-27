@@ -66,9 +66,7 @@ Future<void> _outboxGonder() async {
   try {
     // `companyId` bilerek yerelden okunuyor: oturumu sunucudan geri yüklemek
     // (auth/me) arka planda gereksiz bir ağ turu ve ek hata yüzeyi olurdu.
-    final company = await (db.select(
-      db.companies,
-    )..limit(1)).getSingleOrNull();
+    final company = await (db.select(db.companies)..limit(1)).getSingleOrNull();
     if (company == null) return;
 
     final api = DioSyncApiClient(ApiClient(tokenStore));

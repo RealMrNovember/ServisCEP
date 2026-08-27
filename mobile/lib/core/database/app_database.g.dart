@@ -7069,6 +7069,18 @@ class $QuoteItemsTable extends QuoteItems
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _discountRateMeta = const VerificationMeta(
+    'discountRate',
+  );
+  @override
+  late final GeneratedColumn<int> discountRate = GeneratedColumn<int>(
+    'discount_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7079,6 +7091,7 @@ class $QuoteItemsTable extends QuoteItems
     unitPriceMinor,
     taxRate,
     discountMinor,
+    discountRate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7152,6 +7165,15 @@ class $QuoteItemsTable extends QuoteItems
         ),
       );
     }
+    if (data.containsKey('discount_rate')) {
+      context.handle(
+        _discountRateMeta,
+        discountRate.isAcceptableOrUnknown(
+          data['discount_rate']!,
+          _discountRateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -7193,6 +7215,10 @@ class $QuoteItemsTable extends QuoteItems
         DriftSqlType.int,
         data['${effectivePrefix}discount_minor'],
       )!,
+      discountRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discount_rate'],
+      )!,
     );
   }
 
@@ -7211,6 +7237,14 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
   final int unitPriceMinor;
   final int taxRate;
   final int discountMinor;
+
+  /// Yuzde iskonto (0-100). 0 ise TUTAR iskontosu (`discountMinor`)
+  /// gecerlidir; ikisi birden girilemez cunku arayuzde tek bir secici var
+  /// (TL / $ / EUR / %).
+  ///
+  /// Ikisi birden dolu gelirse YUZDE kazanir — sunucu tarafi da ayni
+  /// kurali uyguluyor (bkz. backend App\Support\DocumentTotal).
+  final int discountRate;
   const QuoteItem({
     required this.id,
     required this.quoteId,
@@ -7220,6 +7254,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
     required this.unitPriceMinor,
     required this.taxRate,
     required this.discountMinor,
+    required this.discountRate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7232,6 +7267,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
     map['unit_price_minor'] = Variable<int>(unitPriceMinor);
     map['tax_rate'] = Variable<int>(taxRate);
     map['discount_minor'] = Variable<int>(discountMinor);
+    map['discount_rate'] = Variable<int>(discountRate);
     return map;
   }
 
@@ -7245,6 +7281,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
       unitPriceMinor: Value(unitPriceMinor),
       taxRate: Value(taxRate),
       discountMinor: Value(discountMinor),
+      discountRate: Value(discountRate),
     );
   }
 
@@ -7262,6 +7299,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
       unitPriceMinor: serializer.fromJson<int>(json['unitPriceMinor']),
       taxRate: serializer.fromJson<int>(json['taxRate']),
       discountMinor: serializer.fromJson<int>(json['discountMinor']),
+      discountRate: serializer.fromJson<int>(json['discountRate']),
     );
   }
   @override
@@ -7276,6 +7314,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
       'unitPriceMinor': serializer.toJson<int>(unitPriceMinor),
       'taxRate': serializer.toJson<int>(taxRate),
       'discountMinor': serializer.toJson<int>(discountMinor),
+      'discountRate': serializer.toJson<int>(discountRate),
     };
   }
 
@@ -7288,6 +7327,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
     int? unitPriceMinor,
     int? taxRate,
     int? discountMinor,
+    int? discountRate,
   }) => QuoteItem(
     id: id ?? this.id,
     quoteId: quoteId ?? this.quoteId,
@@ -7297,6 +7337,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
     unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
     taxRate: taxRate ?? this.taxRate,
     discountMinor: discountMinor ?? this.discountMinor,
+    discountRate: discountRate ?? this.discountRate,
   );
   QuoteItem copyWithCompanion(QuoteItemsCompanion data) {
     return QuoteItem(
@@ -7314,6 +7355,9 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
       discountMinor: data.discountMinor.present
           ? data.discountMinor.value
           : this.discountMinor,
+      discountRate: data.discountRate.present
+          ? data.discountRate.value
+          : this.discountRate,
     );
   }
 
@@ -7327,7 +7371,8 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
           ..write('unit: $unit, ')
           ..write('unitPriceMinor: $unitPriceMinor, ')
           ..write('taxRate: $taxRate, ')
-          ..write('discountMinor: $discountMinor')
+          ..write('discountMinor: $discountMinor, ')
+          ..write('discountRate: $discountRate')
           ..write(')'))
         .toString();
   }
@@ -7342,6 +7387,7 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
     unitPriceMinor,
     taxRate,
     discountMinor,
+    discountRate,
   );
   @override
   bool operator ==(Object other) =>
@@ -7354,7 +7400,8 @@ class QuoteItem extends DataClass implements Insertable<QuoteItem> {
           other.unit == this.unit &&
           other.unitPriceMinor == this.unitPriceMinor &&
           other.taxRate == this.taxRate &&
-          other.discountMinor == this.discountMinor);
+          other.discountMinor == this.discountMinor &&
+          other.discountRate == this.discountRate);
 }
 
 class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
@@ -7366,6 +7413,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
   final Value<int> unitPriceMinor;
   final Value<int> taxRate;
   final Value<int> discountMinor;
+  final Value<int> discountRate;
   final Value<int> rowid;
   const QuoteItemsCompanion({
     this.id = const Value.absent(),
@@ -7376,6 +7424,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
     this.unitPriceMinor = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.discountMinor = const Value.absent(),
+    this.discountRate = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuoteItemsCompanion.insert({
@@ -7387,6 +7436,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
     this.unitPriceMinor = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.discountMinor = const Value.absent(),
+    this.discountRate = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        quoteId = Value(quoteId),
@@ -7400,6 +7450,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
     Expression<int>? unitPriceMinor,
     Expression<int>? taxRate,
     Expression<int>? discountMinor,
+    Expression<int>? discountRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -7411,6 +7462,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
       if (unitPriceMinor != null) 'unit_price_minor': unitPriceMinor,
       if (taxRate != null) 'tax_rate': taxRate,
       if (discountMinor != null) 'discount_minor': discountMinor,
+      if (discountRate != null) 'discount_rate': discountRate,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7424,6 +7476,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
     Value<int>? unitPriceMinor,
     Value<int>? taxRate,
     Value<int>? discountMinor,
+    Value<int>? discountRate,
     Value<int>? rowid,
   }) {
     return QuoteItemsCompanion(
@@ -7435,6 +7488,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
       unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
       taxRate: taxRate ?? this.taxRate,
       discountMinor: discountMinor ?? this.discountMinor,
+      discountRate: discountRate ?? this.discountRate,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7466,6 +7520,9 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
     if (discountMinor.present) {
       map['discount_minor'] = Variable<int>(discountMinor.value);
     }
+    if (discountRate.present) {
+      map['discount_rate'] = Variable<int>(discountRate.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7483,6 +7540,7 @@ class QuoteItemsCompanion extends UpdateCompanion<QuoteItem> {
           ..write('unitPriceMinor: $unitPriceMinor, ')
           ..write('taxRate: $taxRate, ')
           ..write('discountMinor: $discountMinor, ')
+          ..write('discountRate: $discountRate, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8562,6 +8620,18 @@ class $ProformaItemsTable extends ProformaItems
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _discountRateMeta = const VerificationMeta(
+    'discountRate',
+  );
+  @override
+  late final GeneratedColumn<int> discountRate = GeneratedColumn<int>(
+    'discount_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -8572,6 +8642,7 @@ class $ProformaItemsTable extends ProformaItems
     unitPriceMinor,
     taxRate,
     discountMinor,
+    discountRate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8645,6 +8716,15 @@ class $ProformaItemsTable extends ProformaItems
         ),
       );
     }
+    if (data.containsKey('discount_rate')) {
+      context.handle(
+        _discountRateMeta,
+        discountRate.isAcceptableOrUnknown(
+          data['discount_rate']!,
+          _discountRateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -8686,6 +8766,10 @@ class $ProformaItemsTable extends ProformaItems
         DriftSqlType.int,
         data['${effectivePrefix}discount_minor'],
       )!,
+      discountRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discount_rate'],
+      )!,
     );
   }
 
@@ -8704,6 +8788,14 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
   final int unitPriceMinor;
   final int taxRate;
   final int discountMinor;
+
+  /// Yuzde iskonto (0-100). 0 ise TUTAR iskontosu (`discountMinor`)
+  /// gecerlidir; ikisi birden girilemez cunku arayuzde tek bir secici var
+  /// (TL / $ / EUR / %).
+  ///
+  /// Ikisi birden dolu gelirse YUZDE kazanir — sunucu tarafi da ayni
+  /// kurali uyguluyor (bkz. backend App\Support\DocumentTotal).
+  final int discountRate;
   const ProformaItem({
     required this.id,
     required this.proformaId,
@@ -8713,6 +8805,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
     required this.unitPriceMinor,
     required this.taxRate,
     required this.discountMinor,
+    required this.discountRate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8725,6 +8818,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
     map['unit_price_minor'] = Variable<int>(unitPriceMinor);
     map['tax_rate'] = Variable<int>(taxRate);
     map['discount_minor'] = Variable<int>(discountMinor);
+    map['discount_rate'] = Variable<int>(discountRate);
     return map;
   }
 
@@ -8738,6 +8832,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
       unitPriceMinor: Value(unitPriceMinor),
       taxRate: Value(taxRate),
       discountMinor: Value(discountMinor),
+      discountRate: Value(discountRate),
     );
   }
 
@@ -8755,6 +8850,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
       unitPriceMinor: serializer.fromJson<int>(json['unitPriceMinor']),
       taxRate: serializer.fromJson<int>(json['taxRate']),
       discountMinor: serializer.fromJson<int>(json['discountMinor']),
+      discountRate: serializer.fromJson<int>(json['discountRate']),
     );
   }
   @override
@@ -8769,6 +8865,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
       'unitPriceMinor': serializer.toJson<int>(unitPriceMinor),
       'taxRate': serializer.toJson<int>(taxRate),
       'discountMinor': serializer.toJson<int>(discountMinor),
+      'discountRate': serializer.toJson<int>(discountRate),
     };
   }
 
@@ -8781,6 +8878,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
     int? unitPriceMinor,
     int? taxRate,
     int? discountMinor,
+    int? discountRate,
   }) => ProformaItem(
     id: id ?? this.id,
     proformaId: proformaId ?? this.proformaId,
@@ -8790,6 +8888,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
     unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
     taxRate: taxRate ?? this.taxRate,
     discountMinor: discountMinor ?? this.discountMinor,
+    discountRate: discountRate ?? this.discountRate,
   );
   ProformaItem copyWithCompanion(ProformaItemsCompanion data) {
     return ProformaItem(
@@ -8809,6 +8908,9 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
       discountMinor: data.discountMinor.present
           ? data.discountMinor.value
           : this.discountMinor,
+      discountRate: data.discountRate.present
+          ? data.discountRate.value
+          : this.discountRate,
     );
   }
 
@@ -8822,7 +8924,8 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
           ..write('unit: $unit, ')
           ..write('unitPriceMinor: $unitPriceMinor, ')
           ..write('taxRate: $taxRate, ')
-          ..write('discountMinor: $discountMinor')
+          ..write('discountMinor: $discountMinor, ')
+          ..write('discountRate: $discountRate')
           ..write(')'))
         .toString();
   }
@@ -8837,6 +8940,7 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
     unitPriceMinor,
     taxRate,
     discountMinor,
+    discountRate,
   );
   @override
   bool operator ==(Object other) =>
@@ -8849,7 +8953,8 @@ class ProformaItem extends DataClass implements Insertable<ProformaItem> {
           other.unit == this.unit &&
           other.unitPriceMinor == this.unitPriceMinor &&
           other.taxRate == this.taxRate &&
-          other.discountMinor == this.discountMinor);
+          other.discountMinor == this.discountMinor &&
+          other.discountRate == this.discountRate);
 }
 
 class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
@@ -8861,6 +8966,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
   final Value<int> unitPriceMinor;
   final Value<int> taxRate;
   final Value<int> discountMinor;
+  final Value<int> discountRate;
   final Value<int> rowid;
   const ProformaItemsCompanion({
     this.id = const Value.absent(),
@@ -8871,6 +8977,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
     this.unitPriceMinor = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.discountMinor = const Value.absent(),
+    this.discountRate = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProformaItemsCompanion.insert({
@@ -8882,6 +8989,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
     this.unitPriceMinor = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.discountMinor = const Value.absent(),
+    this.discountRate = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        proformaId = Value(proformaId),
@@ -8895,6 +9003,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
     Expression<int>? unitPriceMinor,
     Expression<int>? taxRate,
     Expression<int>? discountMinor,
+    Expression<int>? discountRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8906,6 +9015,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
       if (unitPriceMinor != null) 'unit_price_minor': unitPriceMinor,
       if (taxRate != null) 'tax_rate': taxRate,
       if (discountMinor != null) 'discount_minor': discountMinor,
+      if (discountRate != null) 'discount_rate': discountRate,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8919,6 +9029,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
     Value<int>? unitPriceMinor,
     Value<int>? taxRate,
     Value<int>? discountMinor,
+    Value<int>? discountRate,
     Value<int>? rowid,
   }) {
     return ProformaItemsCompanion(
@@ -8930,6 +9041,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
       unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
       taxRate: taxRate ?? this.taxRate,
       discountMinor: discountMinor ?? this.discountMinor,
+      discountRate: discountRate ?? this.discountRate,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8961,6 +9073,9 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
     if (discountMinor.present) {
       map['discount_minor'] = Variable<int>(discountMinor.value);
     }
+    if (discountRate.present) {
+      map['discount_rate'] = Variable<int>(discountRate.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8978,6 +9093,7 @@ class ProformaItemsCompanion extends UpdateCompanion<ProformaItem> {
           ..write('unitPriceMinor: $unitPriceMinor, ')
           ..write('taxRate: $taxRate, ')
           ..write('discountMinor: $discountMinor, ')
+          ..write('discountRate: $discountRate, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20409,6 +20525,7 @@ typedef $$QuoteItemsTableCreateCompanionBuilder =
       Value<int> unitPriceMinor,
       Value<int> taxRate,
       Value<int> discountMinor,
+      Value<int> discountRate,
       Value<int> rowid,
     });
 typedef $$QuoteItemsTableUpdateCompanionBuilder =
@@ -20421,6 +20538,7 @@ typedef $$QuoteItemsTableUpdateCompanionBuilder =
       Value<int> unitPriceMinor,
       Value<int> taxRate,
       Value<int> discountMinor,
+      Value<int> discountRate,
       Value<int> rowid,
     });
 
@@ -20487,6 +20605,11 @@ class $$QuoteItemsTableFilterComposer
 
   ColumnFilters<int> get discountMinor => $composableBuilder(
     column: $table.discountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get discountRate => $composableBuilder(
+    column: $table.discountRate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20558,6 +20681,11 @@ class $$QuoteItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get discountRate => $composableBuilder(
+    column: $table.discountRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$QuotesTableOrderingComposer get quoteId {
     final $$QuotesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -20615,6 +20743,11 @@ class $$QuoteItemsTableAnnotationComposer
 
   GeneratedColumn<int> get discountMinor => $composableBuilder(
     column: $table.discountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get discountRate => $composableBuilder(
+    column: $table.discountRate,
     builder: (column) => column,
   );
 
@@ -20678,6 +20811,7 @@ class $$QuoteItemsTableTableManager
                 Value<int> unitPriceMinor = const Value.absent(),
                 Value<int> taxRate = const Value.absent(),
                 Value<int> discountMinor = const Value.absent(),
+                Value<int> discountRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuoteItemsCompanion(
                 id: id,
@@ -20688,6 +20822,7 @@ class $$QuoteItemsTableTableManager
                 unitPriceMinor: unitPriceMinor,
                 taxRate: taxRate,
                 discountMinor: discountMinor,
+                discountRate: discountRate,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -20700,6 +20835,7 @@ class $$QuoteItemsTableTableManager
                 Value<int> unitPriceMinor = const Value.absent(),
                 Value<int> taxRate = const Value.absent(),
                 Value<int> discountMinor = const Value.absent(),
+                Value<int> discountRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuoteItemsCompanion.insert(
                 id: id,
@@ -20710,6 +20846,7 @@ class $$QuoteItemsTableTableManager
                 unitPriceMinor: unitPriceMinor,
                 taxRate: taxRate,
                 discountMinor: discountMinor,
+                discountRate: discountRate,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -21537,6 +21674,7 @@ typedef $$ProformaItemsTableCreateCompanionBuilder =
       Value<int> unitPriceMinor,
       Value<int> taxRate,
       Value<int> discountMinor,
+      Value<int> discountRate,
       Value<int> rowid,
     });
 typedef $$ProformaItemsTableUpdateCompanionBuilder =
@@ -21549,6 +21687,7 @@ typedef $$ProformaItemsTableUpdateCompanionBuilder =
       Value<int> unitPriceMinor,
       Value<int> taxRate,
       Value<int> discountMinor,
+      Value<int> discountRate,
       Value<int> rowid,
     });
 
@@ -21622,6 +21761,11 @@ class $$ProformaItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get discountRate => $composableBuilder(
+    column: $table.discountRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProformasTableFilterComposer get proformaId {
     final $$ProformasTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -21690,6 +21834,11 @@ class $$ProformaItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get discountRate => $composableBuilder(
+    column: $table.discountRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProformasTableOrderingComposer get proformaId {
     final $$ProformasTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -21747,6 +21896,11 @@ class $$ProformaItemsTableAnnotationComposer
 
   GeneratedColumn<int> get discountMinor => $composableBuilder(
     column: $table.discountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get discountRate => $composableBuilder(
+    column: $table.discountRate,
     builder: (column) => column,
   );
 
@@ -21810,6 +21964,7 @@ class $$ProformaItemsTableTableManager
                 Value<int> unitPriceMinor = const Value.absent(),
                 Value<int> taxRate = const Value.absent(),
                 Value<int> discountMinor = const Value.absent(),
+                Value<int> discountRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProformaItemsCompanion(
                 id: id,
@@ -21820,6 +21975,7 @@ class $$ProformaItemsTableTableManager
                 unitPriceMinor: unitPriceMinor,
                 taxRate: taxRate,
                 discountMinor: discountMinor,
+                discountRate: discountRate,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21832,6 +21988,7 @@ class $$ProformaItemsTableTableManager
                 Value<int> unitPriceMinor = const Value.absent(),
                 Value<int> taxRate = const Value.absent(),
                 Value<int> discountMinor = const Value.absent(),
+                Value<int> discountRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProformaItemsCompanion.insert(
                 id: id,
@@ -21842,6 +21999,7 @@ class $$ProformaItemsTableTableManager
                 unitPriceMinor: unitPriceMinor,
                 taxRate: taxRate,
                 discountMinor: discountMinor,
+                discountRate: discountRate,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

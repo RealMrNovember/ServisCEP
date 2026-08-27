@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -148,6 +148,18 @@ class AppDatabase extends _$AppDatabase {
         ]) {
           await m.addColumn(proformas, column);
         }
+      }
+
+      if (from < 10) {
+        // Yuzde iskonto. Backend alani zaten kabul ediyordu ama mobil
+        // gonderemiyordu; belge toplaminda da hesaba katilmiyordu
+        // (bkz. backend App\Support\DocumentTotal).
+        //
+        // Varsayilan 0: mevcut butun kalemler TUTAR iskontosuyla
+        // kaydedilmis durumda ve 0 "yuzde iskonto yok" demek. Bu sayede
+        // goc hicbir mevcut belgenin toplamini degistirmiyor.
+        await m.addColumn(quoteItems, quoteItems.discountRate);
+        await m.addColumn(proformaItems, proformaItems.discountRate);
       }
     },
   );

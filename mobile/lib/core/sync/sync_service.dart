@@ -230,8 +230,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Vergi levhası dosyası artık cihazda yok.'),
-              kalici: true,
-            );
+                kalici: true,
+              );
               continue;
             }
             await _api.uploadTaxCertificate(
@@ -253,8 +253,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Logo dosyası artık cihazda yok.'),
-              kalici: true,
-            );
+                kalici: true,
+              );
               continue;
             } else {
               await _api.uploadCompanyLogo(path);
@@ -267,8 +267,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Logo dosyası artık cihazda yok.'),
-              kalici: true,
-            );
+                kalici: true,
+              );
               continue;
             } else {
               await _api.uploadCustomerLogo(op.entityId, path);
@@ -283,8 +283,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'Fotoğraf dosyası artık cihazda yok.'),
-              kalici: true,
-            );
+                kalici: true,
+              );
               continue;
             }
             await _api.createJobPhoto(
@@ -298,8 +298,8 @@ class SyncService {
               await _markFailed(
                 op,
                 ApiException(422, 'İmza dosyası artık cihazda yok.'),
-              kalici: true,
-            );
+                kalici: true,
+              );
               continue;
             }
             await _api.createJobSignature(

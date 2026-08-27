@@ -154,8 +154,8 @@ class SyncStatusScreen extends ConsumerWidget {
             switch ((pending > 0, taze)) {
               (true, _) =>
                 'Bekleyen kayıtlar cihazında güvenle duruyor. Bağlantı '
-                'kurulduğunda otomatik gönderilir; uygulama kapalıyken de '
-                'arka planda düzenli olarak denenir.',
+                    'kurulduğunda otomatik gönderilir; uygulama kapalıyken de '
+                    'arka planda düzenli olarak denenir.',
               (false, true) =>
                 'Verilerin sunucuyla eşitlenmiş durumda. Uygulama bağlantı '
                     'geldiğinde, öne alındığında ve birkaç dakikada bir '
