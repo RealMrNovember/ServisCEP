@@ -38,8 +38,13 @@ jobs:
           channel: stable
           cache: true
 
+      # --enforce-lockfile: pubspec.lock ile pubspec.yaml birbirini
+      # TUTMUYORSA kırılır, sessizce güncellemez. Kilit dosyası depoda
+      # tutuluyor; bağımlılık eklenip kilit güncellenmediğinde çözüm
+      # makineden makineye değişiyor. 0.7.8'de `workmanager` tam olarak
+      # böyle eklenmişti ve derleme ancak sürüm anında kırıldı.
       - name: Bağımlılıklar
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Statik analiz
         run: flutter analyze

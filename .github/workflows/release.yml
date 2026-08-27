@@ -89,6 +89,16 @@ jobs:
       # Bölüm yoksa/boşsa, bozuksa veya 500 karakteri aşıyorsa betik hata
       # verir ve sürüm burada durur — notsuz sürüm Play'e çıkamaz
       # (kullanıcı kararı, 2026-08-24).
+      # ÖN KONTROL, her şeyden önce.
+      #
+      # 0.7.8'i yayınlamaya çalışırken üç ayrı sebeple takıldık ve üçü de
+      # ancak yayın anında görüldü: etiketle pubspec sürümü uyuşmuyordu,
+      # versionCode artmamıştı (Play aynısını ikinci kez kabul etmiyor) ve
+      # pubspec.lock güncellenmemişti. Buradaki kontroller o üçünün birebir
+      # karşılığı; AAB derlenmeden önce kırılır.
+      - name: Sürüm ön kontrolü
+        run: python3 .github/scripts/release_preflight.py "${GITHUB_REF_NAME}"
+
       - name: Sürüm notunu CHANGELOG'dan hazırla
         working-directory: .
         run: python3 .github/scripts/prepare_release_notes.py "${GITHUB_REF_NAME}"
