@@ -117,68 +117,65 @@ class _ConflictCardState extends ConsumerState<_ConflictCard> {
     final diffs = conflict.differences;
 
     return AppCard(
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              TcIcon(TcIcons.syncProblem, size: 18, color: palet.warningText),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  conflict.subjectLabel,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          if (diffs.isEmpty)
+            Text(
+              'İki hal arasında görünür bir alan farkı yok — sürüm '
+              'numaraları ayrıştığı için kayıt beklemeye alındı.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+            )
+          else
+            ...diffs.map((diff) => _DiffRow(diff: diff)),
+
+          const SizedBox(height: 16),
+          if (_busy)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
             Row(
               children: [
-                TcIcon(TcIcons.syncProblem, size: 18, color: palet.warningText),
-                const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text(
-                    conflict.subjectLabel,
-                    style: Theme.of(context).textTheme.titleSmall,
+                  child: OutlinedButton(
+                    onPressed: () => _resolve('SUNUCU_TUTULDU'),
+                    child: const Text('Sunucudakini tut'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => _resolve('MOBIL_TUTULDU'),
+                    child: const Text('Bu cihazdakini tut'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-
-            if (diffs.isEmpty)
-              Text(
-                'İki hal arasında görünür bir alan farkı yok — sürüm '
-                'numaraları ayrıştığı için kayıt beklemeye alındı.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
-              )
-            else
-              ...diffs.map((diff) => _DiffRow(diff: diff)),
-
-            const SizedBox(height: 16),
-            if (_busy)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(8),
-                  child: SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _resolve('SUNUCU_TUTULDU'),
-                      child: const Text('Sunucudakini tut'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => _resolve('MOBIL_TUTULDU'),
-                      child: const Text('Bu cihazdakini tut'),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
