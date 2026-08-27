@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\CustomerTaxCertificateController;
 use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\DiagnosticsController;
 use App\Http\Controllers\Api\V1\ExpenseEntryController;
+use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\Api\V1\IncomeEntryController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\JobNoteController;
@@ -100,6 +101,17 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
         // (kullanıcı en azından parolasını değiştirebilmeli).
         Route::put('/auth/profile', [ProfileController::class, 'update'])->name('auth.profile.update');
         Route::put('/auth/password', [ProfileController::class, 'updatePassword'])->name('auth.password.update');
+
+        // Geri bildirim — abonelik süresi DOLMUŞ olsa da erişilebilir.
+        // Aboneliği bittiği için yazamayan bir kullanıcı, tam da bu yüzden
+        // bize yazmak isteyebilir; o kapıyı kapatmak anlamsız.
+        //
+        // Hız sınırı dar: geri bildirim insan hızında yazılır, dakikada
+        // beşten fazlası kötüye kullanımdır.
+        Route::middleware('throttle:5,1')
+            ->post('/feedback', [FeedbackController::class, 'store'])
+            ->name('feedback.store');
+        Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
 
         // Abonelik — web'deki Filament App "Abonelik" sayfasının mobil
         // karşılığı: durum + paketler + havale bildirimi (admin onaylı akış).
