@@ -212,10 +212,14 @@ class _JobDetailContent extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 12),
+          // Tamamlanmış işte etiket değişiyor: ekran aynı ama kullanıcı
+          // yaptığı şeyin "kapatmak" değil "düzeltmek" olduğunu bilmeli.
           OutlinedButton.icon(
             onPressed: () => _tamamla(context),
             icon: const TcIcon(TcIcons.checkCircle, size: 18),
-            label: const Text('İşi tamamla'),
+            label: Text(
+              job.status == 'TAMAMLANDI' ? 'Tutarı düzelt' : 'İşi tamamla',
+            ),
           ),
           const SizedBox(height: 28),
           _NotesSection(jobId: job.id),

@@ -213,6 +213,20 @@ class JobsRepository {
       );
       await _db.update(_db.jobs).replace(updated);
 
+      // Bu işin ESKİ borç kaydı varsa siliniyor.
+      //
+      // Tamamlama tek seferlik bir olay değil: kullanıcı işi kapattıktan
+      // sonra fiyatı düzeltmek ya da imza/fotoğraf eklemek için ekrana
+      // geri dönebiliyor. Kayıt körü körüne eklendiğinde her dönüşte
+      // müşterinin cari hesabına BİR BORÇ DAHA yazılıyordu; iki kez
+      // tamamlanan bir iş müşteriye iki kez borç çıkarıyordu.
+      //
+      // İşin borcu tanım gereği tektir; bu yüzden ekleme değil değiştirme.
+      await (_db.delete(_db.customerLedgerEntries)..where(
+            (l) => l.referenceType.equals('job') & l.referenceId.equals(job.id),
+          ))
+          .go();
+
       await _db
           .into(_db.customerLedgerEntries)
           .insert(
