@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.7.7+31
+version: 0.7.8+32
 
 environment:
   # NOT: 3.12.2 olarak ayarlıydı ama şu an erişilebilen en güncel Flutter
@@ -80,7 +80,12 @@ dependencies:
   # Uygulama KAPALIYKEN outbox'i gonderen arka plan gorevi.
   # Dart'in Timer.periodic'i arka planda askiya alindigi icin sart —
   # bkz. lib/core/sync/background_sync.dart
-  workmanager: '>=0.5.2 <1.0.0'
+  #
+  # Kisit DAR tutuluyor. Once '>=0.5.2 <1.0.0' yazilmisti; kod 0.10 API'sine
+  # gore yaziliyken cozucu pekala 0.6'yi secebiliyordu ve `initialize`
+  # imzasi degistigi icin derleme "Too many positional arguments" ile
+  # kiriliyordu (CI'da tam olarak bu yasandi).
+  workmanager: ^0.10.9
 
 dev_dependencies:
   flutter_test:

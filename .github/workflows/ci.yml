@@ -46,3 +46,21 @@ jobs:
 
       - name: Testler
         run: flutter test
+
+      # DERLEME de denetleniyor, yalnizca analiz ve test degil.
+      #
+      # `flutter analyze` Dart tarafina bakiyor; Android tarafi (Gradle,
+      # manifest merge, eklenti uyumlulugu) ona hic girmiyor. Bir eklenti
+      # eklendiginde derleme kirilirsa CI yesil kalir ve sorun ancak surum
+      # etiketi atilinca, yani Play'e cikarken ortaya cikar.
+      #
+      # Imzasiz debug derlemesi yeterli: amac AAB uretmek degil, Android
+      # zincirinin ayakta oldugunu dogrulamak. Imza anahtarlari yalnizca
+      # release isinde var.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android derlemesi
+        run: flutter build apk --debug

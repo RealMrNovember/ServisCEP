@@ -362,6 +362,12 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 
 ### Bakım
 
+- [ ] **Backend için CI yok** — Mobil tarafta `flutter analyze` + test +
+      Android derlemesi her itmede koşuyor (0.7.8'de eklendi). Backend'in
+      245 testi hiçbir yerde koşmuyor; sunucuya ancak deploy sırasında
+      bakılıyor. Postgres servisi ve PHP kurulumu gerektirdiği için ayrı
+      bir iş.
+
 - [x] **Yedekleme** (2026-08-26) — Veritabanının yedeği YOKTU: sunucudaki
       yedekleme betiği yalnızca Docker container'ı olarak çalışan
       Postgres'leri buluyor, TeknikCEP'inki çıplak kurulu olduğu için
