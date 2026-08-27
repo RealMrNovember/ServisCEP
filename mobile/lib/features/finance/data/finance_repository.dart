@@ -8,11 +8,49 @@ import '../../../core/database/app_database.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../auth/data/session_controller.dart';
 
-class MonthlySummary {
-  const MonthlySummary({required this.incomeMinor, required this.expenseMinor});
+/// Bir ayın gelir/gider toplamı — grafikte bir sütun.
+class AyOzeti {
+  const AyOzeti({
+    required this.ay,
+    required this.incomeMinor,
+    required this.expenseMinor,
+  });
+
+  /// Ayın ilk günü.
+  final DateTime ay;
   final int incomeMinor;
   final int expenseMinor;
+
   int get netMinor => incomeMinor - expenseMinor;
+}
+
+/// Finans özet ekranının tüm verisi.
+///
+/// Tek bir modelde toplanıyor: ekran dört ayrı sorgu izlediğinde
+/// parçalar farklı anlarda geliyor ve kullanıcı sayıların birbiri
+/// ardına yerine oturmasını izliyordu.
+class FinansGorunumu {
+  const FinansGorunumu({required this.aylar, required this.receivableMinor});
+
+  /// Eskiden yeniye, son 6 ay. Sonuncusu içinde bulunulan ay.
+  final List<AyOzeti> aylar;
+
+  /// Müşterilerden olan toplam alacak (cari borç − tahsilat).
+  final int receivableMinor;
+
+  AyOzeti get buAy => aylar.last;
+
+  AyOzeti? get gecenAy => aylar.length >= 2 ? aylar[aylar.length - 2] : null;
+
+  /// Net kârın geçen aya göre yüzde değişimi.
+  ///
+  /// Geçen ay sıfır ya da negatifse null döner: "%∞ artış" ya da eksi
+  /// bir tabana bölünmüş bir oran kullanıcıya hiçbir şey anlatmıyor.
+  double? get netDegisimYuzdesi {
+    final onceki = gecenAy?.netMinor ?? 0;
+    if (onceki <= 0) return null;
+    return (buAy.netMinor - onceki) / onceki * 100;
+  }
 }
 
 /// Finans modülü — bkz. docs/04 § Gelir Modülü, § Gider Modülü, § Finans
@@ -36,33 +74,74 @@ class FinanceRepository {
         .watch();
   }
 
-  Stream<MonthlySummary> watchThisMonthSummary(String companyId) {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month);
-    final end = DateTime(now.year, now.month + 1);
+  /// Son 6 ayın gelir/gider serisi + toplam alacak.
+  ///
+  /// Tek seferde altı ay okunuyor ve gruplama bellekte yapılıyor: aylık
+  /// altı ayrı sorgu açmak, aynı tabloyu altı kez taramak demekti.
+  Stream<FinansGorunumu> watchOverview(String companyId) {
+    final simdi = DateTime.now();
+    final buAyBasi = DateTime(simdi.year, simdi.month);
+    final baslangic = DateTime(simdi.year, simdi.month - 5);
+    final bitis = DateTime(simdi.year, simdi.month + 1);
 
-    final incomeStream =
+    final gelirler =
         (_db.select(_db.incomeEntries)..where(
               (i) =>
                   i.companyId.equals(companyId) &
-                  i.date.isBiggerOrEqualValue(start) &
-                  i.date.isSmallerThanValue(end),
-            ))
-            .watch();
-    final expenseStream =
-        (_db.select(_db.expenseEntries)..where(
-              (e) =>
-                  e.companyId.equals(companyId) &
-                  e.date.isBiggerOrEqualValue(start) &
-                  e.date.isSmallerThanValue(end),
+                  i.date.isBiggerOrEqualValue(baslangic) &
+                  i.date.isSmallerThanValue(bitis),
             ))
             .watch();
 
-    return incomeStream.asyncMap((incomes) async {
-      final expenses = await expenseStream.first;
-      return MonthlySummary(
-        incomeMinor: incomes.fold<int>(0, (sum, i) => sum + i.amountMinor),
-        expenseMinor: expenses.fold<int>(0, (sum, e) => sum + e.amountMinor),
+    return gelirler.asyncMap((incomes) async {
+      final expenses =
+          await (_db.select(_db.expenseEntries)..where(
+                (e) =>
+                    e.companyId.equals(companyId) &
+                    e.date.isBiggerOrEqualValue(baslangic) &
+                    e.date.isSmallerThanValue(bitis),
+              ))
+              .get();
+
+      final ledger = await (_db.select(
+        _db.customerLedgerEntries,
+      )..where((l) => l.companyId.equals(companyId))).get();
+
+      final gelirToplam = <DateTime, int>{};
+      final giderToplam = <DateTime, int>{};
+      for (final i in incomes) {
+        final anahtar = DateTime(i.date.year, i.date.month);
+        gelirToplam[anahtar] = (gelirToplam[anahtar] ?? 0) + i.amountMinor;
+      }
+      for (final e in expenses) {
+        final anahtar = DateTime(e.date.year, e.date.month);
+        giderToplam[anahtar] = (giderToplam[anahtar] ?? 0) + e.amountMinor;
+      }
+
+      // Kaydı olmayan ay atlanmıyor, sıfır olarak konuyor: grafikte
+      // eksik sütun, o ayın hiç olmadığı izlenimi veriyordu.
+      final aylar = <AyOzeti>[];
+      for (var geri = 5; geri >= 0; geri--) {
+        final ay = DateTime(buAyBasi.year, buAyBasi.month - geri);
+        aylar.add(
+          AyOzeti(
+            ay: ay,
+            incomeMinor: gelirToplam[ay] ?? 0,
+            expenseMinor: giderToplam[ay] ?? 0,
+          ),
+        );
+      }
+
+      var alacak = 0;
+      for (final l in ledger) {
+        alacak += l.type == 'DEBIT' ? l.amountMinor : -l.amountMinor;
+      }
+
+      return FinansGorunumu(
+        aylar: aylar,
+        // Müşteriler net alacaklıysa (fazla ödeme) alacak sıfır gösterilir;
+        // eksi bir "alacak" rakamı okunmuyor.
+        receivableMinor: alacak < 0 ? 0 : alacak,
       );
     });
   }
@@ -251,10 +330,8 @@ final expenseListProvider = StreamProvider<List<ExpenseEntry>>((ref) {
   return ref.watch(financeRepositoryProvider).watchExpenses(session.companyId);
 });
 
-final monthlySummaryProvider = StreamProvider<MonthlySummary>((ref) {
+final financeOverviewProvider = StreamProvider<FinansGorunumu>((ref) {
   final session = ref.watch(sessionControllerProvider).valueOrNull;
   if (session == null) return const Stream.empty();
-  return ref
-      .watch(financeRepositoryProvider)
-      .watchThisMonthSummary(session.companyId);
+  return ref.watch(financeRepositoryProvider).watchOverview(session.companyId);
 });

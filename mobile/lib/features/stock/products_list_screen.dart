@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/palette.dart';
+import '../../app/theme.dart';
+import '../../app/typography.dart';
 import '../../core/database/app_database.dart';
 import '../../core/utils/money.dart';
 import '../../shared/skeleton.dart';
+import '../../shared/tc_icon.dart';
 import '../../shared/ui.dart';
 import '../auth/data/session_controller.dart';
 import 'barcode_scanner_screen.dart';
@@ -14,12 +18,6 @@ const _statusLabels = {
   StockStatus.inStock: 'Stokta',
   StockStatus.low: 'Az kaldı',
   StockStatus.outOfStock: 'Stokta yok',
-};
-
-const _statusColors = {
-  StockStatus.inStock: Colors.green,
-  StockStatus.low: Colors.orange,
-  StockStatus.outOfStock: Colors.red,
 };
 
 /// Ürün / stok listesi — bkz. docs/16-stok-ve-barkod.md.
@@ -38,6 +36,13 @@ class ProductsListScreen extends ConsumerStatefulWidget {
 class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
   final _searchController = TextEditingController();
   String _query = '';
+
+  /// Seçili süzgeç: null = tümü, [_kritikFiltresi] = kritik stok,
+  /// diğer her değer bir ürün kategorisi.
+  String? _filtre;
+
+  /// Kategori adıyla çakışmayacak bir işaret.
+  static const _kritikFiltresi = '\u0000kritik';
 
   @override
   void dispose() {
@@ -92,38 +97,120 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final palet = context.palette;
     final productsAsync = ref.watch(productsListProvider);
-    final scheme = Theme.of(context).colorScheme;
+    final products = productsAsync.valueOrNull ?? const <Product>[];
+
+    final kritikSayisi = products
+        .where((p) => p.stockStatus != StockStatus.inStock)
+        .length;
+    final kategoriler =
+        products
+            .map((p) => (p.category ?? '').trim())
+            .where((c) => c.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.selectionMode ? 'Ürün Seç' : 'Stok')),
+      appBar: AppBar(
+        title: Text(widget.selectionMode ? 'Ürün Seç' : 'Stok'),
+        bottom: products.isEmpty
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(20),
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: AppSpacing.xl,
+                    right: AppSpacing.xl,
+                    bottom: AppSpacing.sm,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${products.length} ürün',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                    ),
+                  ),
+                ),
+              ),
+      ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Ürün ara (isim, barkod)...',
-                      prefixIcon: const Icon(Icons.search),
+                    decoration: const InputDecoration(
+                      hintText: 'Ürün adı veya barkod',
+                      prefixIcon: Icon(Icons.search),
                       filled: true,
+                      isDense: true,
                     ),
                     onChanged: (v) =>
                         setState(() => _query = v.trim().toLowerCase()),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
+                const SizedBox(width: AppSpacing.sm),
+                OutlinedButton.icon(
                   onPressed: _scanAndFind,
-                  icon: const Icon(Icons.qr_code_scanner),
-                  tooltip: 'Barkod Tara',
+                  icon: const TcIcon(TcIcons.barcode, size: 18),
+                  label: const Text('Barkod'),
                 ),
               ],
             ),
           ),
+
+          // Süzgeçler: "Kritik" en önemlisi ve sayısıyla birlikte —
+          // kullanıcı stoğa çoğunlukla "neyim bitti" diye bakıyor.
+          if (products.isNotEmpty)
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.xs,
+                ),
+                children: [
+                  ChoiceChip(
+                    label: const Text('Tümü'),
+                    selected: _filtre == null,
+                    onSelected: (_) => setState(() => _filtre = null),
+                  ),
+                  if (kritikSayisi > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: AppSpacing.sm),
+                      child: ChoiceChip(
+                        label: Text('Kritik · $kritikSayisi'),
+                        selected: _filtre == _kritikFiltresi,
+                        onSelected: (_) =>
+                            setState(() => _filtre = _kritikFiltresi),
+                      ),
+                    ),
+                  for (final kategori in kategoriler)
+                    Padding(
+                      padding: const EdgeInsets.only(left: AppSpacing.sm),
+                      child: ChoiceChip(
+                        label: Text(kategori),
+                        selected: _filtre == kategori,
+                        onSelected: (_) => setState(() => _filtre = kategori),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
           Expanded(
             child: productsAsync.when(
               loading: () => const AppSkeleton(count: 6),
@@ -132,16 +219,6 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
                 onRetry: () => ref.invalidate(productsListProvider),
               ),
               data: (products) {
-                final filtered = _query.isEmpty
-                    ? products
-                    : products
-                          .where(
-                            (p) =>
-                                p.name.toLowerCase().contains(_query) ||
-                                (p.barcode ?? '').contains(_query),
-                          )
-                          .toList();
-
                 if (products.isEmpty) {
                   return _EmptyState(
                     onAdd: () => Navigator.of(context).push(
@@ -152,19 +229,29 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
                     onScan: _scanAndFind,
                   );
                 }
+
+                final filtered = products.where(_uyuyor).toList();
                 if (filtered.isEmpty) {
                   return Center(
                     child: Text(
                       'Sonuç bulunamadı',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: palet.textMuted),
                     ),
                   );
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 100),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.xs,
+                    AppSpacing.lg,
+                    100,
+                  ),
                   itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, index) {
                     final product = filtered[index];
                     return _ProductTile(
@@ -200,8 +287,23 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
             ),
     );
   }
+
+  bool _uyuyor(Product p) {
+    if (_filtre == _kritikFiltresi) {
+      if (p.stockStatus == StockStatus.inStock) return false;
+    } else if (_filtre != null && (p.category ?? '').trim() != _filtre) {
+      return false;
+    }
+    if (_query.isEmpty) return true;
+    return p.name.toLowerCase().contains(_query) ||
+        (p.barcode ?? '').contains(_query);
+  }
 }
 
+/// Ürün satırı — tasarım teslimatı ekran 26.
+///
+/// Barkod tek aralıklı ve adın hemen altında: depoda ürünü elindeki
+/// etiketten arayan kullanıcı rakamları hane hane karşılaştırıyor.
 class _ProductTile extends StatelessWidget {
   const _ProductTile({required this.product, required this.onTap});
   final Product product;
@@ -209,50 +311,73 @@ class _ProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = product.stockStatus;
-    final color = _statusColors[status]!;
+    final palet = context.palette;
+    final durum = product.stockStatus;
+    final renk = switch (durum) {
+      StockStatus.inStock => palet.textMuted,
+      StockStatus.low => palet.warningText,
+      StockStatus.outOfStock => palet.dangerText,
+    };
 
-    return Card(
-      child: ListTile(
-        onTap: onTap,
-        title: Text(
-          product.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          [
-            if (product.brand?.isNotEmpty == true) product.brand!,
-            Money.formatMinor(product.salePriceMinor),
-          ].join(' · '),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                _statusLabels[status]!,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+    return AppCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: Theme.of(context).textTheme.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  _altSatir(product),
+                  style: AppTypography.mono.copyWith(
+                    fontSize: 12,
+                    color: palet.textMuted,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${product.currentStock} ${product.unit}',
+                style: AppTypography.mono.copyWith(fontSize: 15, color: renk),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${product.currentStock} ${product.unit}',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
+              if (durum != StockStatus.inStock) ...[
+                const SizedBox(height: 2),
+                Text(
+                  _statusLabels[durum]!,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: renk, fontSize: 11),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  /// Barkod varsa barkod, yoksa marka ve satış fiyatı.
+  static String _altSatir(Product p) {
+    final barkod = (p.barcode ?? '').trim();
+    if (barkod.isNotEmpty) return barkod;
+    return [
+      if (p.brand?.trim().isNotEmpty == true) p.brand!.trim(),
+      Money.formatMinor(p.salePriceMinor),
+    ].join(' · ');
   }
 }
 
