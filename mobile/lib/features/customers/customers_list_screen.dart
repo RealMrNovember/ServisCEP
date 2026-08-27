@@ -159,7 +159,7 @@ class _CustomerTile extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                _basHarfler(customer.displayName),
+                initialsOf(customer.displayName),
                 style: Theme.of(
                   context,
                 ).textTheme.labelLarge?.copyWith(color: palet.accent),
@@ -215,17 +215,6 @@ class _CustomerTile extends StatelessWidget {
 
   /// İki kelimeli adlarda her kelimenin ilk harfi, tek kelimede ilk iki
   /// harf. Boşsa soru işareti — hiçbir zaman boş kutu görünmüyor.
-  static String _basHarfler(String ad) {
-    final temiz = ad.trim();
-    if (temiz.isEmpty) return '?';
-    final parcalar = temiz.split(RegExp(r'\s+'));
-    if (parcalar.length >= 2) {
-      return (parcalar[0][0] + parcalar[1][0]).toUpperCase();
-    }
-    return temiz.length >= 2
-        ? temiz.substring(0, 2).toUpperCase()
-        : temiz.toUpperCase();
-  }
 
   /// "0216 412 88 90 · Ümraniye" — telefon yoksa müşteri kodu.
   static String _altSatir(Customer c) {

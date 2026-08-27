@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../app/palette.dart';
 import '../app/theme.dart';
 import '../core/database/app_database.dart';
 import '../core/utils/customer_display.dart';
 import '../features/customers/data/customers_repository.dart';
+import 'tc_icon.dart';
 import 'ui.dart';
 
 /// Müşteri seçme alt sayfası; seçilen müşterinin id'sini döndürür.
@@ -88,20 +90,12 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
                 ),
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Müşteri seç',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () => _yeniMusteri(context),
-                          icon: const Icon(Icons.person_add_alt, size: 18),
-                          label: const Text('Yeni'),
-                        ),
-                      ],
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Müşteri seç',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     TextField(
@@ -143,33 +137,62 @@ class _CustomerPickerSheetState extends ConsumerState<_CustomerPickerSheet> {
                       );
                     }
 
+                    final palet = context.palette;
+
                     return ListView.builder(
                       padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                      itemCount: filtered.length,
+                      // Bir fazla: listenin başındaki "yeni müşteri" satırı.
+                      //
+                      // Aranan müşteri çıkmadığında kullanıcının ilk
+                      // refleksi listenin başına bakmak; oluşturma eylemi
+                      // başlıkta küçük bir düğmeyken fark edilmiyordu.
+                      itemCount: filtered.length + 1,
                       itemBuilder: (context, index) {
-                        final customer = filtered[index];
+                        if (index == 0) {
+                          return ListTile(
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: palet.accent.withValues(alpha: 0.12),
+                                borderRadius: AppRadius.field,
+                              ),
+                              child: TcIcon(
+                                TcIcons.userPlus,
+                                size: 18,
+                                color: palet.accent,
+                              ),
+                            ),
+                            title: Text(
+                              'Yeni müşteri oluştur',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(color: palet.accent),
+                            ),
+                            onTap: () => _yeniMusteri(context),
+                          );
+                        }
+
+                        final customer = filtered[index - 1];
                         final subtitle = [
                           if (customer.phone?.trim().isNotEmpty == true)
                             customer.phone!.trim(),
-                          if (customer.il?.trim().isNotEmpty == true)
-                            customer.il!.trim(),
+                          if (customer.ilce?.trim().isNotEmpty == true)
+                            customer.ilce!.trim(),
                         ].join('  ·  ');
 
                         return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.12),
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: palet.accent.withValues(alpha: 0.12),
+                              borderRadius: AppRadius.field,
+                            ),
                             child: Text(
-                              customer.displayName.isEmpty
-                                  ? '?'
-                                  : customer.displayName
-                                        .substring(0, 1)
-                                        .toUpperCase(),
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
+                              initialsOf(customer.displayName),
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(color: palet.accent),
                             ),
                           ),
                           title: Text(customer.displayName),

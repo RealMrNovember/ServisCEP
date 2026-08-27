@@ -22,6 +22,7 @@ import '../../core/utils/money.dart';
 import '../customers/data/customers_repository.dart';
 import 'data/job_media_repository.dart';
 import 'data/jobs_repository.dart';
+import 'job_complete_screen.dart';
 import 'signature_capture_screen.dart';
 
 final _jobProvider = FutureProvider.family<Job?, String>((ref, id) {
@@ -212,9 +213,9 @@ class _JobDetailContent extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            onPressed: () => _showSetPriceDialog(context, ref),
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('Gerçek fiyatı gir / işi tamamla'),
+            onPressed: () => _tamamla(context),
+            icon: const Icon(Icons.task_alt_outlined, size: 18),
+            label: const Text('İşi tamamla'),
           ),
           const SizedBox(height: 28),
           _NotesSection(jobId: job.id),
@@ -227,39 +228,10 @@ class _JobDetailContent extends ConsumerWidget {
     );
   }
 
-  Future<void> _showSetPriceDialog(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController(
-      text: job.actualPriceMinor != null
-          ? (job.actualPriceMinor! / 100).toString()
-          : '',
-    );
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Gerçek fiyat'),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(prefixText: '₺ '),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Vazgeç'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Kaydet ve Tamamla'),
-          ),
-        ],
-      ),
-    );
-    if (result == null || result.trim().isEmpty) return;
-
-    final minor = Money.parseToMinor(result);
-    await ref.read(jobsRepositoryProvider).completeWithPrice(job, minor);
-    await NotificationService.cancelJobReminder(job.id);
+  Future<void> _tamamla(BuildContext context) async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => JobCompleteScreen(job: job)));
   }
 }
 

@@ -17,6 +17,14 @@ Kurallar:
 
 ---
 
+## v0.8.0
+
+Yenilikler:
+• Uygulama baştan aşağı yenilendi. Ana Sayfa artık günü tek bakışta gösteriyor: kaç iş, kaçı bitti, ne kadar tahsilat.
+• Sıradaki işiniz öne çıkıyor; müşteriyi aramak ve yol tarifi almak tek dokunuş.
+• Yeni iş, teklif, müşteri ve barkod için ana ekrandan kısayollar.
+• İş, müşteri ve belge listeleri yeniden tasarlandı; gönderilmemiş kayıtlar artık açıkça işaretli.
+
 ## v0.7.8
 
 Yenilikler:

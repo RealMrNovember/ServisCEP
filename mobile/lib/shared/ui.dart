@@ -403,3 +403,32 @@ class InfoRowTile extends StatelessWidget {
     );
   }
 }
+
+/// Menü ve ayar listelerinde grup başlığı.
+///
+/// Gruplama olmadan liste düz bir yığın oluyor ve kullanıcı aradığını
+/// gözüyle taramak zorunda kalıyordu.
+class MenuGroupHeader extends StatelessWidget {
+  const MenuGroupHeader(this.metin, {super.key});
+
+  final String metin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Text(
+        metin.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: context.palette.textMuted,
+          letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+}

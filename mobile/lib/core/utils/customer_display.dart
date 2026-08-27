@@ -10,3 +10,20 @@ extension CustomerDisplayName on Customer {
     return contactName?.trim() ?? '';
   }
 }
+
+/// Listelerde avatar yerine kullanılan baş harfler.
+///
+/// İKİ harf: tek harf listede çok fazla tekrar ediyor ve kullanıcı
+/// satırları birbirinden ayırt edemiyordu ("A" ile başlayan yedi
+/// müşteri). Ad boşsa soru işareti döner — hiçbir zaman boş kutu çıkmaz.
+String initialsOf(String ad) {
+  final temiz = ad.trim();
+  if (temiz.isEmpty) return '?';
+  final parcalar = temiz.split(RegExp(r'\s+'));
+  if (parcalar.length >= 2) {
+    return (parcalar[0][0] + parcalar[1][0]).toUpperCase();
+  }
+  return temiz.length >= 2
+      ? temiz.substring(0, 2).toUpperCase()
+      : temiz.toUpperCase();
+}

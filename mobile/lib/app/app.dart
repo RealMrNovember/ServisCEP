@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/sync/sync_trigger.dart';
+import '../features/settings/data/theme_mode_controller.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -15,12 +16,13 @@ class TeknikCepApp extends ConsumerWidget {
     // oturum yoksa no-op kalır (bkz. SyncTrigger._trigger).
     ref.watch(syncTriggerProvider);
     final router = ref.watch(routerProvider);
+    final temaKipi = ref.watch(themeModeControllerProvider);
     return MaterialApp.router(
       title: 'TeknikCEP',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: temaKipi,
       routerConfig: router,
       locale: const Locale('tr', 'TR'),
       supportedLocales: const [Locale('tr', 'TR')],

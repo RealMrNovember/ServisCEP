@@ -446,7 +446,28 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     if (company != null) _applyCompanyDefaults(company);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_kind.label)),
+      appBar: AppBar(
+        title: Text('Yeni ${_kind.label}'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(20),
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.xl,
+              right: AppSpacing.xl,
+              bottom: AppSpacing.sm,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${_codeController.text.trim()} · ${_adim + 1}. adım / 4',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: context.palette.textMuted,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: Column(
         children: [
           _AdimGostergesi(

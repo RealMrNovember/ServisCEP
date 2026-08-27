@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/palette.dart';
 import '../../core/services/app_version_service.dart';
 import '../../core/services/update_prompt.dart';
 import '../../core/sync/sync_status.dart';
 import '../../shared/brand_footer.dart';
+import '../../shared/ui.dart';
 import '../auth/data/session_controller.dart';
+import '../feedback/feedback_screen.dart';
 import 'company_settings_screen.dart';
+import 'data/theme_mode_controller.dart';
 import 'job_types_screen.dart';
 import 'notification_settings_screen.dart';
 import 'personnel_screen.dart';
 import 'profile_screen.dart';
 import 'sync_status_screen.dart';
+
+/// Gizlilik politikası ve kullanım koşullarının yayında olduğu adres.
+///
+/// Play, uygulama içinden de ulaşılabilir olmasını istiyor; mağaza
+/// listesindeki bağlantı tek başına yeterli sayılmıyor.
+final _gizlilikUri = Uri.https('serviscep.cicibyte.com', '/privacy.html');
 
 /// Ayarlar — hesap, işletme ve uygulama ayarları tek yerde.
 ///
@@ -24,35 +35,34 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     final session = ref.watch(sessionControllerProvider).valueOrNull;
     final isOwner = session?.isOwner ?? false;
 
     final pending = ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
     final failed = ref.watch(failedSyncCountProvider).valueOrNull ?? 0;
+    final temaKipi = ref.watch(themeModeControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ayarlar')),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          _SectionTitle('Hesabım'),
+          const MenuGroupHeader('Hesap'),
           ListTile(
             leading: const Icon(Icons.person_outline_rounded),
             title: const Text('Profilim'),
-            subtitle: const Text('Ad, telefon, parola'),
+            subtitle: Text(session?.fullName ?? 'Ad, telefon, parola'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
           ),
-
           if (isOwner) ...[
-            _SectionTitle('İşletme'),
             ListTile(
               leading: const Icon(Icons.business_outlined),
               title: const Text('Şirket ayarları'),
-              subtitle: const Text('Ünvan, işletme türü, IBAN'),
+              subtitle: const Text('Antet, logo, vergi bilgileri, IBAN'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -71,7 +81,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ],
 
-          _SectionTitle('Uygulama'),
+          const MenuGroupHeader('Uygulama'),
           ListTile(
             leading: const Icon(Icons.category_outlined),
             title: const Text('İş türleri'),
@@ -97,7 +107,7 @@ class SettingsScreen extends ConsumerWidget {
               (pending > 0 || failed > 0)
                   ? Icons.cloud_sync_rounded
                   : Icons.cloud_done_outlined,
-              color: failed > 0 ? scheme.error : null,
+              color: failed > 0 ? palet.dangerText : null,
             ),
             title: const Text('Senkron durumu'),
             subtitle: Text(
@@ -112,33 +122,68 @@ class SettingsScreen extends ConsumerWidget {
               context,
             ).push(MaterialPageRoute(builder: (_) => const SyncStatusScreen())),
           ),
+          ListTile(
+            leading: const Icon(Icons.brightness_6_outlined),
+            title: const Text('Tema'),
+            subtitle: Text(themeModeLabel(temaKipi)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _temaSec(context, ref, temaKipi),
+          ),
           const _UpdateTile(),
+
+          const MenuGroupHeader('Destek'),
+          ListTile(
+            leading: const Icon(Icons.forum_outlined),
+            title: const Text('Bize yaz'),
+            subtitle: const Text('Öneri, sorun ya da soru gönder'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const FeedbackScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Gizlilik ve sözleşmeler'),
+            subtitle: const Text('Tarayıcıda açılır'),
+            trailing: const Icon(Icons.open_in_new),
+            onTap: () =>
+                launchUrl(_gizlilikUri, mode: LaunchMode.externalApplication),
+          ),
 
           const BrandFooter(),
         ],
       ),
     );
   }
-}
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
-      child: Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.6,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+  /// Tema seçimi alt sayfası.
+  ///
+  /// Üç seçenek de tek dokunuşta uygulanır ve sayfa kapanır; "kaydet"
+  /// düğmesi yok çünkü sonuç anında ekranda görünüyor.
+  Future<void> _temaSec(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode secili,
+  ) async {
+    final secim = await showModalBottomSheet<ThemeMode>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final kip in ThemeMode.values)
+              ListTile(
+                title: Text(themeModeLabel(kip)),
+                trailing: kip == secili ? const Icon(Icons.check) : null,
+                onTap: () => Navigator.pop(sheetContext, kip),
+              ),
+          ],
         ),
       ),
     );
+    if (secim != null) {
+      await ref.read(themeModeControllerProvider.notifier).ayarla(secim);
+    }
   }
 }
 

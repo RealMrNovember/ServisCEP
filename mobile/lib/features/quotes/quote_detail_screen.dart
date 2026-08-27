@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../app/theme.dart';
+import '../../app/palette.dart';
 import '../../core/database/app_database.dart';
 import '../../core/services/document_share.dart';
 import '../../core/services/pdf_service.dart';
@@ -23,12 +23,17 @@ const _quoteStatusLabels = {
   'SURESI_DOLDU': 'Süresi Doldu',
 };
 
-Color _statusColor(String status, ColorScheme scheme) => switch (status) {
-  'KABUL_EDILDI' => AppColors.success,
-  'REDDEDILDI' => AppColors.danger,
-  'SURESI_DOLDU' => AppColors.warning,
-  'GONDERILDI' => scheme.primary,
-  _ => scheme.onSurfaceVariant,
+/// Rozet rengi.
+///
+/// Dolgu tonu (`success`) değil YAZI tonu (`successText`) kullanılıyor:
+/// rozet, rengi hem yazıda hem %12 zeminde kullanıyor ve dolgu tonu
+/// bu zeminin üstünde AA kontrastını tutturmuyor.
+Color _statusColor(String status, AppPalette palet) => switch (status) {
+  'KABUL_EDILDI' => palet.successText,
+  'REDDEDILDI' => palet.dangerText,
+  'SURESI_DOLDU' => palet.warningText,
+  'GONDERILDI' => palet.accent,
+  _ => palet.textMuted,
 };
 
 final _dateFormat = DateFormat('d MMMM y', 'tr_TR');
@@ -121,7 +126,7 @@ class QuoteDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
 
     return ref
         .watch(quoteByIdProvider(quoteId))
@@ -137,6 +142,7 @@ class QuoteDetailScreen extends ConsumerWidget {
             }
 
             return DocumentDetailScaffold(
+              kindLabel: 'Teklif',
               code: quote.code,
               customerId: quote.customerId,
               createdAt: quote.createdAt,
@@ -152,7 +158,7 @@ class QuoteDetailScreen extends ConsumerWidget {
                   ),
               statusPill: StatusPill(
                 label: _quoteStatusLabels[quote.status] ?? quote.status,
-                color: _statusColor(quote.status, scheme),
+                color: _statusColor(quote.status, palet),
                 icon: Icons.expand_more,
               ),
               onChangeStatus: () => _changeStatus(context, ref, quote),

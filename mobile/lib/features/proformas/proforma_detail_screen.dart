@@ -90,6 +90,7 @@ class ProformaDetailScreen extends ConsumerWidget {
             }
 
             return DocumentDetailScaffold(
+              kindLabel: 'Proforma',
               code: proforma.code,
               customerId: proforma.customerId,
               createdAt: proforma.createdAt,

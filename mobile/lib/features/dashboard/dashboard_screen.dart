@@ -18,7 +18,7 @@ import '../../shared/update_banner.dart';
 import '../auth/data/session_controller.dart';
 import '../quotes/quote_form_screen.dart';
 import '../jobs/data/jobs_repository.dart';
-import '../stock/barcode_scanner_screen.dart';
+import '../stock/barcode_flow.dart';
 import '../subscription/widgets/subscription_banner.dart';
 
 /// Ana Sayfa.
@@ -256,11 +256,11 @@ class _OzetKirilim extends StatelessWidget {
 ///
 /// Dörtten fazlası ızgarayı ikinci satıra taşırdı ve ekranın en değerli
 /// bölgesini yerdi; dörtten azı ise kullanıcıyı menüye gönderirdi.
-class _HizliEylemler extends StatelessWidget {
+class _HizliEylemler extends ConsumerWidget {
   const _HizliEylemler();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.xl,
@@ -290,9 +290,7 @@ class _HizliEylemler extends StatelessWidget {
           _EylemKutusu(
             ikon: TcIcons.barcode,
             etiket: 'Barkod',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
-            ),
+            onTap: () => scanBarcodeAndOpen(context, ref),
           ),
         ],
       ),

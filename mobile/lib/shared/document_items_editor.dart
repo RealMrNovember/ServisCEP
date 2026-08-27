@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../app/palette.dart';
 import '../app/theme.dart';
+import '../app/typography.dart';
 import '../core/database/app_database.dart';
 import '../core/models/doc_item_draft.dart';
 import '../core/utils/money.dart';
 import '../features/stock/products_list_screen.dart';
+import 'tc_icon.dart';
 import 'ui.dart';
 
 /// Teklif/Proforma kalemlerini düzenleme — hem Quote hem Proforma
@@ -174,6 +177,12 @@ class _DocumentItemsEditorState extends State<DocumentItemsEditor> {
   }
 }
 
+/// Kapalı kalem satırı — tasarım teslimatı ekran 13.
+///
+/// Tasarımda satır yerinde açılıp 3 sütunlu bir ızgaraya dönüşüyor; burada
+/// düzenleme mevcut [_ItemSheet] alt sayfasında açılıyor. İkisi de aynı
+/// sorunu (7 alanın dar ekrana sığmaması) çözüyor ve alt sayfa klavye
+/// açıldığında kırpılmıyor — bu yüzden çalışan çözüm korundu.
 class _ItemTile extends StatelessWidget {
   const _ItemTile({
     required this.index,
@@ -193,7 +202,7 @@ class _ItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     final amounts = item.amounts(vatMode);
 
     return AppCard(
@@ -212,15 +221,14 @@ class _ItemTile extends StatelessWidget {
             height: 26,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+              color: palet.accent.withValues(alpha: 0.12),
+              borderRadius: AppRadius.field,
             ),
             child: Text(
               '$index',
-              style: TextStyle(
+              style: AppTypography.mono.copyWith(
                 fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: scheme.primary,
+                color: palet.accent,
               ),
             ),
           ),
@@ -231,20 +239,14 @@ class _ItemTile extends StatelessWidget {
               children: [
                 Text(
                   item.description,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${item.quantity} ${item.unit} × '
-                  '${Money.formatMinor(item.unitPriceMinor, currency: currency)}'
-                  '  ·  KDV %${item.taxRate}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  _altSatir(),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
                 ),
               ],
             ),
@@ -255,19 +257,16 @@ class _ItemTile extends StatelessWidget {
             children: [
               Text(
                 Money.formatMinor(amounts.grossMinor, currency: currency),
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTypography.mono.copyWith(fontSize: 14),
               ),
               SizedBox(
                 height: 28,
                 width: 28,
                 child: IconButton(
                   padding: EdgeInsets.zero,
-                  iconSize: 18,
+                  iconSize: 16,
                   tooltip: 'Kalemi sil',
-                  icon: const Icon(Icons.close),
+                  icon: const TcIcon(TcIcons.x, size: 16),
                   onPressed: onRemove,
                 ),
               ),
@@ -276,6 +275,21 @@ class _ItemTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// "40 m × ₺30,00 · KDV %20 · %10 iskonto" — iskonto yalnızca varsa.
+  String _altSatir() {
+    final parcalar = <String>[
+      '${item.quantity} ${item.unit} × '
+          '${Money.formatMinor(item.unitPriceMinor, currency: currency)}',
+      'KDV %${item.taxRate}',
+    ];
+    if (item.discountMinor > 0) {
+      parcalar.add(
+        '${Money.formatMinor(item.discountMinor, currency: currency)} iskonto',
+      );
+    }
+    return parcalar.join('  ·  ');
   }
 }
 
@@ -295,8 +309,16 @@ class DocumentTotalsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
 
-    Widget row(String label, int amount, {bool strong = false}) {
+    Widget row(
+      String label,
+      int amount, {
+      bool strong = false,
+      bool negatif = false,
+      Color? renk,
+    }) {
+      final metin = Money.formatMinor(amount, currency: currency);
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
@@ -311,13 +333,12 @@ class DocumentTotalsCard extends StatelessWidget {
               ),
             ),
             Text(
-              Money.formatMinor(amount, currency: currency),
-              style: TextStyle(
-                fontSize: strong ? 19 : 13.5,
-                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
-                color: strong ? scheme.primary : scheme.onSurface,
-                letterSpacing: strong ? -0.4 : 0,
-              ),
+              negatif ? '−$metin' : metin,
+              style: (strong ? AppTypography.monoLarge : AppTypography.mono)
+                  .copyWith(
+                    fontSize: strong ? 19 : 13.5,
+                    color: renk ?? (strong ? scheme.primary : null),
+                  ),
             ),
           ],
         ),
@@ -329,6 +350,15 @@ class DocumentTotalsCard extends StatelessWidget {
       child: Column(
         children: [
           row('Ara toplam', totals.netMinor),
+          // İskonto satırı yalnızca gerçekten indirim varsa çizilir:
+          // sıfır yazan bir satır kullanıcıya bir şey söylemiyor.
+          if (totals.discountMinor > 0)
+            row(
+              'Toplam iskonto',
+              totals.discountMinor,
+              negatif: true,
+              renk: palet.successText,
+            ),
           row('KDV', totals.vatMinor),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),

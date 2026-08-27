@@ -5,15 +5,21 @@ import '../../app/palette.dart';
 import '../../app/theme.dart';
 
 import '../../shared/app_version_label.dart';
+import '../../shared/ui.dart';
 import '../../shared/brand_footer.dart';
+import '../../core/utils/customer_display.dart';
 import '../auth/data/session_controller.dart';
 import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
 import '../settings/settings_screen.dart';
+import '../settings/sync_status_screen.dart';
+import '../stock/barcode_flow.dart';
 import '../stock/products_list_screen.dart';
-import '../feedback/feedback_screen.dart';
 import '../subscription/payments_screen.dart';
 import '../subscription/subscription_screen.dart';
+import '../../core/sync/sync_status.dart';
+import '../subscription/data/subscription_models.dart';
+import '../subscription/data/subscription_repository.dart';
 import '../sync/data/sync_conflict_repository.dart';
 import '../sync/sync_conflicts_screen.dart';
 
@@ -40,8 +46,9 @@ class MoreScreen extends ConsumerWidget {
             _ProfilBasligi(
               adSoyad: session.fullName,
               sirket: session.companyName,
+              abonelik: ref.watch(subscriptionStatusProvider).valueOrNull,
             ),
-          const _GrupBasligi('İşletme'),
+          const MenuGroupHeader('İşletme'),
 
           ListTile(
             leading: const Icon(Icons.calendar_month_outlined),
@@ -73,7 +80,14 @@ class MoreScreen extends ConsumerWidget {
               MaterialPageRoute(builder: (_) => const ProductsListScreen()),
             ),
           ),
-          const _GrupBasligi('Hesap'),
+          ListTile(
+            leading: const Icon(Icons.qr_code_scanner_outlined),
+            title: const Text('Barkod Tara'),
+            subtitle: const Text('Ürünü hızlı bul veya ekle'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => scanBarcodeAndOpen(context, ref),
+          ),
+          const MenuGroupHeader('Hesap'),
           ListTile(
             leading: const Icon(Icons.workspace_premium_outlined),
             title: const Text('Abonelik'),
@@ -91,15 +105,6 @@ class MoreScreen extends ConsumerWidget {
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const PaymentsScreen())),
-          ),
-          ListTile(
-            leading: const Icon(Icons.forum_outlined),
-            title: const Text('Geri Bildirim'),
-            subtitle: const Text('Öneri, sorun ya da soru gönderin'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const FeedbackScreen())),
           ),
 
           // Çakışma varken görünür — yoksa menüyü kalabalıklaştırmaz.
@@ -145,6 +150,30 @@ class MoreScreen extends ConsumerWidget {
             },
           ),
 
+          Consumer(
+            builder: (context, ref, _) {
+              final bekleyen =
+                  ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
+              return ListTile(
+                leading: Icon(
+                  bekleyen > 0
+                      ? Icons.cloud_sync_rounded
+                      : Icons.cloud_done_outlined,
+                ),
+                title: const Text('Eşitleme durumu'),
+                subtitle: Text(
+                  bekleyen > 0
+                      ? '$bekleyen kayıt bekliyor'
+                      : 'Her şey eşitlendi',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SyncStatusScreen()),
+                ),
+              );
+            },
+          ),
+
           const Divider(height: 24),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
@@ -177,10 +206,18 @@ class MoreScreen extends ConsumerWidget {
 /// açan kullanıcı çoğu zaman "hangi hesaptayım, ne kadar sürem kaldı"
 /// sorusuyla geliyor.
 class _ProfilBasligi extends StatelessWidget {
-  const _ProfilBasligi({required this.adSoyad, required this.sirket});
+  const _ProfilBasligi({
+    required this.adSoyad,
+    required this.sirket,
+    required this.abonelik,
+  });
 
   final String adSoyad;
   final String sirket;
+
+  /// Çevrimdışıyken null gelir — rozet o zaman hiç çizilmez. Yanlış bir
+  /// "süresi doldu" göstermektense hiç göstermemek doğru.
+  final SubscriptionStatus? abonelik;
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +241,7 @@ class _ProfilBasligi extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                _basHarfler(adSoyad),
+                initialsOf(adSoyad),
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(color: palet.accent),
@@ -231,6 +268,26 @@ class _ProfilBasligi extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (_abonelikMetni != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _abonelikRengi(palet).withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      _abonelikMetni!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: _abonelikRengi(palet),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -239,44 +296,22 @@ class _ProfilBasligi extends StatelessWidget {
     );
   }
 
-  static String _basHarfler(String ad) {
-    final temiz = ad.trim();
-    if (temiz.isEmpty) return '?';
-    final parcalar = temiz.split(RegExp(r'\s+'));
-    if (parcalar.length >= 2) {
-      return (parcalar[0][0] + parcalar[1][0]).toUpperCase();
-    }
-    return temiz.length >= 2
-        ? temiz.substring(0, 2).toUpperCase()
-        : temiz.toUpperCase();
+  /// "Deneme · 6 gün" / "Pro · 41 gün". Süresiz abonelikte gün yazılmaz.
+  String? get _abonelikMetni {
+    final a = abonelik;
+    if (a == null) return null;
+    final ad = a.isTrial ? 'Deneme' : (a.plan?.name ?? 'Abonelik');
+    final gun = a.daysRemaining;
+    if (gun == null) return ad;
+    if (gun <= 0) return '$ad · süresi doldu';
+    return '$ad · $gun gün';
   }
-}
 
-/// Menü grubu başlığı.
-///
-/// Gruplama olmadan liste on bir satırlık düz bir yığındı ve kullanıcı
-/// aradığını gözüyle taramak zorunda kalıyordu.
-class _GrupBasligi extends StatelessWidget {
-  const _GrupBasligi(this.metin);
-
-  final String metin;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.sm,
-      ),
-      child: Text(
-        metin.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: context.palette.textMuted,
-          letterSpacing: 1.1,
-        ),
-      ),
-    );
+  /// Son bir haftaya girildiyse uyarı tonu: kullanıcı bunu görmeli.
+  Color _abonelikRengi(AppPalette palet) {
+    final gun = abonelik?.daysRemaining;
+    if (gun == null) return palet.accent;
+    if (gun <= 0) return palet.dangerText;
+    return gun <= 7 ? palet.warningText : palet.accent;
   }
 }

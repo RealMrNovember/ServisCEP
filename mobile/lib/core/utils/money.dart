@@ -84,6 +84,18 @@ abstract final class Money {
   }) {
     return _formatter(currency, decimals).format(minor / 100);
   }
+
+  /// Bir metin alanına önceden yazılacak, simgesiz tutar: "2.400,00".
+  ///
+  /// [parseToMinor] ile gidip gelmesi ŞART. Önceden bu iş
+  /// `(minor / 100).toString()` ile yapılıyordu; çıkan "2400.0" metnini
+  /// [parseToMinor] noktayı binlik ayıracı sayarak okuyor ve tutarı her
+  /// kaydedişte on katına çıkarıyordu.
+  static String formatMinorPlain(int minor) =>
+      NumberFormat.decimalPatternDigits(
+        locale: 'tr_TR',
+        decimalDigits: 2,
+      ).format(minor / 100);
 }
 
 /// Bir belge kaleminin KDV kipine göre hesaplanmış tutarları.
@@ -96,6 +108,7 @@ class LineAmounts {
     required this.netMinor,
     required this.vatMinor,
     required this.grossMinor,
+    this.discountMinor = 0,
   });
 
   /// KDV hariç tutar.
@@ -106,6 +119,14 @@ class LineAmounts {
 
   /// KDV dahil tutar.
   final int grossMinor;
+
+  /// Bu satırda uygulanan iskonto.
+  ///
+  /// Hesaba zaten [netMinor] içinde girmiş durumda; ayrıca saklanmasının
+  /// tek sebebi belge toplamında "toplam iskonto" satırını
+  /// yazabilmek — kullanıcı müşteriye ne kadar indirim yaptığını
+  /// belgeden görmek istiyor.
+  final int discountMinor;
 
   /// [unitPriceMinor] × [quantity] − [discountMinor] üzerinden hesaplar.
   ///
@@ -128,6 +149,7 @@ class LineAmounts {
         netMinor: net,
         vatMinor: safeBase - net,
         grossMinor: safeBase,
+        discountMinor: discountMinor,
       );
     }
 
@@ -136,6 +158,7 @@ class LineAmounts {
       netMinor: safeBase,
       vatMinor: vat,
       grossMinor: safeBase + vat,
+      discountMinor: discountMinor,
     );
   }
 }
@@ -161,16 +184,18 @@ class DocumentTotals {
     var net = 0;
     var vat = 0;
     var gross = 0;
+    var indirim = discountMinor;
     for (final line in lines) {
       net += line.netMinor;
       vat += line.vatMinor;
       gross += line.grossMinor;
+      indirim += line.discountMinor;
     }
     return DocumentTotals(
       netMinor: net,
       vatMinor: vat,
       grossMinor: gross,
-      discountMinor: discountMinor,
+      discountMinor: indirim,
     );
   }
 }
