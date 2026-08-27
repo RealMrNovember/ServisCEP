@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/palette.dart';
 import '../../app/theme.dart';
+import '../../shared/brand_footer.dart';
+import '../../shared/tc_icon.dart';
+import '../../shared/ui.dart';
+import '../../shared/wordmark.dart';
 import 'data/auth_repository.dart';
 import 'data/google_auth_service.dart';
 import 'data/session_controller.dart';
@@ -98,12 +103,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
 
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -111,37 +117,77 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        margin: const EdgeInsets.only(bottom: 24),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          Icons.bolt_rounded,
-                          color: AppColors.accent,
-                          size: 32,
-                        ),
-                      ),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wordmark(fontSize: 26),
                     ),
+                    const SizedBox(height: AppSpacing.x3l),
                     Text(
                       'Tekrar hoş geldin',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
-                      'Devam etmek için giriş yap',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                      'E-posta ve şifrenle giriş yap.',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: palet.textMuted),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: AppSpacing.xxl),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: 'E-posta'),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'E-posta gerekli'
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'Şifre'),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Şifre gerekli' : null,
+                      onFieldSubmitted: (_) => _submit(),
+                    ),
+                    if (_errorText != null) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        _errorText!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: palet.dangerText),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.xl),
+                    FilledButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Giriş Yap'),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: scheme.outlineVariant)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: Text(
+                            'veya',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: palet.textMuted),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: scheme.outlineVariant)),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
                     OutlinedButton.icon(
                       onPressed: _isGoogleSubmitting
                           ? null
@@ -155,65 +201,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : const _GoogleIcon(),
                       label: const Text('Google ile devam et'),
                     ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: scheme.outlineVariant)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'veya e-posta ile',
-                            style: TextStyle(
-                              color: scheme.onSurfaceVariant,
-                              fontSize: 12,
+
+                    const SizedBox(height: AppSpacing.xl),
+                    // Çevrimdışı girişin çalıştığını burada söylemek
+                    // gerekiyor: sahada bağlantısı olmayan kullanıcı
+                    // uygulamayı hiç açamayacağını sanıp vazgeçiyordu.
+                    AppCard(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Row(
+                        children: [
+                          TcIcon(
+                            TcIcons.cloudOff,
+                            size: 18,
+                            color: palet.textMuted,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Çevrimdışı giriş açık',
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Daha önce giriş yaptıysan internet '
+                                  'olmadan da uygulamayı açabilirsin.',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: palet.textMuted),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                        Expanded(child: Divider(color: scheme.outlineVariant)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'E-posta'),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'E-posta gerekli'
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Parola'),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Parola gerekli' : null,
-                      onFieldSubmitted: (_) => _submit(),
-                    ),
-                    if (_errorText != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        _errorText!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: scheme.error),
+                        ],
                       ),
-                    ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _isSubmitting ? null : _submit,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Giriş yap'),
                     ),
-                    const SizedBox(height: 12),
+
+                    const SizedBox(height: AppSpacing.md),
                     TextButton(
                       onPressed: () => context.go('/onboarding'),
                       child: const Text('Hesabın yok mu? Kayıt ol'),
                     ),
+                    const BrandFooter(),
                   ],
                 ),
               ),

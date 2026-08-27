@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/palette.dart';
+import '../../app/theme.dart';
+import '../../shared/step_indicator.dart';
+import '../../shared/ui.dart';
+import '../../shared/wordmark.dart';
 import 'data/auth_repository.dart';
 import 'data/google_auth_service.dart';
 import 'data/session_controller.dart';
@@ -44,6 +49,55 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final Set<String> _selectedBusinessTypes = {};
   bool _isSubmitting = false;
   String? _errorText;
+
+  /// Görünen adım (0..2) — tasarım teslimatı ekran 18.
+  ///
+  /// Kayıt formu on alan taşıyordu ve telefonda tek ekranda hepsi
+  /// görününce kullanıcı "bu kadar çok şey mi soruyor" deyip
+  /// vazgeçiyordu. Hesap → Firma → İş Türleri olarak bölündü.
+  int _adim = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _adim = _ilkAdim;
+  }
+
+  final Set<int> _hataliAdimlar = {};
+
+  /// Google akışında parola sorulmuyor; o yüzden ilk adımda tek alan
+  /// (e-posta, o da kilitli) kalıyor ve adım atlanabilir hâle geliyor.
+  int get _ilkAdim => _isGoogleFlow ? 1 : 0;
+
+  /// Adımın eksiği varsa nedenini döner.
+  String? _adimEksigi(int adim) {
+    if (adim == 2 && _selectedBusinessTypes.isEmpty) {
+      return 'En az bir işletme türü seç.';
+    }
+    // Form doğrulaması alan alan mesajını kendi gösteriyor; burada
+    // yalnızca geçilip geçilemeyeceği soruluyor.
+    if (adim < 2 && !(_formKey.currentState?.validate() ?? false)) {
+      return '';
+    }
+    return null;
+  }
+
+  void _ileriGit() {
+    final eksik = _adimEksigi(_adim);
+    if (eksik != null) {
+      setState(() => _hataliAdimlar.add(_adim));
+      if (eksik.isNotEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(eksik)));
+      }
+      return;
+    }
+    setState(() {
+      _hataliAdimlar.remove(_adim);
+      _adim += 1;
+    });
+  }
 
   bool get _isGoogleFlow => widget.googlePrefill != null;
 
@@ -122,183 +176,208 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TeknikCEP\'e hoş geldin',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _isGoogleFlow
-                      ? 'Google hesabınla bağlandın — son adım: işletme bilgilerin.'
-                      : 'İşletmeni birkaç adımda kur, hemen kullanmaya başla.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                _SectionTitle('İşletme türün'),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _businessTypeOptions.map((type) {
-                    final selected = _selectedBusinessTypes.contains(type);
-                    return FilterChip(
-                      label: Text(type),
-                      selected: selected,
-                      onSelected: (value) {
-                        setState(() {
-                          if (value) {
-                            _selectedBusinessTypes.add(type);
-                          } else {
-                            _selectedBusinessTypes.remove(type);
-                          }
-                        });
+      appBar: AppBar(
+        title: const Text('Hesap Oluştur'),
+        leading: _adim > _ilkAdim
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _adim -= 1),
+              )
+            : null,
+      ),
+      body: Column(
+        children: [
+          StepIndicator(
+            etiketler: const ['Hesap', 'Firma', 'İş Türleri'],
+            adim: _adim,
+            hataliAdimlar: _hataliAdimlar,
+            // Google akışında ilk adım hiç gösterilmiyor; oraya geri
+            // dönmek boş bir ekran açardı.
+            onGit: (i) => setState(() => _adim = i < _ilkAdim ? _ilkAdim : i),
+          ),
+          Divider(height: 1, color: palet.border),
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.xxl),
+                children: [
+                  if (_adim == 0) ...[
+                    const Wordmark(fontSize: 24),
+                    const SizedBox(height: AppSpacing.xl),
+                    const SectionHeader(
+                      'Hesap bilgilerin',
+                      subtitle: 'Uygulamaya bu bilgilerle gireceksin.',
+                    ),
+                    TextFormField(
+                      controller: _ownerNameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(labelText: 'Ad Soyad'),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Ad soyad gerekli'
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: 'E-posta'),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'E-posta gerekli';
+                        }
+                        if (!v.contains('@')) return 'Geçerli bir e-posta gir';
+                        return null;
                       },
-                    );
-                  }).toList(),
-                ),
-
-                const SizedBox(height: 32),
-                _SectionTitle('Firma bilgileri'),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _companyNameController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Firma / işletme adı',
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Firma adı gerekli'
-                      : null,
-                ),
-
-                const SizedBox(height: 32),
-                _SectionTitle('Senin bilgilerin'),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _ownerNameController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Ad Soyad'),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Ad soyad gerekli'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _emailController,
-                  enabled: !_isGoogleFlow,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'E-posta',
-                    suffixIcon: _isGoogleFlow
-                        ? const Icon(
-                            Icons.verified,
-                            size: 18,
-                            color: Colors.green,
-                          )
-                        : null,
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'E-posta gerekli';
-                    if (!v.contains('@')) return 'Geçerli bir e-posta gir';
-                    return null;
-                  },
-                ),
-                if (!_isGoogleFlow) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefon (opsiyonel)',
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Parola'),
-                    validator: (v) {
-                      if (v == null || v.length < 6) {
-                        return 'En az 6 karakter olmalı';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _passwordConfirmController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Parola (tekrar)',
+                    const SizedBox(height: AppSpacing.md),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'Şifre'),
+                      validator: (v) => (v == null || v.length < 6)
+                          ? 'En az 6 karakter olmalı'
+                          : null,
                     ),
-                    validator: (v) {
-                      if (v != _passwordController.text) {
-                        return 'Parolalar eşleşmiyor';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.md),
+                    TextFormField(
+                      controller: _passwordConfirmController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Şifre (tekrar)',
+                      ),
+                      validator: (v) => v != _passwordController.text
+                          ? 'Şifreler eşleşmiyor'
+                          : null,
+                    ),
+                  ],
 
-                if (_errorText != null) ...[
-                  const SizedBox(height: 16),
-                  Text(_errorText!, style: TextStyle(color: scheme.error)),
-                ],
+                  if (_adim == 1) ...[
+                    const SectionHeader(
+                      'Firma bilgileri',
+                      subtitle:
+                          'Tekliflerin ve belgelerin üstünde bu bilgiler '
+                          'görünecek.',
+                    ),
+                    TextFormField(
+                      controller: _companyNameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(labelText: 'Firma adı'),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Firma adı gerekli'
+                          : null,
+                    ),
+                    if (_isGoogleFlow) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _ownerNameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Yetkili adı soyadı',
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Ad soyad gerekli'
+                            : null,
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.md),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Telefon',
+                        helperText: 'Zorunlu değil.',
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    // Vergi dairesi/no ve şehir tasarımda burada; kayıt
+                    // uçları bu alanları almıyor ve kayıt sırasında ikinci
+                    // bir istek atmak hesabı yarım bırakma riski
+                    // doğuruyor. Kullanıcıya nereden gireceği söyleniyor.
+                    Text(
+                      'Vergi dairesi, adres ve logonu kayıttan sonra '
+                      'Ayarlar → Şirket ayarlarından girebilirsin.',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                    ),
+                  ],
 
-                const SizedBox(height: 28),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _submit,
+                  if (_adim == 2) ...[
+                    const SectionHeader(
+                      'Ne iş yapıyorsun?',
+                      subtitle:
+                          'Seçtiklerine göre hazır iş türleri tanımlanır; '
+                          'sonradan değiştirebilirsin.',
+                    ),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: _businessTypeOptions.map((type) {
+                        final selected = _selectedBusinessTypes.contains(type);
+                        return FilterChip(
+                          label: Text(type),
+                          selected: selected,
+                          onSelected: (value) {
+                            setState(() {
+                              if (value) {
+                                _selectedBusinessTypes.add(type);
+                              } else {
+                                _selectedBusinessTypes.remove(type);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+
+                  if (_errorText != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      _errorText!,
+                      style: TextStyle(color: palet.dangerText),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _isSubmitting
+                      ? null
+                      : (_adim == 2 ? _submit : _ileriGit),
                   child: _isSubmitting
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Hesabı oluştur'),
+                      : Text(_adim == 2 ? 'Hesabı Oluştur' : 'Devam Et'),
                 ),
-                const SizedBox(height: 16),
-                Center(
-                  child: TextButton(
-                    onPressed: () => context.go('/login'),
-                    child: const Text('Zaten hesabın var mı? Giriş yap'),
-                  ),
+              ),
+              if (_adim == _ilkAdim)
+                TextButton(
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Zaten hesabın var mı? Giriş yap'),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(
-        context,
-      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
     );
   }
 }

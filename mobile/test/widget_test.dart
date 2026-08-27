@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:serviscep/app/theme.dart';
 import 'package:serviscep/features/auth/login_screen.dart';
 
 /// NOT: Tam uygulama akışı (auth + yerel veritabanı + secure storage)
@@ -14,12 +15,14 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: LoginScreen())),
+      ProviderScope(
+        child: MaterialApp(theme: AppTheme.light(), home: const LoginScreen()),
+      ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Tekrar hoş geldin'), findsOneWidget);
-    expect(find.text('Giriş yap'), findsOneWidget);
+    expect(find.text('Giriş Yap'), findsOneWidget);
     expect(find.text('E-posta'), findsOneWidget);
   });
 }
