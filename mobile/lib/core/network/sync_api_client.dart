@@ -119,6 +119,11 @@ abstract interface class SyncApiClient {
 
   Future<SyncEntityResult> createServiceRequest(Map<String, dynamic> payload);
 
+  Future<SyncEntityResult> updateServiceRequest(
+    String id,
+    Map<String, dynamic> payload,
+  );
+
   /// Talep → iş dönüşümü — backend'in `/convert` endpoint'i, mobilin offline
   /// oluşturduğu işin UUID'sini (`job_id`) kabul eder; yanıt işin son hâli
   /// (JobResource). Replay idempotenttir (200 döner, duplicate iş oluşmaz).
@@ -354,6 +359,12 @@ class DioSyncApiClient implements SyncApiClient {
   @override
   Future<SyncEntityResult> createServiceRequest(Map<String, dynamic> payload) =>
       _create('/service-requests', payload);
+
+  @override
+  Future<SyncEntityResult> updateServiceRequest(
+    String id,
+    Map<String, dynamic> payload,
+  ) => _update('/service-requests/$id', payload);
 
   @override
   Future<Map<String, dynamic>> convertServiceRequest(

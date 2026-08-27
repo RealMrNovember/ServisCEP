@@ -161,20 +161,12 @@ class _JobsTabState extends ConsumerState<_JobsTab> {
   }
 }
 
-const _requestStatusLabels = {
-  'BEKLIYOR': 'Bekliyor',
-  'ISLEME_ALINDI': 'İşleme Alındı',
-  'REDDEDILDI': 'Reddedildi',
-  'ISE_DONUSTU': 'İşe Dönüştü',
-};
-
 class _RequestsTab extends ConsumerWidget {
   const _RequestsTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final requestsAsync = ref.watch(serviceRequestsListProvider);
-    final scheme = Theme.of(context).colorScheme;
 
     return requestsAsync.when(
       loading: () => const AppSkeleton(pattern: SkeletonPattern.cards),
@@ -184,27 +176,10 @@ class _RequestsTab extends ConsumerWidget {
       ),
       data: (requests) {
         if (requests.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.inbox_outlined,
-                    size: 56,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Henüz talep yok',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          return const AppEmptyState(
+            icon: Icons.inbox_outlined,
+            title: 'Talepler müşteriden gelir',
+            message: 'Onayladığın talep otomatik olarak iş listesine düşer.',
           );
         }
 
@@ -219,6 +194,11 @@ class _RequestsTab extends ConsumerWidget {
   }
 }
 
+/// Servis talebi kartı — tasarım teslimatı ekran 19.
+///
+/// İki eylem yan yana: reddetmek de en az işe çevirmek kadar sık.
+/// Önceden yalnızca "İşe Dönüştür" vardı; istemediği talebi kapatmanın
+/// yolu olmayan kullanıcının listesi hiç boşalmıyordu.
 class _RequestTile extends ConsumerWidget {
   const _RequestTile({required this.item});
   final RequestWithCustomer item;
@@ -230,59 +210,96 @@ class _RequestTile extends ConsumerWidget {
     if (context.mounted) context.push('/jobs/${job.id}');
   }
 
+  Future<void> _reject(BuildContext context, WidgetRef ref) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Talebi reddet'),
+        content: const Text(
+          'Talep listede "Reddedildi" olarak kalır, silinmez.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Reddet'),
+          ),
+        ],
+      ),
+    );
+    if (onay != true) return;
+    await ref.read(serviceRequestsRepositoryProvider).reject(item.request);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final palet = context.palette;
     final request = item.request;
     final canConvert =
         request.status == 'BEKLIYOR' || request.status == 'ISLEME_ALINDI';
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    item.customer.displayName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+    final (durumMetni, durumRengi) = switch (request.status) {
+      'BEKLIYOR' => ('Yeni', palet.accent),
+      'ISLEME_ALINDI' => ('İncelendi', palet.warningText),
+      'REDDEDILDI' => ('Reddedildi', palet.dangerText),
+      _ => ('İşe dönüştü', palet.successText),
+    };
+
+    return AppCard(
+      pending: request.syncStatus == 'PENDING',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            request.description,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '${item.customer.displayName} · ${_gecenSure(request.createdAt)}',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              StatusPill(label: durumMetni, color: durumRengi, dense: true),
+              const Spacer(),
+              if (canConvert) ...[
+                TextButton(
+                  onPressed: () => _reject(context, ref),
+                  style: TextButton.styleFrom(
+                    foregroundColor: palet.dangerText,
                   ),
+                  child: const Text('Reddet'),
                 ),
-                Text(
-                  request.code,
-                  style: Theme.of(context).textTheme.bodySmall,
+                const SizedBox(width: AppSpacing.xs),
+                FilledButton.tonal(
+                  onPressed: () => _convert(context, ref),
+                  child: const Text('İşe Çevir'),
                 ),
               ],
-            ),
-            const SizedBox(height: 6),
-            Text(request.description),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Chip(
-                  label: Text(
-                    _requestStatusLabels[request.status] ?? request.status,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-                const Spacer(),
-                if (canConvert)
-                  FilledButton.tonal(
-                    onPressed: () => _convert(context, ref),
-                    child: const Text('İşe Dönüştür'),
-                  ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  /// "2 saat önce" / "Dün 16:20" / "23 Ağu".
+  ///
+  /// Sahadaki kullanıcı için talebin ne kadar beklediği, tam tarihinden
+  /// daha önemli — geciken talep müşteri kaybı demek.
+  static String _gecenSure(DateTime an) {
+    final fark = DateTime.now().difference(an);
+    if (fark.inMinutes < 60) return '${fark.inMinutes} dk önce';
+    if (fark.inHours < 24) return '${fark.inHours} saat önce';
+    if (fark.inDays == 1) return 'Dün ${DateFormat('HH:mm').format(an)}';
+    return DateFormat('d MMM', 'tr_TR').format(an);
   }
 }
 

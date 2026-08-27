@@ -189,6 +189,12 @@ class SyncService {
           case ('service_request', 'CREATE'):
             final result = await _api.createServiceRequest(payload);
             await _markSynced('service_request', result);
+          case ('service_request', 'UPDATE'):
+            final result = await _api.updateServiceRequest(op.entityId, {
+              ...payload,
+              'base_version': op.baseVersion,
+            });
+            await _markSynced('service_request', result);
           case ('service_request', 'CONVERT'):
             // Backend işi bizim job_id'mizle kendisi oluşturur ve işin son
             // hâlini döndürür — yerel iş (kod/başlık sunucu türetmesiyle)

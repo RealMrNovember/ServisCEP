@@ -225,97 +225,228 @@ class _GeneralTab extends ConsumerWidget {
   }
 }
 
-class _FinanceTab extends ConsumerWidget {
+/// Cari hesap sekmesi — tasarım teslimatı ekran 21.
+///
+/// Üç sayı üstte: toplam borç, toplam tahsilat, kalan bakiye. Tek başına
+/// bakiye "2.400 borçlu" diyor ama kullanıcının asıl sorduğu "ne kadar iş
+/// yaptım, ne kadarını aldım" — üçü birlikte olmadan cevabı yok.
+class _FinanceTab extends ConsumerStatefulWidget {
   const _FinanceTab({required this.customerId});
   final String customerId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    final balanceAsync = ref.watch(customerBalanceProvider(customerId));
-    final entriesAsync = ref.watch(customerLedgerEntriesProvider(customerId));
+  ConsumerState<_FinanceTab> createState() => _FinanceTabState();
+}
+
+class _FinanceTabState extends ConsumerState<_FinanceTab> {
+  /// null = tümü, 'DEBIT' = borç, 'CREDIT' = tahsilat.
+  String? _filtre;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+    final entriesAsync = ref.watch(
+      customerLedgerEntriesProvider(widget.customerId),
+    );
+    final entries = entriesAsync.valueOrNull ?? const [];
+
+    var borc = 0;
+    var tahsilat = 0;
+    for (final e in entries) {
+      if (e.type == 'DEBIT') {
+        borc += e.amountMinor;
+      } else {
+        tahsilat += e.amountMinor;
+      }
+    }
+    final bakiye = borc - tahsilat;
+
+    final gosterilen = _filtre == null
+        ? entries
+        : entries.where((e) => e.type == _filtre).toList();
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+        Row(
+          children: [
+            Expanded(
+              child: _OzetKutusu(
+                etiket: 'Toplam borç',
+                tutar: borc,
+                renk: palet.textMuted,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _OzetKutusu(
+                etiket: 'Toplam tahsilat',
+                tutar: tahsilat,
+                renk: palet.textMuted,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppCard(
+          accent: true,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Kalan bakiye',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    Money.formatMinor(bakiye),
+                    style: AppTypography.monoLarge.copyWith(
+                      fontSize: 22,
+                      // Borç kalmadıysa vurgu rengi yerine "olumlu" tonu:
+                      // kapanmış hesap iyi haber, kullanıcı bunu bir
+                      // bakışta anlamalı.
+                      color: bakiye > 0 ? palet.accent : palet.successText,
+                    ),
+                  ),
+                ],
+              ),
+              OutlinedButton(
+                onPressed: () =>
+                    _showRecordPaymentDialog(context, ref, widget.customerId),
+                child: const Text('Tahsilat Ekle'),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+        Wrap(
+          spacing: AppSpacing.sm,
+          children: [
+            for (final (deger, etiket) in const [
+              (null, 'Tümü'),
+              ('DEBIT', 'Borç'),
+              ('CREDIT', 'Tahsilat'),
+            ])
+              ChoiceChip(
+                label: Text(etiket),
+                selected: _filtre == deger,
+                onSelected: (_) => setState(() => _filtre = deger),
+              ),
+          ],
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+        if (entriesAsync.isLoading && entries.isEmpty)
+          const Center(child: CircularProgressIndicator())
+        else if (gosterilen.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+            child: Text(
+              entries.isEmpty
+                  ? 'Henüz iş veya tahsilat hareketi yok. İlk iş '
+                        'tamamlandığında cari hesap burada görünecek.'
+                  : 'Bu türde hareket yok.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: palet.textMuted),
+            ),
+          )
+        else
+          for (final entry in gosterilen) _HareketSatiri(entry: entry),
+      ],
+    );
+  }
+}
+
+/// Üstteki iki küçük özet kutusu.
+class _OzetKutusu extends StatelessWidget {
+  const _OzetKutusu({
+    required this.etiket,
+    required this.tutar,
+    required this.renk,
+  });
+
+  final String etiket;
+  final int tutar;
+  final Color renk;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            etiket,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: renk),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            Money.formatMinor(tutar, decimals: false),
+            style: AppTypography.mono.copyWith(fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tek cari hareket.
+///
+/// Tutarın önündeki işaret yönü söylüyor: artı borç, eksi tahsilat.
+/// Yalnızca renk kullanmak, renk körü kullanıcı için ayrım bırakmıyordu.
+class _HareketSatiri extends StatelessWidget {
+  const _HareketSatiri({required this.entry});
+
+  final CustomerLedgerEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+    final borc = entry.type == 'DEBIT';
+    final renk = borc ? palet.text : palet.successText;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        children: [
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cari bakiye (borç)',
-                  style: TextStyle(color: scheme.onSurfaceVariant),
+                  entry.description,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  Money.formatMinor(balanceAsync.valueOrNull ?? 0),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () =>
-                      _showRecordPaymentDialog(context, ref, customerId),
-                  icon: const Icon(Icons.payments_outlined, size: 18),
-                  label: const Text('Tahsilat Ekle'),
+                  DateFormat('d MMM y', 'tr_TR').format(entry.entryDate),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
                 ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Hareketler',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        entriesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Hata: $e'),
-          data: (entries) {
-            if (entries.isEmpty) {
-              return Text(
-                'Henüz iş veya tahsilat hareketi yok. İlk iş tamamlandığında cari hesap burada görünecek.',
-                style: TextStyle(color: scheme.onSurfaceVariant),
-              );
-            }
-            return Column(
-              children: [
-                for (final entry in entries)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      entry.type == 'DEBIT'
-                          ? Icons.arrow_upward
-                          : Icons.arrow_downward,
-                      color: entry.type == 'DEBIT'
-                          ? scheme.error
-                          : Colors.green,
-                    ),
-                    title: Text(entry.description),
-                    subtitle: Text(
-                      DateFormat('d MMM y', 'tr_TR').format(entry.entryDate),
-                    ),
-                    trailing: Text(
-                      Money.formatMinor(entry.amountMinor),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: entry.type == 'DEBIT'
-                            ? scheme.error
-                            : Colors.green,
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            '${borc ? '+' : '−'}'
+            '${Money.formatMinor(entry.amountMinor, decimals: false)}',
+            style: AppTypography.mono.copyWith(fontSize: 14, color: renk),
+          ),
+        ],
+      ),
     );
   }
 }

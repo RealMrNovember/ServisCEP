@@ -153,10 +153,38 @@ class ServiceRequestsRepository {
     });
   }
 
+  /// Talebi reddeder.
+  ///
+  /// Silinmiyor, durumu değişiyor: müşteriden gelen bir talebin izi
+  /// kalmalı — "biz böyle bir talep almadık" tartışmasına düşülmesin.
+  Future<void> reject(ServiceRequest request) async {
+    await _db.transaction(() async {
+      await (_db.update(
+        _db.serviceRequests,
+      )..where((r) => r.id.equals(request.id))).write(
+        const ServiceRequestsCompanion(
+          status: Value('REDDEDILDI'),
+          syncStatus: Value('PENDING'),
+        ),
+      );
+
+      await _enqueue(
+        entityId: request.id,
+        operation: 'UPDATE',
+        baseVersion: request.version,
+        payload: const {
+          'status': 'REDDEDILDI',
+          'changed_fields': ['status'],
+        },
+      );
+    });
+  }
+
   Future<void> _enqueue({
     required String entityId,
     required String operation,
     required Map<String, dynamic> payload,
+    int? baseVersion,
   }) {
     return _db
         .into(_db.syncOperations)
@@ -167,6 +195,7 @@ class ServiceRequestsRepository {
             entityId: entityId,
             operation: operation,
             payload: jsonEncode(payload),
+            baseVersion: Value(baseVersion),
           ),
         );
   }
