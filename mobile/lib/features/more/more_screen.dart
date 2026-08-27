@@ -9,6 +9,7 @@ import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
 import '../settings/settings_screen.dart';
 import '../stock/products_list_screen.dart';
+import '../feedback/feedback_screen.dart';
 import '../subscription/payments_screen.dart';
 import '../subscription/subscription_screen.dart';
 import '../sync/data/sync_conflict_repository.dart';
@@ -102,6 +103,15 @@ class MoreScreen extends ConsumerWidget {
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const PaymentsScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.forum_outlined),
+            title: const Text('Geri Bildirim'),
+            subtitle: const Text('Öneri, sorun ya da soru gönderin'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const FeedbackScreen())),
           ),
 
           // Çakışma varken görünür — yoksa menüyü kalabalıklaştırmaz.
