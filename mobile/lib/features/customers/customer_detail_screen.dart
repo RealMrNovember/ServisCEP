@@ -5,6 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import '../../app/palette.dart';
+import '../../app/typography.dart';
+import '../../shared/ui.dart';
+import '../../app/theme.dart';
 import 'package:open_filex/open_filex.dart';
 
 import '../../core/constants/customer_types.dart';
@@ -100,7 +104,13 @@ class _CustomerDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      // Tasarım teslimatı ekran 04: ÜÇ sekme.
+      //
+      // "Fotoğraflar" sekmesi kaldırıldı — her zaman boş bir yer tutucuydu,
+      // hiçbir şey göstermiyordu. "İş Geçmişi" Bilgi sekmesinin içine
+      // taşındı; ayrı sekme olması kullanıcıyı müşterinin geçmişini görmek
+      // için sekme değiştirmeye zorluyordu.
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: Text(customer.displayName),
@@ -114,13 +124,10 @@ class _CustomerDetailContent extends StatelessWidget {
             ),
           ],
           bottom: const TabBar(
-            isScrollable: true,
             tabs: [
-              Tab(text: 'Genel'),
-              Tab(text: 'Finans'),
-              Tab(text: 'İş Geçmişi'),
+              Tab(text: 'Bilgi'),
+              Tab(text: 'Cari Hesap'),
               Tab(text: 'Belgeler'),
-              Tab(text: 'Fotoğraflar'),
             ],
           ),
         ),
@@ -128,9 +135,7 @@ class _CustomerDetailContent extends StatelessWidget {
           children: [
             _GeneralTab(customer: customer),
             _FinanceTab(customerId: customer.id),
-            _JobHistoryTab(customerId: customer.id),
             _DocumentsTab(customer: customer),
-            const _EmptyTab(text: 'Bu müşteriye ait fotoğraf yok'),
           ],
         ),
       ),
@@ -138,12 +143,12 @@ class _CustomerDetailContent extends StatelessWidget {
   }
 }
 
-class _GeneralTab extends StatelessWidget {
+class _GeneralTab extends ConsumerWidget {
   const _GeneralTab({required this.customer});
   final Customer customer;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -210,6 +215,12 @@ class _GeneralTab extends StatelessWidget {
             label: 'Notlar',
             value: customer.notes!,
           ),
+
+        // GEÇMİŞ İŞLER burada, ayrı sekmede değil (tasarım ekran 04).
+        // Kullanıcı müşteriye baktığında ilk merak ettiği şey onunla daha
+        // önce ne yapıldığı; bunun için sekme değiştirmek zorunda kalmamalı.
+        const SizedBox(height: AppSpacing.xxl),
+        _GecmisIsler(customerId: customer.id),
       ],
     );
   }
@@ -310,65 +321,94 @@ class _FinanceTab extends ConsumerWidget {
   }
 }
 
-class _JobHistoryTab extends ConsumerWidget {
-  const _JobHistoryTab({required this.customerId});
+/// Müşterinin geçmiş işleri — Bilgi sekmesinin içinde.
+///
+/// ListView DEĞİL Column döndürüyor: dış ListView'in içine giriyor ve
+/// iç içe iki kaydırma alanı kullanıcıyı hep şaşırtır.
+class _GecmisIsler extends ConsumerWidget {
+  const _GecmisIsler({required this.customerId});
   final String customerId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final palet = context.palette;
     final jobsAsync = ref.watch(jobsByCustomerProvider(customerId));
-    final scheme = Theme.of(context).colorScheme;
 
     return jobsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Hata: $e')),
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (jobs) {
         if (jobs.isEmpty) {
-          return Center(
-            child: Text(
-              'Bu müşteriye ait iş kaydı yok',
-              style: TextStyle(color: scheme.onSurfaceVariant),
-            ),
+          return Text(
+            'Bu müşteriye ait iş kaydı yok',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: jobs.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            final job = jobs[index];
-            final statusColor = jobStatusColors[job.status] ?? Colors.grey;
-            return Card(
-              child: ListTile(
-                onTap: () => context.push('/jobs/${job.id}'),
-                title: Text(
-                  job.title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  'Geçmiş işler',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                subtitle: Text(
-                  '${job.code} · ${DateFormat('d MMM y', 'tr_TR').format(job.createdAt)}',
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  '${jobs.length} iş',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
                 ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    jobStatusLabels[job.status] ?? job.status,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            for (final job in jobs)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: AppCard(
+                  onTap: () => context.push('/jobs/${job.id}'),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              job.title,
+                              style: Theme.of(context).textTheme.titleSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              DateFormat(
+                                'd MMM y',
+                                'tr_TR',
+                              ).format(job.createdAt),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: palet.textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (job.actualPriceMinor != null)
+                        Text(
+                          Money.formatMinor(
+                            job.actualPriceMinor!,
+                            decimals: false,
+                          ),
+                          style: AppTypography.mono.copyWith(fontSize: 14),
+                        ),
+                    ],
                   ),
                 ),
               ),
-            );
-          },
+          ],
         );
       },
     );

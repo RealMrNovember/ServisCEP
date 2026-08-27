@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../app/palette.dart';
+import '../../shared/ui.dart';
+import '../../app/theme.dart';
+import '../../shared/tc_icon.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants/job_constants.dart';
@@ -130,79 +135,81 @@ class _JobDetailContent extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
-          Text(
-            job.title,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          _IsBasligi(
+            job: job,
+            onDurumDegistir: () => _changeStatus(context, ref),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            children: [
-              ActionChip(
-                avatar: Icon(Icons.circle, size: 10, color: statusColor),
-                label: Text(jobStatusLabels[job.status] ?? job.status),
-                onPressed: () => _changeStatus(context, ref),
-              ),
-              Chip(
-                label: Text(jobPriorityLabels[job.priority] ?? job.priority),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           FutureBuilder<Customer?>(
             future: customerAsync,
             builder: (context, snapshot) {
-              final customer = snapshot.data;
-              return _InfoTile(
-                icon: Icons.person_outline,
-                label: 'Müşteri',
-                value: customer?.displayName ?? '...',
+              final musteri = snapshot.data;
+              return _KunyeKarti(
+                satirlar: [
+                  ('Müşteri', musteri?.displayName ?? '...'),
+                  if (job.address?.isNotEmpty == true)
+                    ('Adres', job.address!)
+                  else if (musteri?.address?.isNotEmpty == true)
+                    ('Adres', musteri!.address!),
+                  if (job.appointmentDate != null)
+                    (
+                      'Tarih / saat',
+                      DateFormat(
+                        'd MMM · HH:mm',
+                        'tr_TR',
+                      ).format(job.appointmentDate!),
+                    ),
+                  if (job.description?.isNotEmpty == true)
+                    ('Açıklama', job.description!),
+                  (
+                    'Tahmini',
+                    job.estimatedPriceMinor != null
+                        ? Money.formatMinor(job.estimatedPriceMinor!)
+                        : 'Belirtilmedi',
+                  ),
+                  if (job.actualPriceMinor != null)
+                    ('Alınan ücret', Money.formatMinor(job.actualPriceMinor!)),
+                ],
               );
             },
           ),
-          if (job.appointmentDate != null)
-            _InfoTile(
-              icon: Icons.event_outlined,
-              label: 'Randevu',
-              value: DateFormat(
-                'd MMMM y, EEEE HH:mm',
-                'tr_TR',
-              ).format(job.appointmentDate!),
-            ),
-          if (job.address?.isNotEmpty == true)
-            _InfoTile(
-              icon: Icons.location_on_outlined,
-              label: 'Adres',
-              value: job.address!,
-              trailing: IconButton(
-                icon: const Icon(Icons.map_outlined, size: 20),
-                tooltip: 'Haritada Aç',
-                onPressed: () => MapLauncher.openAddress(job.address!),
-              ),
-            ),
-          if (job.description?.isNotEmpty == true)
-            _InfoTile(
-              icon: Icons.description_outlined,
-              label: 'Açıklama',
-              value: job.description!,
-            ),
-          _InfoTile(
-            icon: Icons.payments_outlined,
-            label: 'Tahmini fiyat',
-            value: job.estimatedPriceMinor != null
-                ? Money.formatMinor(job.estimatedPriceMinor!)
-                : 'Belirtilmedi',
-          ),
-          _InfoTile(
-            icon: Icons.check_circle_outline,
-            label: 'Gerçek fiyat',
-            value: job.actualPriceMinor != null
-                ? Money.formatMinor(job.actualPriceMinor!)
-                : 'Henüz girilmedi',
+          const SizedBox(height: AppSpacing.lg),
+          // Ara ve Yol Tarifi ana eylemler: kullanıcı bu ekranı çoğu zaman
+          // YOLDA açıyor.
+          FutureBuilder<Customer?>(
+            future: customerAsync,
+            builder: (context, snapshot) {
+              final musteri = snapshot.data;
+              final telefon = musteri?.phone;
+              final adres = job.address?.isNotEmpty == true
+                  ? job.address
+                  : musteri?.address;
+              return Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: telefon == null || telefon.isEmpty
+                          ? null
+                          : () => launchUrl(Uri.parse('tel:$telefon')),
+                      icon: const TcIcon(TcIcons.phone, size: 18),
+                      label: const Text('Ara'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: adres == null || adres.isEmpty
+                          ? null
+                          : () => MapLauncher.openAddress(adres),
+                      icon: const TcIcon(TcIcons.map, size: 18),
+                      label: const Text('Yol Tarifi'),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
@@ -593,6 +600,139 @@ class _InfoTile extends StatelessWidget {
             ),
           ),
           ?trailing,
+        ],
+      ),
+    );
+  }
+}
+
+/// İş başlığı ve rozetler — tasarım teslimatı ekran 03.
+///
+/// Rozetler tek satırda: aciliyet, durum ve senkron durumu kullanıcının
+/// ekrana girer girmez göreceği üç şey.
+class _IsBasligi extends StatelessWidget {
+  const _IsBasligi({required this.job, required this.onDurumDegistir});
+
+  final Job job;
+  final VoidCallback onDurumDegistir;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+    final acil = job.priority == 'YUKSEK' && job.status != 'TAMAMLANDI';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(job.title, style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: AppSpacing.md),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            if (acil) _Rozet(metin: 'Acil', renk: palet.dangerText),
+            // Durum rozetine dokunulunca değiştirilebiliyor; tek dokunuşla
+            // "devam ediyor"a geçmek sahadaki en sık eylem.
+            _Rozet(
+              metin: jobStatusLabels[job.status] ?? job.status,
+              renk: job.status == 'TAMAMLANDI'
+                  ? palet.successText
+                  : palet.accent,
+              onTap: onDurumDegistir,
+            ),
+            if (job.syncStatus == 'PENDING')
+              _Rozet(metin: 'Cihazda', renk: palet.warningText),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Rozet extends StatelessWidget {
+  const _Rozet({required this.metin, required this.renk, this.onTap});
+
+  final String metin;
+  final Color renk;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final govde = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 5,
+      ),
+      decoration: BoxDecoration(
+        color: renk.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: renk, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            metin,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: renk),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) return govde;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: govde,
+    );
+  }
+}
+
+/// Künye kartı: müşteri, adres, tarih/saat.
+///
+/// Tek kart içinde etiket–değer satırları. Ayrı ayrı kartlara bölmek
+/// ekranı uzatıyor ve kullanıcı aşağı kaydırmadan hiçbirini göremiyordu.
+class _KunyeKarti extends StatelessWidget {
+  const _KunyeKarti({required this.satirlar});
+
+  final List<(String, String)> satirlar;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+
+    return AppCard(
+      child: Column(
+        children: [
+          for (var i = 0; i < satirlar.length; i++) ...[
+            if (i > 0) Divider(height: AppSpacing.xl, color: palet.border),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 96,
+                  child: Text(
+                    satirlar[i].$1,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    satirlar[i].$2,
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
