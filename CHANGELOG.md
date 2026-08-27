@@ -21,9 +21,10 @@ Kurallar:
 
 Yenilikler:
 • Çevrimdışı kaydettikleriniz artık uygulama kapalıyken de gönderiliyor; internet gelince kendiliğinden eşitleniyor.
-• Yeni bir kayıt oluşturduğunuzda eşitleme hemen başlıyor, sıradaki turu beklemiyor.
-• Gönderilemeyen kayıtlar tekrar deneniyor. Yine olmazsa senkron ekranından tek dokunuşla yeniden gönderebiliyorsunuz.
-• Oturumunuz düştüğünde bekleyen kayıtlar korunuyor; yeniden giriş yapınca gönderiliyor.
+• Yeni kayıt oluşturduğunuzda eşitleme hemen başlıyor.
+• Gönderilemeyen kayıtlar tekrar deneniyor; olmazsa senkron ekranından tek dokunuşla yeniden gönderin.
+• Oturumunuz düşse de bekleyen kayıtlar korunuyor.
+• Geri Bildirim eklendi: öneri ve sorunlarınızı yazın, yanıtlayınca bildirim gelir.
 
 ## v0.7.7
 
