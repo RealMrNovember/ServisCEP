@@ -48,6 +48,9 @@ enum SyncBannerState {
   /// Bağlantı var, tur çalışmıyor, kuyrukta kayıt var.
   waiting,
 
+  /// Kalıcı hata almış kayıt var — kendiliğinden düzelmez.
+  failed,
+
   /// Kuyruk yeni boşaldı — kısa süre görünür.
   done,
 }
@@ -63,8 +66,17 @@ SyncBannerState syncBannerStateFor({
   required bool online,
   required int pending,
   required bool running,
+  int failed = 0,
 }) {
   if (!online) return SyncBannerState.offline;
+
+  // Gönderilemeyen kayıt, kuyruk boşalsa bile duruyor ve kendiliğinden
+  // düzelmiyor. Bu hesap eskiden `failed`'ı hiç görmüyordu: kuyruk
+  // boşaldığında şerit "hidden"a düşüyor, oradan da "Tüm kayıtlar
+  // gönderildi" kutlamasına geçiyordu — ekranda bir kayıt
+  // GÖNDERİLEMEDİ yazarken. Kullanıcıya söylenen en kötü yalan bu.
+  if (failed > 0) return SyncBannerState.failed;
+
   if (running) return SyncBannerState.syncing;
   if (pending > 0) return SyncBannerState.waiting;
   return SyncBannerState.hidden;
@@ -164,6 +176,7 @@ class _SyncBannerState extends ConsumerState<SyncBanner> {
   Widget build(BuildContext context) {
     final cevrimici = ref.watch(isOnlineProvider).valueOrNull ?? true;
     final bekleyen = ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
+    final gonderilemeyen = ref.watch(failedSyncCountProvider).valueOrNull ?? 0;
     final servis = ref.watch(syncServiceProvider);
 
     return ValueListenableBuilder<bool>(
@@ -173,6 +186,7 @@ class _SyncBannerState extends ConsumerState<SyncBanner> {
           online: cevrimici,
           pending: bekleyen,
           running: calisiyor,
+          failed: gonderilemeyen,
         );
 
         // Yapı aşamasında setState çağrılamaz; durum geçişi kareden sonra
@@ -210,6 +224,7 @@ class _SyncBannerState extends ConsumerState<SyncBanner> {
                   child: _Serit(
                     durum: gorunen,
                     bekleyen: bekleyen,
+                    gonderilemeyen: gonderilemeyen,
                     onClose: () => setState(() {
                       _kapatilan = (durum: gorunen, bekleyen: bekleyen);
                     }),
@@ -222,10 +237,16 @@ class _SyncBannerState extends ConsumerState<SyncBanner> {
 }
 
 class _Serit extends StatelessWidget {
-  const _Serit({required this.durum, required this.bekleyen, this.onClose});
+  const _Serit({
+    required this.durum,
+    required this.bekleyen,
+    this.gonderilemeyen = 0,
+    this.onClose,
+  });
 
   final SyncBannerState durum;
   final int bekleyen;
+  final int gonderilemeyen;
 
   /// Kapatma düğmesi. Verilmezse düğme çıkmaz ("tamamlandı" gibi kendi
   /// kendine kapanan durumlarda gereksiz).
@@ -258,6 +279,13 @@ class _Serit extends StatelessWidget {
         palet.warningText,
         TcIcons.cloudOff,
         '$bekleyen kayıt gönderilmeyi bekliyor',
+      ),
+      SyncBannerState.failed => (
+        palet.dangerSoft,
+        palet.dangerLine,
+        palet.dangerText,
+        TcIcons.alertCircle,
+        '$gonderilemeyen kayıt gönderilemedi — dokun',
       ),
       SyncBannerState.done => (
         palet.successSoft,

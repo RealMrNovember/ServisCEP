@@ -17,6 +17,14 @@ Kurallar:
 
 ---
 
+## v0.8.2
+
+Düzeltmeler:
+• Eşitleme ekranı kendi kendisiyle çelişiyordu: bir kayıt gönderilemezken üstte "Tüm kayıtlar gönderildi" yazıyordu.
+• Gönderilemeyen kayıtlar artık tek tek görünüyor — hangisi ve neden.
+• "Yerel veritabanı" boyutu her zaman 0 B gösteriyordu.
+• Uzun satırlarda kelimeler ortadan bölünüyor, alttaki açıklama menü çubuğunun altında kalıyordu.
+
 ## v0.8.1
 
 Yenilikler:

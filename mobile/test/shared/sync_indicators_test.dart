@@ -3,6 +3,46 @@ import 'package:serviscep/shared/sync_indicators.dart';
 
 void main() {
   group('Çevrimdışı şerit durumu', () {
+    test('gönderilemeyen kayıt varken ASLA "tamamlandı" denmez', () {
+      // Ekranda yaşandı: kuyruk boşalınca şerit gizleniyor, oradan da
+      // "Tüm kayıtlar gönderildi" kutlamasına geçiyordu — bir kayıt
+      // gönderilememişken. Kutlama yalnızca `hidden`dan doğduğu için,
+      // bu durumun hidden'a düşmemesi kutlamayı da imkânsız kılıyor.
+      expect(
+        syncBannerStateFor(online: true, pending: 0, running: false, failed: 1),
+        SyncBannerState.failed,
+      );
+    });
+
+    test('gönderilemeyen, bekleyenin önüne geçer', () {
+      // Bekleyen kayıt kendiliğinden gider; gönderilemeyen gitmez.
+      // Kullanıcıya söylenmesi gereken, eylem isteyen olandır.
+      expect(
+        syncBannerStateFor(online: true, pending: 5, running: false, failed: 2),
+        SyncBannerState.failed,
+      );
+    });
+
+    test('çevrimdışıyken gönderilemeyen değil bağlantı bildirilir', () {
+      // Çevrimdışıyken yeniden denemenin yolu yok; kullanıcıya
+      // yapabileceği bir şey söylenmeli.
+      expect(
+        syncBannerStateFor(
+          online: false,
+          pending: 0,
+          running: false,
+          failed: 3,
+        ),
+        SyncBannerState.offline,
+      );
+    });
+
+    test('gönderilemeyen yoksa davranış değişmez', () {
+      expect(
+        syncBannerStateFor(online: true, pending: 0, running: false, failed: 0),
+        SyncBannerState.hidden,
+      );
+    });
     test('bağlantı yoksa çevrimdışı der, kuyruk boş olsa bile', () {
       expect(
         syncBannerStateFor(online: false, pending: 0, running: false),

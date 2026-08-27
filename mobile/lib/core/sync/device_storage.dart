@@ -22,12 +22,23 @@ class DeviceStorage {
 /// açıldığında hesaplanıyor (FutureProvider, otomatik yeniden okuma yok).
 final deviceStorageProvider = FutureProvider<DeviceStorage>((ref) async {
   // drift_flutter, `driftDatabase(name: 'serviscep')` için veritabanını
-  // uygulama destek dizinine `serviscep.sqlite` adıyla açıyor.
-  final destek = await getApplicationSupportDirectory();
-  final db = File(p.join(destek.path, 'serviscep.sqlite'));
-  final dbBoyut = await db.exists() ? await db.length() : 0;
-
+  // BELGELER dizinine `serviscep.sqlite` adıyla açıyor
+  // (drift_flutter/lib/src/native.dart: getApplicationDocumentsDirectory).
+  //
+  // Burada önce destek dizinine bakılıyordu; dosya bulunamadığı için
+  // ekranda "Yerel veritabanı 0 B" yazıyordu. Var olmayan bir dosyanın
+  // boyutunu sıfır diye göstermek, ölçümü yanlış yapmaktan daha kötü:
+  // kullanıcıya verisinin hiç yer kaplamadığını söylüyor.
   final belgeler = await getApplicationDocumentsDirectory();
+
+  // WAL kipinde asıl veri `-wal` dosyasında bekliyor olabilir; yalnızca
+  // ana dosyaya bakmak boyutu olduğundan küçük gösterir.
+  var dbBoyut = 0;
+  for (final ek in const ['', '-wal', '-shm']) {
+    final dosya = File(p.join(belgeler.path, 'serviscep.sqlite$ek'));
+    if (await dosya.exists()) dbBoyut += await dosya.length();
+  }
+
   final medya = Directory(p.join(belgeler.path, 'serviscep_media'));
   var medyaBoyut = 0;
   if (await medya.exists()) {

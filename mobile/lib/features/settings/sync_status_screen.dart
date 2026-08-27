@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../app/palette.dart';
 import '../../app/theme.dart';
+import '../../core/database/app_database.dart';
 import '../../core/sync/device_storage.dart';
 import '../../core/sync/sync_status.dart';
 import '../../shared/ui.dart';
@@ -53,20 +54,39 @@ class SyncStatusScreen extends ConsumerWidget {
         DateTime.now().difference(lastSync).abs() < syncFreshnessWindow;
     final allClear = kuyrukTemiz && taze;
 
-    final (String baslik, String ikon) = switch ((kuyrukTemiz, taze)) {
-      (true, true) => ('Her şey eşitlendi', TcIcons.cloudOk),
-      (true, false) when lastSync == null => (
-        'Henüz eşitlenmedi',
-        TcIcons.cloudOff,
-      ),
-      (true, false) => ('Bir süredir eşitlenemedi', TcIcons.cloudOff),
-      _ => ('Bekleyen değişiklikler var', TcIcons.sync),
+    // Başlık, sorunu ADIYLA söyler.
+    //
+    // Eskiden failed ve conflict, pending ile aynı torbaya atılıp
+    // "Bekleyen değişiklikler var" deniyordu. Ekranda "Gönderilmeyi
+    // bekleyen: 0 kayıt" yazarken başlığın "bekleyen değişiklik" demesi
+    // kullanıcıyı neyin yanlış olduğunu aramaya bırakıyordu — üstelik
+    // asıl sorun (gönderilemeyen kayıt) kendiliğinden düzelmiyor.
+    final (String baslik, String ikon) = switch ((
+      failed > 0,
+      conflicts > 0,
+      pending > 0,
+      taze,
+    )) {
+      (true, _, _, _) => ('Gönderilemeyen kayıt var', TcIcons.alertCircle),
+      (_, true, _, _) => ('Çakışma çözülmeyi bekliyor', TcIcons.syncProblem),
+      (_, _, true, _) => ('Gönderilmeyi bekleyenler var', TcIcons.sync),
+      (_, _, _, true) => ('Her şey eşitlendi', TcIcons.cloudOk),
+      _ when lastSync == null => ('Henüz eşitlenmedi', TcIcons.cloudOff),
+      _ => ('Bir süredir eşitlenemedi', TcIcons.cloudOff),
     };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Eşitleme durumu')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+        // Alt boşluk gezinme çubuğunu hesaba katıyor: bu ekran sekme
+        // kabuğunun İÇİNDE açılıyor ve çubuk üstünde duruyor. 40dp'lik
+        // sabit boşlukla son paragraf çubuğun altında kalıp kesiliyordu.
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.xl,
+          AppSpacing.xl,
+          AppSize.nav + AppSpacing.xxl,
+        ),
         children: [
           AppCard(
             accent: allClear,
@@ -75,7 +95,11 @@ class SyncStatusScreen extends ConsumerWidget {
                 TcIcon(
                   ikon,
                   size: 40,
-                  color: allClear ? palet.successText : palet.warningText,
+                  color: allClear
+                      ? palet.successText
+                      : (failed > 0 || conflicts > 0
+                            ? palet.dangerText
+                            : palet.warningText),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(baslik, style: Theme.of(context).textTheme.titleMedium),
@@ -111,7 +135,8 @@ class SyncStatusScreen extends ConsumerWidget {
             _StatusRow(
               icon: TcIcons.alertCircle,
               label: 'Gönderilemeyen',
-              value: '$failed kayıt — dokun, yeniden dene',
+              value: '$failed kayıt',
+              hint: 'Dokun, yeniden dene',
               warn: true,
               // Kalıcı hata almış kayıtlar için ARAYÜZDE HİÇBİR YOL YOKTU:
               // satır yalnızca sayıyı gösteriyor, dokunulamıyordu ve hiçbir
@@ -120,6 +145,18 @@ class SyncStatusScreen extends ConsumerWidget {
               // kalıyordu.
               onTap: () => _yenidenDene(context, ref),
             ),
+          // Hangi kayıt, neden gönderilemedi. Yeniden denemekten başka
+          // bilgisi olmayan kullanıcı, sorunun geçici mi kalıcı mı
+          // olduğunu ayırt edemiyordu.
+          if (failed > 0)
+            ...ref
+                .watch(failedSyncOperationsProvider)
+                .maybeWhen(
+                  data: (satirlar) =>
+                      satirlar.map((satir) => _GonderilemeyenSatir(op: satir)),
+                  orElse: () => const <Widget>[],
+                ),
+
           if (conflicts > 0)
             _StatusRow(
               icon: TcIcons.syncProblem,
@@ -166,16 +203,30 @@ class SyncStatusScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
           Text(
-            switch ((pending > 0, taze)) {
-              (true, _) =>
+            // Bu metin de başlıkla AYNI önceliği izliyor. Üç ayrı yerde
+            // (şerit, başlık, bu metin) üç farklı durum hesaplanınca ekran
+            // kendi kendisiyle çelişiyordu: şerit "Tüm kayıtlar
+            // gönderildi", başlık "Bekleyen değişiklikler var", burası
+            // "Verilerin sunucuyla eşitlenmiş durumda" diyordu — hepsi
+            // aynı anda, bir kayıt gönderilememişken.
+            switch ((failed > 0, conflicts > 0, pending > 0, taze)) {
+              (true, _, _, _) =>
+                'Bu kayıtlar kalıcı bir hata aldı ve kendiliğinden '
+                    'gönderilmeyecek. Satıra dokunup yeniden dene; sorun '
+                    'sürerse kayıt cihazında duruyor, kaybolmaz.',
+              (_, true, _, _) =>
+                'Aynı kayıt hem bu cihazda hem sunucuda değişmiş. Hangi '
+                    'halin kalacağını sen seçene kadar hiçbir veri '
+                    'üzerine yazılmaz.',
+              (_, _, true, _) =>
                 'Bekleyen kayıtlar cihazında güvenle duruyor. Bağlantı '
                     'kurulduğunda otomatik gönderilir; uygulama kapalıyken de '
                     'arka planda düzenli olarak denenir.',
-              (false, true) =>
+              (_, _, _, true) =>
                 'Verilerin sunucuyla eşitlenmiş durumda. Uygulama bağlantı '
                     'geldiğinde, öne alındığında ve birkaç dakikada bir '
                     'otomatik senkronlanır.',
-              (false, false) =>
+              _ =>
                 'Gönderilmeyi bekleyen bir kayıt yok, ancak bir süredir '
                     'sunucuya ulaşılamadı. Cihazın internete bağlı olması '
                     'sunucuya erişebildiği anlamına gelmez; ofisteki '
@@ -198,6 +249,7 @@ class _StatusRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.hint,
     this.warn = false,
     this.onTap,
   });
@@ -206,32 +258,70 @@ class _StatusRow extends StatelessWidget {
   final String icon;
   final String label;
   final String value;
+
+  /// Değerin altına düşen kısa açıklama.
+  final String? hint;
   final bool warn;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = warn ? scheme.error : scheme.onSurfaceVariant;
+    final palet = context.palette;
+    final color = warn ? palet.dangerText : palet.textMuted;
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: TcIcon(icon, color: color, size: 22),
-      title: Text(label, style: const TextStyle(fontSize: 14.5)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: warn ? scheme.error : scheme.onSurface,
-            ),
-          ),
-          if (onTap != null) const TcIcon(TcIcons.chevronRight, size: 20),
-        ],
-      ),
+    // ListTile DEĞİL.
+    //
+    // ListTile, `trailing`e istediği genişliği verip `title`dan kırpıyor:
+    // değer uzayınca etiket ("Gönderilemeyen") satır sonunda HECE
+    // GÖZETMEDEN bölünüyordu ("Gönderilemeye / n"). Burada genişlik iki
+    // taraf arasında paylaştırılıyor ve etiket asla bölünmüyor.
+    return InkWell(
       onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TcIcon(icon, color: color, size: 22),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    value,
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: warn ? palet.dangerText : palet.text,
+                    ),
+                  ),
+                  if (hint != null)
+                    Text(
+                      hint!,
+                      textAlign: TextAlign.right,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: warn ? palet.dangerText : palet.textMuted,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: AppSpacing.xs),
+              TcIcon(TcIcons.chevronRight, size: 20, color: palet.textMuted),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -298,6 +388,79 @@ class _SyncNowButtonState extends ConsumerState<_SyncNowButton> {
             )
           : const TcIcon(TcIcons.sync),
       label: Text(_calisiyor ? 'Senkronlanıyor…' : 'Şimdi senkronla'),
+    );
+  }
+}
+
+/// Türkçe varlık adları — kullanıcı 'service_request' okumamalı.
+const _varlikAdlari = {
+  'customer': 'Müşteri',
+  'job': 'İş',
+  'service_request': 'Servis talebi',
+  'quote': 'Teklif',
+  'proforma': 'Proforma',
+  'payment': 'Tahsilat',
+  'income_entry': 'Gelir kaydı',
+  'expense_entry': 'Gider kaydı',
+  'job_note': 'İş notu',
+  'job_photo': 'İş fotoğrafı',
+  'job_signature': 'İmza',
+};
+
+/// Gönderilemeyen tek bir kayıt.
+class _GonderilemeyenSatir extends StatelessWidget {
+  const _GonderilemeyenSatir({required this.op});
+
+  final SyncOperation op;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+    final ad = _varlikAdlari[op.entityType] ?? op.entityType;
+    final eylem = switch (op.operation) {
+      'CREATE' => 'oluşturma',
+      'UPDATE' => 'güncelleme',
+      'DELETE' => 'silme',
+      'CONVERT' => 'işe çevirme',
+      _ => op.operation.toLowerCase(),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.x3l,
+        bottom: AppSpacing.sm,
+      ),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$ad — $eylem', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 2),
+            Text(
+              // Sunucunun kendi mesajı gösteriliyor: "bir hata oluştu"
+              // demek, destek talebi geldiğinde nedeni bulmayı imkânsız
+              // kılıyor. Mesaj Türkçe ve kullanıcıya dönük yazılıyor
+              // (bkz. backend doğrulama mesajları).
+              op.lastError?.trim().isNotEmpty == true
+                  ? op.lastError!.trim()
+                  : 'Sunucu bir sebep bildirmedi.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+            ),
+            if (op.attemptCount > 0) ...[
+              const SizedBox(height: 2),
+              Text(
+                '${op.attemptCount} deneme',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: palet.textFaint),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

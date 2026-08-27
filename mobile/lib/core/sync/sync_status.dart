@@ -1,6 +1,8 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../database/app_database.dart';
 import '../providers/core_providers.dart';
 
 const _lastSyncKey = 'last_sync_at';
@@ -54,6 +56,20 @@ final failedSyncCountProvider = StreamProvider<int>((ref) {
     ..addColumns([db.syncOperations.id])
     ..where(db.syncOperations.status.equals('FAILED'));
   return query.watch().map((rows) => rows.length);
+});
+
+/// Gönderilemeyen yazmaların kendisi.
+///
+/// Sayıyı göstermek yetmiyor: "1 kayıt gönderilemedi" diyen bir ekran,
+/// kullanıcının "hangisi ve neden?" sorusunu cevapsız bırakıyor ve elinde
+/// yeniden denemekten başka bir şey kalmıyor. `lastError` zaten
+/// yazılıyordu, hiçbir yerde okunmuyordu.
+final failedSyncOperationsProvider = StreamProvider<List<SyncOperation>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.syncOperations)
+        ..where((o) => o.status.equals('FAILED'))
+        ..orderBy([(o) => OrderingTerm.desc(o.createdAt)]))
+      .watch();
 });
 
 /// Cihazın şu anki bağlantı durumu.
