@@ -254,6 +254,27 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 
 ## Sıradaki İşler (2026-08-26 itibarıyla)
 
+> **İLK PUBLIC SÜRÜMDE YAPILACAK — zorunlu güncelleme.**
+>
+> Kapalı test boyunca güncelleme BİLİNÇLİ olarak zorunlu değil (kullanıcı
+> kararı, 2026-08-27): test sürecinde sık sürüm çıkıyor ve her seferinde
+> zorlamak kullanıcıyı bıktırır.
+>
+> Ama herkese açık ilk sürümde kimse eski test derlemesinde kalmamalı.
+> O gün yapılacak: admin panel → Uygulama Sürümü → **"En düşük
+> desteklenen sürüm kodu"** alanını public sürümün yapı numarasına çek.
+> O andan sonra daha eski sürümdeki kullanıcı "Sonra" diyemez.
+>
+> SIRA ÖNEMLİ: önce sürümün Play'de dağıtımı tamamlanmalı, SONRA bu alan
+> yükseltilmeli. Ters sırada, güncellemesi henüz Play'de görünmeyen
+> kullanıcı uygulamayı hiç kullanamaz hale gelir.
+>
+> Not: Play'in arka planda sessiz güncellemesi yalnızca kullanıcı otomatik
+> güncellemeyi AÇIK bıraktıysa çalışıyor. Türkiye'de yaygın olarak
+> kapatılıyor; o kullanıcıları güncel tutan şey uygulamanın kendi açılış
+> uyarısı (her açılışta yeniden sorar, "Sonra" kalıcı olarak susturmaz).
+
+
 Bu bölüm aktif takip içindir. Biten madde işaretlenir, açıklaması
 yukarıdaki tablolara taşınır.
 
