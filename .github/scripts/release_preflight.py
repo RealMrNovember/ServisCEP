@@ -1,6 +1,14 @@
 """Sürüm etiketini yayına çıkmadan ÖNCE denetler.
 
-Kullanım:  python3 .github/scripts/release_preflight.py v0.8.0
+Kullanım:
+    python3 .github/scripts/release_preflight.py v0.8.0   # etiket denetimi
+    python3 .github/scripts/release_preflight.py          # HAZIRLIK denetimi
+
+Etiketsiz çağrı "hazırlık" kipidir ve CI'da her itmede koşar: etiket
+atılmadan ÖNCE kilit dosyası, gevşek kısıt ve yapı numarasının artıp
+artmadığı denetlenir. Böylece etiket anında sürpriz kalmaz — v0.7.8'de
+tam da bu yüzden etiketi üç kez silip yeniden itmek zorunda kaldık ve
+bu, dışarıdan bakan her sistem için kirli bir durumdur.
 
 Neden var: 0.7.8'i yayınlamaya çalışırken üç ayrı sebeple takıldık ve
 üçü de ancak yayın anında görüldü. Buradaki kontroller o üç hatanın
@@ -85,7 +93,7 @@ def kontrol_surum_eslesmesi(etiket: str, surum: str) -> None:
         )
 
 
-def kontrol_yapi_numarasi(yapi: int, etiket: str) -> None:
+def kontrol_yapi_numarasi(yapi: int, etiket: str | None) -> None:
     """versionCode her yayında ARTMALI.
 
     Play aynı versionCode'u ikinci kez kabul etmiyor. 0.7.8'de tam olarak
@@ -107,10 +115,17 @@ def kontrol_yapi_numarasi(yapi: int, etiket: str) -> None:
     if kaynak is None:
         return
 
-    if yapi <= en_yuksek:
+    # Etiket kipinde ARTMIŞ olmalı; hazırlık kipinde eşitlik olağandır.
+    #
+    # Sürüm çıktıktan hemen sonra main'deki numara etiketle aynıdır ve bu
+    # doğru durumdur. Katı karşılaştırma, her yayından sonra biri numarayı
+    # yükseltene kadar main'i kırmızı bırakırdı.
+    yetersiz = yapi <= en_yuksek if etiket is not None else yapi < en_yuksek
+    if yetersiz:
         hata(
             f"Yapı numarası {yapi}, önceki en yüksek {en_yuksek} ({kaynak}) — "
-            f"artmamış. Play aynı versionCode'u ikinci kez kabul etmiyor."
+            f"{'artmamış' if etiket is not None else 'geride'}. Play aynı "
+            f"versionCode'u ikinci kez kabul etmiyor."
         )
 
 
@@ -172,15 +187,16 @@ def kontrol_gevsek_kisitlar() -> None:
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
+    if len(sys.argv) > 2:
         print(__doc__, file=sys.stderr)
         raise SystemExit(1)
 
-    etiket = sys.argv[1]
+    etiket = sys.argv[1] if len(sys.argv) == 2 else None
     surum, yapi = pubspec_surumu()
-    print(f"Etiket: {etiket} | pubspec: {surum}+{yapi}")
+    print(f"{'Etiket: ' + etiket if etiket else 'Hazırlık denetimi'} | pubspec: {surum}+{yapi}")
 
-    kontrol_surum_eslesmesi(etiket, surum)
+    if etiket is not None:
+        kontrol_surum_eslesmesi(etiket, surum)
     kontrol_yapi_numarasi(yapi, etiket)
     kontrol_kilit_dosyasi()
     kontrol_gevsek_kisitlar()

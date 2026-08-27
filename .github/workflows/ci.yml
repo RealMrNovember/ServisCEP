@@ -31,6 +31,21 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Etiketler de çekilsin: hazırlık denetimi yapı numarasını
+          # önceki etiketlerle karşılaştırıyor.
+          fetch-depth: 0
+
+      # HAZIRLIK DENETİMİ — etiket atılmadan ÖNCE.
+      #
+      # v0.7.8'de sürüm hattı üst üste üç kez düştü ve her seferinde
+      # etiketi silip yeniden itmek gerekti; dışarıdan bakan her sistem
+      # için bu kirli bir durum ("v0.7.8 zaten var" ama içeriği değişmiş).
+      # Kilit dosyası, gevşek kısıt ve yapı numarası artık burada, her
+      # itmede denetleniyor.
+      - name: Sürüm hazırlık denetimi
+        working-directory: .
+        run: python3 .github/scripts/release_preflight.py
 
       - uses: subosito/flutter-action@v2
         with:
@@ -67,5 +82,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # `--flavor` ZORUNLU: projede iki flavor tanımlı (github/play).
+      # Flavor'suz çağrıda Gradle `app-github-debug.apk` üretiyor ama
+      # Flutter `app-debug.apk` arıyor ve "failed to produce an .apk file"
+      # ile düşüyor. Yerel denemede tam olarak bu yaşandı.
+      #
+      # `github` seçildi: imza anahtarı gerektirmiyor. `play` flavor'ı
+      # release imzasına bağlı ve anahtarlar yalnızca sürüm işinde var.
       - name: Android derlemesi
-        run: flutter build apk --debug
+        run: flutter build apk --debug --flavor github
