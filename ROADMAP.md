@@ -278,6 +278,28 @@ Aşağıdaki maddeler, orijinal spesifikasyonun (`docs/99`) ötesinde, geliştir
 Bu bölüm aktif takip içindir. Biten madde işaretlenir, açıklaması
 yukarıdaki tablolara taşınır.
 
+### Tasarımın Getirdiği YENİ Özellikler (0.8.0 dışı)
+
+Tasarım teslimatı taranırken bulundu (2026-08-27): dört özellik tasarımda
+var ama kodda yok ve teslimatta "YENİ" olarak işaretlenmemişler —
+tasarımcı var olduklarını varsaymış.
+
+0.8.0 bir TASARIM sürümü olarak kalıyor; bunlar ayrı iş. 42 ekranlık bir
+göçün içine dört yeni özellik sıkıştırmak sürümü hem geciktirir hem
+riskli yapar.
+
+- [ ] **Kullanılan malzeme** (ekran 03 İş Detayı) — işe harcanan malzeme
+      kalem kalem, tutarlarıyla ve toplamıyla. Şema göçü + stok bağlantısı
+      ister; iş tamamlama ve cari borç hesabıyla da kesişiyor.
+- [ ] **Teklife Çevir** (ekran 03) — işten teklif üretme. Malzeme
+      kalemleri varsa onlardan beslenmeli, yani 1. maddeye bağlı.
+- [ ] **Ekstre** (ekran 21 Cari Hesap) — cari hareketlerin PDF dökümü.
+      Yeni bir belge şablonu; belge kimliği işiyle birlikte ele alınmalı
+      (bkz. docs/21).
+- [ ] **Personel Davet Et** (ekran 35) — personel yönetimi var ama davet
+      akışı yok; kullanıcılar panelden elle oluşturuluyor. E-posta daveti
+      + ilk giriş akışı gerektiriyor.
+
 ### Cihaz Değiştirme — Medya Geri Yükleme
 
 Kullanıcı hangi cihazdan girerse girsin aynı şeyleri görmeli (kullanıcı
