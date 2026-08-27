@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/palette.dart';
+import '../../app/theme.dart';
+import '../../core/sync/device_storage.dart';
 import '../../core/sync/sync_status.dart';
+import '../../shared/ui.dart';
 import '../../core/sync/sync_trigger.dart';
 import '../sync/data/sync_conflict_repository.dart';
 import '../sync/sync_conflicts_screen.dart';
@@ -27,6 +31,7 @@ class SyncStatusScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     final lastSync = ref.watch(lastSyncProvider).valueOrNull;
     final pending = ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
     final failed = ref.watch(failedSyncCountProvider).valueOrNull ?? 0;
@@ -61,45 +66,23 @@ class SyncStatusScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: allClear
-                  ? scheme.primaryContainer
-                  : scheme.tertiaryContainer,
-              borderRadius: BorderRadius.circular(16),
-            ),
+          AppCard(
+            accent: allClear,
             child: Column(
               children: [
                 Icon(
                   ikon,
-                  size: 44,
-                  color: allClear
-                      ? scheme.onPrimaryContainer
-                      : scheme.onTertiaryContainer,
+                  size: 40,
+                  color: allClear ? palet.successText : palet.warningText,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
+                Text(baslik, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
-                  baslik,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: allClear
-                        ? scheme.onPrimaryContainer
-                        : scheme.onTertiaryContainer,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Son senkron: ${_relative(lastSync)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color:
-                        (allClear
-                                ? scheme.onPrimaryContainer
-                                : scheme.onTertiaryContainer)
-                            .withValues(alpha: 0.8),
-                  ),
+                  'Son eşitleme: ${_relative(lastSync)}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
                 ),
               ],
             ),
@@ -146,7 +129,37 @@ class SyncStatusScreen extends ConsumerWidget {
               ),
             ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xxl),
+          const SectionHeader(
+            'Cihaz',
+            subtitle: 'Verilerin bu telefonda ne kadar yer kaplıyor.',
+          ),
+          ref
+              .watch(deviceStorageProvider)
+              .when(
+                loading: () => const _StatusRow(
+                  icon: Icons.storage_rounded,
+                  label: 'Yerel veritabanı',
+                  value: 'hesaplanıyor…',
+                ),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (yer) => Column(
+                  children: [
+                    _StatusRow(
+                      icon: Icons.storage_rounded,
+                      label: 'Yerel veritabanı',
+                      value: formatBytes(yer.databaseBytes),
+                    ),
+                    _StatusRow(
+                      icon: Icons.perm_media_outlined,
+                      label: 'Fotoğraf ve imzalar',
+                      value: formatBytes(yer.mediaBytes),
+                    ),
+                  ],
+                ),
+              ),
+
+          const SizedBox(height: AppSpacing.xl),
           const _SyncNowButton(),
 
           const SizedBox(height: 16),

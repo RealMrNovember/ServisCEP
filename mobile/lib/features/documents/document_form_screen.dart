@@ -524,7 +524,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
                     'Müşteri',
                     subtitle: 'Belgenin üstünde bu bilgiler görünecek.',
                   ),
-                  _CustomerSlot(customerId: _customerId, onPick: _pickCustomer),
+                  CustomerSlot(customerId: _customerId, onPick: _pickCustomer),
                 ],
                 if (_adim == 1) ...[
                   const SizedBox(height: AppSpacing.xxl),
@@ -786,132 +786,6 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
 }
 
 /// Seçili müşteri kartı — seçilmemişse seçime çağıran boş durum.
-class _CustomerSlot extends ConsumerWidget {
-  const _CustomerSlot({required this.customerId, required this.onPick});
-
-  final String? customerId;
-  final VoidCallback onPick;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    final id = customerId;
-
-    if (id == null) {
-      return AppCard(
-        onTap: onPick,
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Icon(Icons.person_search_outlined, color: scheme.primary),
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Müşteri seç',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Listeden seç ya da yeni müşteri ekle',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
-          ],
-        ),
-      );
-    }
-
-    return ref
-        .watch(customerByIdProvider(id))
-        .when(
-          loading: () => const AppCard(child: LinearProgressIndicator()),
-          error: (_, _) => AppCard(
-            onTap: onPick,
-            child: const Text('Müşteri bilgisi okunamadı. Yeniden seç.'),
-          ),
-          data: (customer) => AppCard(
-            onTap: onPick,
-            child: customer == null
-                ? const Text('Müşteri bulunamadı. Yeniden seç.')
-                : _CustomerSummary(customer: customer),
-          ),
-        );
-  }
-}
-
-class _CustomerSummary extends StatelessWidget {
-  const _CustomerSummary({required this.customer});
-
-  final Customer customer;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final details = <String>[
-      if (customer.companyName?.trim().isNotEmpty == true &&
-          customer.contactName?.trim().isNotEmpty == true)
-        'Yetkili: ${customer.contactName!.trim()}',
-      if (customer.phone?.trim().isNotEmpty == true) customer.phone!.trim(),
-      if (customer.address?.trim().isNotEmpty == true) customer.address!.trim(),
-      if (customer.taxInfo?.trim().isNotEmpty == true) customer.taxInfo!.trim(),
-    ];
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                customer.displayName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              for (final line in details)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Text(
-                    line,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              if (details.isEmpty)
-                Text(
-                  'Adres ve vergi bilgisi girilmemiş — belgede görünmez.',
-                  style: TextStyle(fontSize: 12, color: scheme.error),
-                ),
-            ],
-          ),
-        ),
-        Icon(Icons.swap_horiz, size: 20, color: scheme.onSurfaceVariant),
-      ],
-    );
-  }
-}
-
 /// Alt bar: toplam + oluştur. Kaydırmadan görünmesi bilinçli — kullanıcı
 /// fiyat girerken müşteriye gidecek rakamı sürekli görmeli.
 class _SubmitBar extends StatelessWidget {

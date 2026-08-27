@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
+import '../../app/theme.dart';
+import '../../app/typography.dart';
 import '../../core/utils/money.dart';
 import '../auth/data/session_controller.dart';
 import 'barcode_scanner_screen.dart';
+import '../../shared/tc_icon.dart';
+import '../../shared/ui.dart';
 import 'data/products_repository.dart';
 
 /// Ürün oluşturma / düzenleme — bkz. docs/16-stok-ve-barkod.md.
@@ -143,7 +147,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           children: [
             TextFormField(
               controller: _nameController,
@@ -152,18 +156,21 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Bu alan gerekli' : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             TextFormField(
               controller: _barcodeController,
+              style: AppTypography.mono.copyWith(fontSize: 15),
               decoration: InputDecoration(
-                labelText: 'Barkod (opsiyonel)',
+                labelText: 'Barkod',
+                helperText: 'Zorunlu değil.',
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.qr_code_scanner),
+                  icon: const TcIcon(TcIcons.barcode),
+                  tooltip: 'Barkod tara',
                   onPressed: _scanBarcode,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
                 Expanded(
@@ -172,7 +179,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     decoration: const InputDecoration(labelText: 'Marka'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: TextFormField(
                     controller: _categoryController,
@@ -181,7 +188,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: AppSpacing.xxl),
+            const SectionHeader(
+              'Fiyat',
+              subtitle: 'Satış fiyatı tekliflere hazır gelir.',
+            ),
             Row(
               children: [
                 Expanded(
@@ -191,11 +203,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                       decimal: true,
                     ),
                     decoration: const InputDecoration(
-                      labelText: 'Alış fiyatı (₺)',
+                      labelText: 'Alış fiyatı',
+                      prefixText: '₺ ',
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: TextFormField(
                     controller: _salePriceController,
@@ -203,34 +216,31 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                       decimal: true,
                     ),
                     decoration: const InputDecoration(
-                      labelText: 'Satış fiyatı (₺)',
+                      labelText: 'Satış fiyatı',
+                      prefixText: '₺ ',
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: AppSpacing.xxl),
+            const SectionHeader('Stok'),
             Row(
               children: [
                 Expanded(
+                  flex: 2,
                   child: TextFormField(
                     controller: _stockController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Mevcut stok'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _minStockController,
-                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Minimum stok',
+                      labelText: 'Stok miktarı',
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
+                  flex: 2,
                   child: TextFormField(
                     controller: _unitController,
                     decoration: const InputDecoration(labelText: 'Birim'),
@@ -238,18 +248,46 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(_isEditing ? 'Kaydet' : 'Ürünü Ekle'),
+            const SizedBox(height: AppSpacing.lg),
+            TextFormField(
+              controller: _minStockController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Kritik stok uyarısı',
+                helperText: 'Bu sayının altına düşünce uyarı gelir.',
+                helperMaxLines: 2,
+              ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('İptal'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                flex: 2,
+                child: FilledButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(_isEditing ? 'Kaydet' : 'Ürünü Ekle'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

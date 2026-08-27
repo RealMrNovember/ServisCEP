@@ -4,7 +4,12 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 /// Kamera ile barkod tarama — bkz. docs/16 § Barkod Okuma Akışı.
 ///
 /// Taranan kodu [Navigator.pop] ile geri döndürür; çağıran ekran bunu
-/// yerel stokta arar, yoksa global sorgu / manuel form akışına yönlendirir.
+/// yerel stokta arar, yoksa global sorgu / manuel form akışına yönlendirir
+/// (bkz. scanBarcodeAndOpen).
+///
+/// Tasarım teslimatı ekran 27: bu ekran her iki temada da KOYU. Kamera
+/// görüntüsünün üstünde okunabilirliği tema değil kontrast belirliyor;
+/// açık temada beyaz bir çerçeve görüntüde kayboluyordu.
 class BarcodeScannerScreen extends StatefulWidget {
   const BarcodeScannerScreen({super.key});
 
@@ -42,11 +47,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         title: const Text('Barkod Tara'),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
+            tooltip: 'Işık',
             onPressed: () => _controller.toggleTorch(),
           ),
         ],
@@ -59,7 +68,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             width: 260,
             height: 160,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 2),
+              // Marka mavisi: kamera görüntüsünün içinde beyaz çerçeve
+              // açık zeminli bir etikette kayboluyordu.
+              border: Border.all(color: const Color(0xFF3B82F6), width: 2),
               borderRadius: BorderRadius.circular(16),
             ),
           ),
@@ -73,10 +84,24 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                'Barkodu çerçeve içine hizala',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Barkodu çerçevenin içine getir.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Okunduğunda kendiliğinden devam eder.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 12.5),
+                  ),
+                ],
               ),
             ),
           ),

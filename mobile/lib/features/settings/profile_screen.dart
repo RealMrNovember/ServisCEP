@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/palette.dart';
+import '../../app/theme.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/sync_api_client.dart';
+import '../../core/utils/customer_display.dart';
+import '../../shared/ui.dart';
 import '../auth/data/session_controller.dart';
 import 'data/personnel_repository.dart' show roleLabels;
 
@@ -68,99 +72,116 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final palet = context.palette;
     final session = ref.watch(sessionControllerProvider).valueOrNull;
+    final adSoyad = session?.fullName ?? '';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profilim')),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           children: [
-            Center(
-              child: CircleAvatar(
-                radius: 36,
-                backgroundColor: scheme.primary.withValues(alpha: 0.12),
-                child: Text(
-                  (session?.fullName.isNotEmpty ?? false)
-                      ? session!.fullName[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                    fontSize: 28,
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w700,
+            Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: palet.accent.withValues(alpha: 0.12),
+                    borderRadius: AppRadius.card,
+                  ),
+                  child: Text(
+                    initialsOf(adSoyad),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(color: palet.accent),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: scheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  roleLabels[session?.role] ?? (session?.role ?? ''),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSecondaryContainer,
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        adSoyad,
+                        style: Theme.of(context).textTheme.titleMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          roleLabels[session?.role] ?? (session?.role ?? ''),
+                          if (session?.companyName.isNotEmpty ?? false)
+                            session!.companyName,
+                        ].where((s) => s.isNotEmpty).join(' · '),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 28),
 
+            const SizedBox(height: AppSpacing.xxl),
             TextFormField(
               controller: _nameController,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Ad Soyad'),
+              decoration: const InputDecoration(labelText: 'Ad soyad'),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Ad soyad gerekli' : null,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.lg),
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
                 labelText: 'Telefon',
                 hintText: 'Boş bırakırsan değişmez',
+                helperText:
+                    'E-posta adresin kimliğindir; değiştirmek için web '
+                    'panelini kullanman gerekir.',
+                helperMaxLines: 3,
               ),
             ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Kaydet'),
-            ),
 
-            const Divider(height: 40),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.lock_outline_rounded),
-              title: const Text('Parolamı değiştir'),
-              subtitle: const Text('Diğer cihazlardaki oturumlar kapanır'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _changePassword,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'E-posta adresin kimliğindir; değiştirmek için web panelini '
-              'kullanman gerekir.',
-              style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+            const SizedBox(height: AppSpacing.xl),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.lock_outline_rounded),
+                title: const Text('Şifre'),
+                subtitle: const Text('Diğer cihazlardaki oturumlar kapanır'),
+                trailing: TextButton(
+                  onPressed: _changePassword,
+                  child: const Text('Değiştir'),
+                ),
+                onTap: _changePassword,
+              ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: FilledButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Kaydet'),
+          ),
         ),
       ),
     );
