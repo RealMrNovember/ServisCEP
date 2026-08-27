@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../app/palette.dart';
+import '../../app/typography.dart';
+import '../../shared/tc_icon.dart';
 
 import '../../app/theme.dart';
 import '../../core/constants/job_constants.dart';
@@ -303,116 +306,233 @@ class _FilterChipItem extends StatelessWidget {
   }
 }
 
+/// İş kartı — tasarım teslimatı ekran 02.
+///
+/// İki bölüm: üstte kim/ne, altta ne zaman/ne kadar. Aradaki çizgi
+/// bilinçli — kullanıcı listede gezerken iki ayrı soruyu ayrı ayrı
+/// tarıyor ("hangi iş?" ve "ne zaman?").
 class _JobTile extends StatelessWidget {
   const _JobTile({required this.item});
   final JobWithCustomer item;
 
   @override
   Widget build(BuildContext context) {
+    final palet = context.palette;
     final job = item.job;
-    final statusColor = jobStatusColors[job.status] ?? Colors.grey;
-    final priorityColor = jobPriorityColors[job.priority] ?? Colors.grey;
-    final dateLabel = job.appointmentDate != null
-        ? DateFormat('d MMM, HH:mm', 'tr_TR').format(job.appointmentDate!)
-        : 'Tarih belirlenmedi';
+    final tamamlandi = job.status == 'TAMAMLANDI';
 
     // Gerçekleşen ücret yoksa tahmini fiyata düşülmez: tamamlanmış bir işte
     // tahmini rakam göstermek, tahsil edilen tutarmış gibi okunur.
-    final priceMinor = job.status == 'TAMAMLANDI' ? job.actualPriceMinor : null;
-    final priceLabel = priceMinor == null || priceMinor == 0
+    final tutarKurus = tamamlandi ? job.actualPriceMinor : null;
+    final tutar = tutarKurus == null || tutarKurus == 0
         ? null
-        : Money.formatMinor(priceMinor);
+        : Money.formatMinor(tutarKurus, decimals: false);
 
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => context.push('/jobs/${job.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      job.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+    // Kayıt cihazda ama sunucuda değil. Kullanıcı bunu BİLMELİ: aksi halde
+    // telefonunu kaybettiğinde neyin gitmediğini de bilmez.
+    final bekliyor = job.syncStatus == 'PENDING';
+
+    return AppCard(
+      padding: EdgeInsets.zero,
+      pending: bekliyor,
+      onTap: () => context.push('/jobs/${job.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              children: [
+                _DurumSimgesi(status: job.status),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        job.title,
+                        style: Theme.of(context).textTheme.titleSmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: priorityColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                item.customer.displayName,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 14,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    dateLabel,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Tamamlanan işlerde alınan ücret kartta görünür:
-                  // kullanıcı "bu işten ne kazandım" sorusunun cevabını
-                  // detaya girmeden görebilmeli. Ücret girilmemişse hiçbir
-                  // şey gösterilmez — "₺0,00" yazmak yanıltıcı olurdu.
-                  if (priceLabel != null) ...[
-                    Text(
-                      priceLabel,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: jobStatusColors['TAMAMLANDI'] ?? statusColor,
+                      const SizedBox(height: 2),
+                      Text(
+                        _musteriSatiri(item),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      jobStatusLabels[job.status] ?? job.status,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: statusColor,
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ),
+          Divider(height: 1, color: palet.border),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                _DurumRozeti(status: job.status, priority: job.priority),
+                const SizedBox(width: AppSpacing.md),
+                TcIcon(TcIcons.clock, size: 14, color: palet.textMuted),
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    _zamanMetni(job.appointmentDate, job.startTime),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: palet.textMuted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Spacer(),
+                // Ücret girilmemişse hiçbir şey gösterilmez — sıfır yazmak
+                // yanıltıcı olurdu.
+                if (tutar != null)
+                  Text(tutar, style: AppTypography.mono.copyWith(fontSize: 14)),
+              ],
+            ),
+          ),
+          if (bekliyor)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  TcIcon(TcIcons.cloudOff, size: 14, color: palet.warningText),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Cihazda · gönderilmedi',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: palet.warningText),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _musteriSatiri(JobWithCustomer i) {
+    final ad = i.customer.displayName;
+    final ilce = i.customer.ilce;
+    return ilce == null || ilce.isEmpty ? ad : '$ad · $ilce';
+  }
+
+  /// "Bugün · 14:30" biçimi.
+  ///
+  /// Bugün/yarın kelimeyle yazılıyor: kullanıcı listeyi tararken tarihi
+  /// kafasında çevirmek zorunda kalmamalı.
+  static String _zamanMetni(DateTime? randevu, String? saat) {
+    if (randevu == null) return 'Tarih belirlenmedi';
+
+    final simdi = DateTime.now();
+    final bugun = DateTime(simdi.year, simdi.month, simdi.day);
+    final gun = DateTime(randevu.year, randevu.month, randevu.day);
+    final fark = gun.difference(bugun).inDays;
+
+    final gunMetni = switch (fark) {
+      0 => 'Bugün',
+      1 => 'Yarın',
+      -1 => 'Dün',
+      _ => DateFormat('d MMM', 'tr_TR').format(randevu),
+    };
+
+    final saatMetni = saat ?? DateFormat('HH:mm').format(randevu);
+    return '$gunMetni · $saatMetni';
+  }
+}
+
+/// Kartın solundaki renkli daire.
+class _DurumSimgesi extends StatelessWidget {
+  const _DurumSimgesi({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+    final (renk, ikon) = switch (status) {
+      'TAMAMLANDI' => (palet.successText, TcIcons.checkCircle),
+      'IPTAL' => (palet.dangerText, TcIcons.x),
+      'DEVAM_EDIYOR' => (palet.warningText, TcIcons.wrench),
+      _ => (palet.accent, TcIcons.briefcase),
+    };
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: renk.withValues(alpha: 0.12),
+        borderRadius: AppRadius.field,
+      ),
+      child: Center(child: TcIcon(ikon, size: 18, color: renk)),
+    );
+  }
+}
+
+/// Durum rozeti.
+///
+/// Öncelik YÜKSEK ise durum yerine "Acil" gösteriliyor: kullanıcı listede
+/// önce aciliyete bakıyor, durum ikinci sırada geliyor.
+class _DurumRozeti extends StatelessWidget {
+  const _DurumRozeti({required this.status, required this.priority});
+
+  final String status;
+  final String priority;
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+    final acil = priority == 'YUKSEK' && status != 'TAMAMLANDI';
+
+    final (metin, renk) = acil
+        ? ('Acil', palet.dangerText)
+        : switch (status) {
+            'TAMAMLANDI' => ('Tamamlandı', palet.successText),
+            'IPTAL' => ('İptal', palet.textMuted),
+            'DEVAM_EDIYOR' => ('Devam', palet.warningText),
+            _ => (jobStatusLabels[status] ?? status, palet.accent),
+          };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: renk.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: renk, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            metin,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: renk, fontSize: 11),
+          ),
+        ],
       ),
     );
   }
