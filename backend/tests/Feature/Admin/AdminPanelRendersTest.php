@@ -60,6 +60,38 @@ class AdminPanelRendersTest extends TestCase
         Livewire::test(ListUsers::class)->assertSuccessful();
     }
 
+    public function test_kullanici_ve_sirket_telefonu_listede_gorunur(): void
+    {
+        // Destek senaryosu: kullanıcıyı aramak. Sütun varsayılan gizliyse
+        // her seferinde kolon menüsünden açmak gerekiyordu.
+        $user = User::factory()->create(['phone' => '0532 111 22 33']);
+        Company::where('id', $user->company_id)
+            ->update(['phone' => '0216 444 55 66']);
+
+        Livewire::test(ListUsers::class)
+            ->assertSuccessful()
+            ->assertSee('0532 111 22 33')
+            ->assertSee('0216 444 55 66');
+    }
+
+    public function test_telefonla_arama_kullaniciyi_bulur(): void
+    {
+        // Destek çoğu zaman e-postayı değil telefonu biliyor.
+        User::factory()->create([
+            'full_name' => 'Aranan Kisi',
+            'phone' => '0532 111 22 33',
+        ]);
+        User::factory()->create([
+            'full_name' => 'Baska Kisi',
+            'phone' => '0555 999 88 77',
+        ]);
+
+        Livewire::test(ListUsers::class)
+            ->searchTable('0532 111 22 33')
+            ->assertCanSeeTableRecords(User::where('phone', '0532 111 22 33')->get())
+            ->assertCanNotSeeTableRecords(User::where('phone', '0555 999 88 77')->get());
+    }
+
     public function test_subscription_action_form_can_be_opened(): void
     {
         $user = User::factory()->create();

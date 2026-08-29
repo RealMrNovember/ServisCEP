@@ -49,15 +49,32 @@ class UsersTable
                     ->copyable()
                     ->copyMessage('E-posta kopyalandı')
                     ->searchable(),
+                // Telefon GİZLİ DEĞİL.
+                //
+                // Destekte ilk yapılan şey kullanıcıyı aramak; sütun
+                // varsayılan gizliyken her seferinde kolon menüsünden
+                // açmak gerekiyordu. Aranabilir de: destek çoğu zaman
+                // e-postayı değil telefonu biliyor.
                 TextColumn::make('phone')
                     ->label('Telefon')
                     ->placeholder('—')
                     ->copyable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->copyMessage('Telefon kopyalandı')
+                    ->searchable(),
                 TextColumn::make('company.name')
                     ->label('Şirket')
                     ->searchable()
                     ->sortable(),
+                // Şirketin telefonu kullanıcınınkinden farklı olabilir:
+                // teknisyenin cebi ile işletmenin sabit hattı aynı şey
+                // değil ve belgelerde görünen bu ikincisi.
+                TextColumn::make('company.phone')
+                    ->label('Şirket tel.')
+                    ->placeholder('—')
+                    ->copyable()
+                    ->copyMessage('Şirket telefonu kopyalandı')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('role')
                     ->label('Rol')
                     ->badge()
