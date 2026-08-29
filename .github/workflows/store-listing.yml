@@ -12,11 +12,11 @@ on:
   workflow_dispatch:
     inputs:
       komut:
-        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar) · kanal (oku) · kanal-esitle (alpha→internal)'
+        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar) · kanal (oku) · kanal-esitle · grup-esitle'
         required: true
         default: 'liste'
         type: choice
-        options: [liste, yukle, metin, kanal, kanal-esitle]
+        options: [liste, yukle, metin, kanal, kanal-esitle, grup-esitle]
       hedefler:
         description: 'yukle için: tip=yol (boşlukla ayrılmış)'
         required: false
@@ -62,6 +62,10 @@ jobs:
               ;;
             kanal-esitle)
               python3 .github/scripts/play_sync_tracks.py
+              python3 .github/scripts/play_track_info.py
+              ;;
+            grup-esitle)
+              python3 .github/scripts/play_sync_testers.py
               python3 .github/scripts/play_track_info.py
               ;;
             *)
