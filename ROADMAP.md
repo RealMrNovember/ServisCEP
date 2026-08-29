@@ -489,6 +489,12 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 - İş türleri ekranındaki "24 iş kayıtlı" sayacı — işler türe `jobTypeId`
   ile bağlanmıyor, başlık metniyle eşleşiyor; sayı güvenilir çıkmaz.
 
+- [ ] **İç test kanalında 0.2.12 duruyor** (tespit 2026-08-29) — Play,
+      bir kullanıcıyı uygun olduğu EN ÖNCELİKLİ kanaldan besliyor ve iç
+      test kapalı testin önünde. İç test listesindeki bir hesap, kapalı
+      teste de katılmış olsa bile aylar öncesinin 0.2.12 (build 14)
+      sürümünü alıyor. Kanal ya güncellenmeli ya da yayını durdurulmalı.
+      Okuma: `gh workflow run store-listing.yml -f komut=kanal`.
 - [ ] **Sürüm derlemesi ağa bağımlı** — `sqlite3` paketi derleme anında
       `release-assets.githubusercontent.com` üzerinden hazır ikili
       indiriyor; v0.8.2'de bağlantı koptu ve yayın hattı düştü (yeniden
