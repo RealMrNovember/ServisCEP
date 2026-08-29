@@ -12,11 +12,11 @@ on:
   workflow_dispatch:
     inputs:
       komut:
-        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar)'
+        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar) · kanal (kanal + test grubu)'
         required: true
         default: 'liste'
         type: choice
-        options: [liste, yukle, metin]
+        options: [liste, yukle, metin, kanal]
       hedefler:
         description: 'yukle için: tip=yol (boşlukla ayrılmış)'
         required: false
@@ -56,6 +56,9 @@ jobs:
               ;;
             metin)
               python3 .github/scripts/store_listing_text.py yukle
+              ;;
+            kanal)
+              python3 .github/scripts/play_track_info.py
               ;;
             *)
               python3 .github/scripts/store_images.py yukle ${{ inputs.hedefler }}
