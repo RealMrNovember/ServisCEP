@@ -252,32 +252,18 @@ class SyncService {
           case ('company', 'UPDATE'):
             await _api.updateCompany(payload);
           case ('company', 'LOGO'):
-            final path = payload['file_path'] as String?;
-            if (path == null) {
+            final yol = await _guncelLogoYolu(op);
+            if (yol == null) {
               await _api.deleteCompanyLogo();
-            } else if (!File(path).existsSync()) {
-              await _markFailed(
-                op,
-                ApiException(422, 'Logo dosyası artık cihazda yok.'),
-                kalici: true,
-              );
-              continue;
             } else {
-              await _api.uploadCompanyLogo(path);
+              await _api.uploadCompanyLogo(yol);
             }
           case ('customer', 'LOGO'):
-            final path = payload['file_path'] as String?;
-            if (path == null) {
+            final yol = await _guncelLogoYolu(op);
+            if (yol == null) {
               await _api.deleteCustomerLogo(op.entityId);
-            } else if (!File(path).existsSync()) {
-              await _markFailed(
-                op,
-                ApiException(422, 'Logo dosyası artık cihazda yok.'),
-                kalici: true,
-              );
-              continue;
             } else {
-              await _api.uploadCustomerLogo(op.entityId, path);
+              await _api.uploadCustomerLogo(op.entityId, yol);
             }
           case ('job_note', 'CREATE'):
             await _api.createJobNote(payload['job_id'] as String, {
@@ -351,6 +337,39 @@ class SyncService {
         );
       }
     }
+  }
+
+  /// Gönderilecek logonun O ANKİ yolu.
+  ///
+  /// Kuyruk satırındaki `file_path` KULLANILMIYOR. Sebebi bir kilitlenme:
+  /// [MediaStorage.writeLogo] aynı sahibin eski dosyalarını siliyor, yani
+  /// logo ikinci kez yazıldığında (kullanıcı değiştirdiğinde ya da pull
+  /// eksik dosyayı sunucudan geri indirdiğinde) ilk satırın işaret ettiği
+  /// dosya yok oluyordu. Satır o andan itibaren KALICI hataya alınıyor ve
+  /// yeniden denemek de dahil hiçbir şey onu kurtaramıyordu — kullanıcı
+  /// "Logo dosyası artık cihazda yok" diyen, asla temizlenmeyen bir
+  /// kayıtla kalıyordu.
+  ///
+  /// Doğru davranış zaten buydu: gönderilmesi gereken, kuyruğa girildiği
+  /// andaki dosya değil, kullanıcının ŞU ANKİ logosu. Kayıt silinmişse
+  /// null döner ve sunucudaki logo silinir.
+  Future<String?> _guncelLogoYolu(SyncOperation op) async {
+    final yol = switch (op.entityType) {
+      'company' =>
+        (await (_db.select(
+          _db.companies,
+        )..where((c) => c.id.equals(op.entityId))).getSingleOrNull())?.logoPath,
+      _ =>
+        (await (_db.select(
+          _db.customers,
+        )..where((c) => c.id.equals(op.entityId))).getSingleOrNull())?.logoPath,
+    };
+
+    if (yol == null || yol.isEmpty) return null;
+
+    // Kayıtta yol var ama dosya gerçekten yoksa: silme olarak gönderilir.
+    // Kuyruğu sonsuza dek tıkamaktansa sunucuyu cihazla hizalamak doğru.
+    return File(yol).existsSync() ? yol : null;
   }
 
   /// Convert yanıtındaki işin sunucu hâlini yerel kayda uygular — kod

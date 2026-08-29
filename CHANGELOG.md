@@ -17,6 +17,12 @@ Kurallar:
 
 ---
 
+## v0.8.3
+
+Düzeltmeler:
+• Logo gönderimi bir kez takıldığında kalıcı olarak "gönderilemedi" kalıyordu; artık kendiliğinden düzeliyor.
+• Logoyu değiştirdiğinizde eski gönderim kaydı kuyruğu tıkamıyor.
+
 ## v0.8.2
 
 Düzeltmeler:

@@ -12,11 +12,11 @@ on:
   workflow_dispatch:
     inputs:
       komut:
-        description: 'liste (yalnızca oku) veya yukle'
+        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar)'
         required: true
         default: 'liste'
         type: choice
-        options: [liste, yukle]
+        options: [liste, yukle, metin]
       hedefler:
         description: 'yukle için: tip=yol (boşlukla ayrılmış)'
         required: false
@@ -49,8 +49,15 @@ jobs:
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
-          if [ "${{ inputs.komut }}" = "liste" ]; then
-            python3 .github/scripts/store_images.py liste
-          else
-            python3 .github/scripts/store_images.py yukle ${{ inputs.hedefler }}
-          fi
+          case "${{ inputs.komut }}" in
+            liste)
+              python3 .github/scripts/store_images.py liste
+              python3 .github/scripts/store_listing_text.py liste
+              ;;
+            metin)
+              python3 .github/scripts/store_listing_text.py yukle
+              ;;
+            *)
+              python3 .github/scripts/store_images.py yukle ${{ inputs.hedefler }}
+              ;;
+          esac

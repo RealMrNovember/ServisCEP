@@ -1,0 +1,41 @@
+TeknikCEP, saha teknik servis işletmelerinin (elektrik, kamera sistemleri,
+bilgisayar/beyaz eşya tamiri ve benzeri) müşteri, iş, teklif/proforma ve
+finans süreçlerini tek bir yerden yönetmesi için tasarlanmış mobil-first,
+offline-first bir işletme yönetim platformudur.
+
+ÖNE ÇIKAN ÖZELLİKLER
+
+• Müşteri Yönetimi — yetkili adı/firma adı, iletişim bilgileri, adres,
+  vergi bilgisi ve cari hesap ekstresi tek ekranda.
+
+• İş / Servis Takibi — randevu planlama, durum akışı (talep, planlandı,
+  devam ediyor, tamamlandı), teknisyen ataması, öncelik seviyeleri.
+
+• Servis Formu — kategorili fotoğraf ekleme (öncesi/arıza/montaj/sonrası)
+  ve dijital imza toplama.
+
+• Stok & Barkod — ürün kataloğu, kamera ile barkod okuma, stok durumu
+  uygulama içi renkli rozetlerle gösterilir; teklif/proforma kalemleri
+  doğrudan stoktan seçilebilir.
+
+• Teklif & Proforma — kurumsal görünümlü PDF belgeler, WhatsApp/Android
+  paylaşım menüsüyle tek dokunuşla müşteriye gönderim.
+
+• Cari Hesap — özet bakiye değil, tam kronolojik borç/alacak hareket
+  dökümü.
+
+• Finans Paneli — gelir/gider takibi, tahsilat kaydı, günlük özet.
+
+• Takvim — aylık görünüm ve günlük iş listesi.
+
+• Yerel Hatırlatmalar — randevu saatinden önce cihaz üzerinde bildirim,
+  internet gerektirmez.
+
+• Offline-First Mimari — İnternet olmadan da tam işlevsel çalışır;
+  tüm veriler önce cihazda, güvenli şekilde saklanır.
+
+Bu belgeler resmi e-fatura veya resmi elektronik imza yerine geçmez;
+TeknikCEP bir işletme ve teknik servis yönetim platformudur, muhasebe
+yazılımı değildir.
+
+TeknikCEP, Cicibyte Teknoloji (cicibyte.com) tarafından geliştirilmiştir.
