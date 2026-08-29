@@ -10,8 +10,19 @@ oldugu EN ONCELIKLI kanaldan besliyor ve ic test kapali testin onunde;
 kanallar ayriyken grubu ic teste eklemek, herkesi ic testteki (muhtemelen
 daha eski) surume dusururdu.
 
-NOT: ic test kanalinin 100 test kullanicisi siniri var. Grup buyurse
-Play bir kismini kabul etmeyebilir.
+BILINEN KISIT (denendi 2026-08-29): ic test kanali Console'da yeni
+test kullanicisi modeline gecirilmisse Play bu yazmayi 403 ile
+reddediyor:
+
+    "The internal track has been upgraded to use open or closed
+     testing; switch back to communities-based testing before using
+     the API for this track."
+
+Bu durumda ic test kullanicilari yalnizca Console'dan, e-posta
+listesiyle yonetilebiliyor — API'den grup atanamiyor. Script bunu
+sessizce gecmiyor, Play'in mesajiyla birlikte kiriliyor.
+
+Ic test kanalinin 100 test kullanicisi siniri da var.
 
 Kullanim:
     python play_sync_testers.py
