@@ -128,10 +128,18 @@ jobs:
           # alpha track "completed" durumda gerçek bir sürüm barındırıyor.
           # Otomatik yüklemeler artık doğrudan kapalı teste (alpha) akıyor.
           # `track` KULLANIMDAN KALDIRILDI (action README). `tracks`
-          # virgülle ayrılmış isim listesi bekliyor; tek kanal için tek
-          # isim. Eski alan bir gün kaldırılırsa sürüm yayınlamak
-          # tamamen kırılırdı.
-          tracks: alpha
+          # virgülle ayrılmış isim listesi bekliyor (kaynakta `split(',')`).
+          # Eski alan bir gün kaldırılırsa sürüm yayınlamak tamamen
+          # kırılırdı.
+          #
+          # İKİ KANAL BİRDEN (2026-08-29): Play, bir kullanıcıyı uygun
+          # olduğu EN ÖNCELİKLİ kanaldan besliyor ve iç test kapalı testin
+          # önünde. Yalnızca alpha'ya yayınlarken iç test listesindeki
+          # hesaplar aylar öncesinin 0.2.12'sinde kalmıştı: uygulamayı
+          # "kullanıyoruz" diyorlardı ama ellerindeki neredeyse başka bir
+          # uygulamaydı. Aynı AAB tek yüklemede iki kanala atanıyor —
+          # kanallar bir daha ayrışmıyor.
+          tracks: internal,alpha
           status: completed
 
       # Sunucudaki sürüm kaydını CI yazar.

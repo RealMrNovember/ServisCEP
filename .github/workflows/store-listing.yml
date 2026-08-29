@@ -12,11 +12,11 @@ on:
   workflow_dispatch:
     inputs:
       komut:
-        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar) · kanal (kanal + test grubu)'
+        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar) · kanal (oku) · kanal-esitle (alpha→internal)'
         required: true
         default: 'liste'
         type: choice
-        options: [liste, yukle, metin, kanal]
+        options: [liste, yukle, metin, kanal, kanal-esitle]
       hedefler:
         description: 'yukle için: tip=yol (boşlukla ayrılmış)'
         required: false
@@ -58,6 +58,10 @@ jobs:
               python3 .github/scripts/store_listing_text.py yukle
               ;;
             kanal)
+              python3 .github/scripts/play_track_info.py
+              ;;
+            kanal-esitle)
+              python3 .github/scripts/play_sync_tracks.py
               python3 .github/scripts/play_track_info.py
               ;;
             *)
