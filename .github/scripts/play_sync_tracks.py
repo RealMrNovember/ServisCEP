@@ -105,15 +105,30 @@ def main() -> None:
             ad = r.get("name")
             break
 
+    # Bir kanalin ILK surumu asamali OLAMAZ (denendi 2026-09-09):
+    #
+    #     "The first release on a track cannot be staged" — 400
+    #
+    # Play yuzde kabul etmiyor, istek tamamen reddediliyor. Sessizce
+    # gecmek yerine ne yapildigi soyleniyor: aksi halde "%20'ye actim"
+    # sanip tamamina acmis olurdun.
+    oran = ORAN
+    if oran < 1.0 and hedef_kod == 0:
+        print(
+            f"UYARI: {HEDEF} kanalinin ILK surumu asamali olamaz "
+            f"(Play kisiti). Istenen %{ORAN * 100:.0f} yerine tam yayin "
+            f"yapiliyor. Sonraki surumlerde asamali yayin kullanilabilir."
+        )
+        oran = 1.0
+
     # Asamali yayin: oran 1'in altindaysa surum "inProgress" olmak
-    # ZORUNDA. Play, "completed" bir surumde userFraction kabul etmiyor
-    # ve istegi sessizce tam yayina cevirmiyor, hata veriyor.
-    asamali = ORAN < 1.0
+    # ZORUNDA. Play, "completed" bir surumde userFraction kabul etmiyor.
+    asamali = oran < 1.0
     surum = {
         "name": ad,
         "versionCodes": [str(kaynak_kod)],
         "status": "inProgress" if asamali else "completed",
-        **({"userFraction": ORAN} if asamali else {}),
+        **({"userFraction": oran} if asamali else {}),
         **({"releaseNotes": notlar} if notlar else {}),
     }
     govde = {"track": HEDEF, "releases": [surum]}
@@ -125,7 +140,7 @@ def main() -> None:
     kontrol(s.post(f"{TABAN}/edits/{duzenleme}:commit"), "Commit")
     print(
         f"{HEDEF} kanalina build {kaynak_kod} atandi"
-        + (f" (kullanicilarin %{ORAN * 100:.0f}'ine)" if ORAN < 1.0 else "")
+        + (f" (kullanicilarin %{oran * 100:.0f}'ine)" if oran < 1.0 else "")
         + "."
     )
 
