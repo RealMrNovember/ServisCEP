@@ -12,11 +12,15 @@ on:
   workflow_dispatch:
     inputs:
       komut:
-        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar) · kanal (oku) · kanal-esitle · grup-esitle'
+        description: 'liste (oku) · yukle (görseller) · metin (açıklamalar) · kanal (oku) · kanal-esitle · grup-esitle · uretime-al'
         required: true
         default: 'liste'
         type: choice
-        options: [liste, yukle, metin, kanal, kanal-esitle, grup-esitle]
+        options: [liste, yukle, metin, kanal, kanal-esitle, grup-esitle, uretime-al]
+      oran:
+        description: 'uretime-al için yayın oranı (0.2 = %20, 1 = tamamı)'
+        required: false
+        default: '1.0'
       hedefler:
         description: 'yukle için: tip=yol (boşlukla ayrılmış)'
         required: false
@@ -66,6 +70,10 @@ jobs:
               ;;
             grup-esitle)
               python3 .github/scripts/play_sync_testers.py
+              python3 .github/scripts/play_track_info.py
+              ;;
+            uretime-al)
+              HEDEF_KANAL=production YAYIN_ORANI='${{ inputs.oran }}'                 python3 .github/scripts/play_sync_tracks.py
               python3 .github/scripts/play_track_info.py
               ;;
             *)

@@ -32,7 +32,11 @@ TABAN = (
 )
 
 KAYNAK = "alpha"
-HEDEF = "internal"
+HEDEF = os.environ.get("HEDEF_KANAL", "internal")
+
+# Uretim kanalina asamali yayin: yuzde 100 yerine once bir dilime.
+# Ortam degiskeniyle veriliyor; varsayilan tam yayin.
+ORAN = float(os.environ.get("YAYIN_ORANI", "1.0"))
 
 
 def oturum() -> requests.Session:
@@ -101,24 +105,29 @@ def main() -> None:
             ad = r.get("name")
             break
 
-    govde = {
-        "track": HEDEF,
-        "releases": [
-            {
-                "name": ad,
-                "versionCodes": [str(kaynak_kod)],
-                "status": "completed",
-                **({"releaseNotes": notlar} if notlar else {}),
-            }
-        ],
+    # Asamali yayin: oran 1'in altindaysa surum "inProgress" olmak
+    # ZORUNDA. Play, "completed" bir surumde userFraction kabul etmiyor
+    # ve istegi sessizce tam yayina cevirmiyor, hata veriyor.
+    asamali = ORAN < 1.0
+    surum = {
+        "name": ad,
+        "versionCodes": [str(kaynak_kod)],
+        "status": "inProgress" if asamali else "completed",
+        **({"userFraction": ORAN} if asamali else {}),
+        **({"releaseNotes": notlar} if notlar else {}),
     }
+    govde = {"track": HEDEF, "releases": [surum]}
 
     kontrol(
         s.put(f"{TABAN}/edits/{duzenleme}/tracks/{HEDEF}", json=govde),
         f"{HEDEF} yazma",
     )
     kontrol(s.post(f"{TABAN}/edits/{duzenleme}:commit"), "Commit")
-    print(f"{HEDEF} kanalina build {kaynak_kod} atandi.")
+    print(
+        f"{HEDEF} kanalina build {kaynak_kod} atandi"
+        + (f" (kullanicilarin %{ORAN * 100:.0f}'ine)" if ORAN < 1.0 else "")
+        + "."
+    )
 
     # Geri oku: commit'in basarili donmesi, kanalin gercekten guncellendigi
     # anlamina gelmiyor.

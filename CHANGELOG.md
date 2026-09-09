@@ -17,6 +17,13 @@ Kurallar:
 
 ---
 
+## v0.9.0
+
+Yenilikler:
+• Aboneliğiniz bitse bile kayıtlarınız sunucuya gönderilmeye devam ediyor — verileriniz hiçbir koşulda cihazda mahsur kalmıyor.
+• Süre dolduğunda yalnızca yeni kayıt oluşturmak duruyor; paket seçme, ödeme bildirme ve WhatsApp'tan bize ulaşma tek dokunuş.
+• Eşitleme ekranı kayıtların neden gönderilmediğini artık açıkça söylüyor.
+
 ## v0.8.3
 
 Düzeltmeler:
