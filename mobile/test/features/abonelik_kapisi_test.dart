@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,8 +44,9 @@ void main() {
         overrides: [
           subscriptionStatusProvider.overrideWith(
             (ref) => saglayici.when(
-              data: (d) => Future.value(d),
-              loading: Future<SubscriptionStatus>.any,
+              data: Future<SubscriptionStatus>.value,
+              // Hiç tamamlanmayan Future = kalıcı "yükleniyor".
+              loading: () => Completer<SubscriptionStatus>().future,
               error: (e, s) => Future<SubscriptionStatus>.error(e),
             ),
           ),

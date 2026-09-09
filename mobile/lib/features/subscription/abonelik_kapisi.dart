@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/palette.dart';
 import '../../app/theme.dart';
 import '../../shared/tc_icon.dart';
+import 'data/subscription_models.dart';
 import 'data/subscription_repository.dart';
 import 'subscription_screen.dart';
 
