@@ -26,15 +26,32 @@ import 'subscription_screen.dart';
 /// if (!await abonelikIzinVerir(context, ref)) return;
 /// ```
 Future<bool> abonelikIzinVerir(BuildContext context, WidgetRef ref) async {
-  final durum = ref.read(subscriptionStatusProvider).valueOrNull;
+  final SubscriptionStatus durum;
+  try {
+    // `.future` BEKLENİYOR, `ref.read(...).valueOrNull` OKUNMUYOR.
+    //
+    // İkincisi anlık görüntü veriyor: sağlayıcıyı henüz kimse
+    // izlemediyse durum "yükleniyor" oluyor, değer null geliyor ve kapı
+    // sessizce açılıyordu. Uygulama açılıp doğrudan "Yeni Müşteri"ye
+    // basıldığında tam olarak bu oluyordu — yani kapı en sık kullanılan
+    // yolda hiç çalışmıyordu. Testle yakalandı.
+    //
+    // Zaman aşımı var: yavaş bir bağlantı düğmeyi süresiz kilitlemesin.
+    // Sağlayıcı önbellekli, sonraki dokunuşlar anında yanıt veriyor.
+    durum = await ref
+        .read(subscriptionStatusProvider.future)
+        .timeout(const Duration(seconds: 4));
+  } on Object {
+    // Durum BİLİNMİYORSA geçit açık.
+    //
+    // Çevrimdışı bir kullanıcının önüne "aboneliğin doldu" duvarı
+    // çıkarmak, tam da uygulamanın var oluş sebebine aykırı: sahada
+    // internet yokken çalışabilmek. Yanlışlıkla birkaç kayıt fazladan
+    // girilmesi, çalışan bir kullanıcıyı sahada durdurmaktan iyidir.
+    return true;
+  }
 
-  // Durum BİLİNMİYORSA geçit açık.
-  //
-  // Çevrimdışı bir kullanıcının önüne "aboneliğin doldu" duvarı
-  // çıkarmak, tam da uygulamanın var oluş sebebine aykırı: sahada
-  // internet yokken çalışabilmek. Yanlışlıkla birkaç kayıt fazladan
-  // girilmesi, çalışan bir kullanıcıyı sahada durdurmaktan iyidir.
-  if (durum == null || durum.hasActiveSubscription) return true;
+  if (durum.hasActiveSubscription) return true;
 
   if (!context.mounted) return false;
   await showModalBottomSheet<void>(
