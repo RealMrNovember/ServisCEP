@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../subscription/abonelik_kapisi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/palette.dart';
@@ -221,9 +223,13 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
               data: (products) {
                 if (products.isEmpty) {
                   return _EmptyState(
-                    onAdd: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ProductFormScreen(),
+                    onAdd: () => abonelikliGit(
+                      context,
+                      ref,
+                      () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ProductFormScreen(),
+                        ),
                       ),
                     ),
                     onScan: _scanAndFind,
@@ -279,8 +285,12 @@ class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
       floatingActionButton: widget.selectionMode
           ? null
           : FloatingActionButton.extended(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProductFormScreen()),
+              onPressed: () => abonelikliGit(
+                context,
+                ref,
+                () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProductFormScreen()),
+                ),
               ),
               icon: const TcIcon(TcIcons.plus),
               label: const Text('Yeni Ürün'),

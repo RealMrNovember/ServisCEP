@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../subscription/abonelik_kapisi.dart';
+
 import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -24,14 +26,14 @@ import '../quotes/quote_form_screen.dart';
 /// NOT: Servis formu/fatura/tahsilat belgeleri ve PDF üretimi sonraki
 /// oturumda eklenecek (bkz. ROADMAP.md — M11). Şu an Teklif ve Proforma
 /// listeleri gerçek veriyle çalışıyor.
-class DocumentsScreen extends StatefulWidget {
+class DocumentsScreen extends ConsumerStatefulWidget {
   const DocumentsScreen({super.key});
 
   @override
-  State<DocumentsScreen> createState() => _DocumentsScreenState();
+  ConsumerState<DocumentsScreen> createState() => _DocumentsScreenState();
 }
 
-class _DocumentsScreenState extends State<DocumentsScreen>
+class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
     with SingleTickerProviderStateMixin {
   late final _tabController = TabController(length: 2, vsync: this)
     ..addListener(() => setState(() {}));
@@ -68,7 +70,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
         children: const [_QuotesTab(), _ProformasTab()],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
+        onPressed: () => abonelikliGit(context, ref, () {
           if (isQuotesTab) {
             Navigator.of(
               context,
@@ -78,7 +80,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
               MaterialPageRoute(builder: (_) => const ProformaFormScreen()),
             );
           }
-        },
+        }),
         icon: const TcIcon(TcIcons.plus),
         label: Text(isQuotesTab ? 'Yeni Teklif' : 'Yeni Proforma'),
       ),

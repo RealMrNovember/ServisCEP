@@ -14,6 +14,16 @@ use Illuminate\Support\Carbon;
 
 class SubscriptionController extends Controller
 {
+    /** Destek WhatsApp numarasının ayar anahtarı. */
+    public const KEY_SUPPORT_WHATSAPP = 'support_whatsapp';
+
+    /**
+     * Panelde bir şey ayarlanmadığında kullanılacak numara.
+     *
+     * wa.me biçimi: yalnızca rakam, ülke kodu dahil, artı işareti yok.
+     */
+    public const VARSAYILAN_WHATSAPP = '905354895050';
+
     /**
      * Şirketin abonelik durumu — mobil "Abonelik" ekranının tek çağrıda
      * ihtiyaç duyduğu her şey: aktif paket, deneme mi, kalan gün ve
@@ -50,6 +60,14 @@ class SubscriptionController extends Controller
                 'payment_mode' => PaymentConfig::mode(),
                 // Havale bilgisi kart kipinde de gönderilir: sağlayıcı
                 // geçici olarak düşerse kullanıcı yine de ödeyebilmeli.
+                // Destek hattı — abonelik akışında sıkışan kullanıcının
+                // son çıkışı. Panelden değiştirilebilir; boş bırakılırsa
+                // uygulama WhatsApp düğmesini hiç göstermez (çalışmayan
+                // bir düğme, olmayan düğmeden kötüdür).
+                'support_whatsapp' => Setting::get(
+                    self::KEY_SUPPORT_WHATSAPP,
+                    self::VARSAYILAN_WHATSAPP,
+                ),
                 'payment_info' => [
                     'iban' => Setting::get('payment_iban'),
                     'account_holder' => Setting::get('payment_account_holder'),

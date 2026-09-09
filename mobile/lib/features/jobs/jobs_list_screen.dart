@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../subscription/abonelik_kapisi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -20,14 +22,14 @@ import 'data/jobs_repository.dart';
 /// İşler ekranı — bkz. docs/06 § Mobil Navigasyon. "Talepler" (docs/02 §
 /// Talep Modülü) ayrı bir alt sekme olarak burada barındırılır; ayrı bir
 /// bottom-nav sekmesi açmak sade navigasyon prensibine aykırı olurdu.
-class JobsListScreen extends StatefulWidget {
+class JobsListScreen extends ConsumerStatefulWidget {
   const JobsListScreen({super.key});
 
   @override
-  State<JobsListScreen> createState() => _JobsListScreenState();
+  ConsumerState<JobsListScreen> createState() => _JobsListScreenState();
 }
 
-class _JobsListScreenState extends State<JobsListScreen>
+class _JobsListScreenState extends ConsumerState<JobsListScreen>
     with SingleTickerProviderStateMixin {
   late final _tabController = TabController(length: 2, vsync: this)
     ..addListener(() => setState(() {}));
@@ -66,11 +68,15 @@ class _JobsListScreenState extends State<JobsListScreen>
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           if (isJobsTab) {
-            context.push('/jobs/new');
+            abonelikliGit(context, ref, () => context.push('/jobs/new'));
           } else {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ServiceRequestFormScreen(),
+            abonelikliGit(
+              context,
+              ref,
+              () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ServiceRequestFormScreen(),
+                ),
               ),
             );
           }
@@ -135,7 +141,13 @@ class _JobsTabState extends ConsumerState<_JobsTab> {
                   : jobs.where((j) => j.job.status == _statusFilter).toList();
 
               if (jobs.isEmpty) {
-                return _EmptyState(onAdd: () => context.push('/jobs/new'));
+                return _EmptyState(
+                  onAdd: () => abonelikliGit(
+                    context,
+                    ref,
+                    () => context.push('/jobs/new'),
+                  ),
+                );
               }
               if (filtered.isEmpty) {
                 return Center(

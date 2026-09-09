@@ -66,6 +66,7 @@ class SubscriptionStatus {
     required this.expiresAt,
     required this.daysRemaining,
     required this.paymentInfo,
+    this.supportWhatsapp,
   });
 
   factory SubscriptionStatus.fromJson(Map<String, dynamic> json) {
@@ -81,6 +82,7 @@ class SubscriptionStatus {
           ? DateTime.tryParse(data['subscription_expires_at'] as String)
           : null,
       daysRemaining: (data['days_remaining'] as num?)?.toInt(),
+      supportWhatsapp: (data['support_whatsapp'] as String?)?.trim(),
       paymentInfo: PaymentInfo.fromJson(
         data['payment_info'] as Map<String, dynamic>? ?? const {},
       ),
@@ -96,6 +98,16 @@ class SubscriptionStatus {
   /// null = süresiz abonelik (bitiş tarihi yok).
   final int? daysRemaining;
   final PaymentInfo paymentInfo;
+
+  /// Destek WhatsApp numarası (yalnızca rakam, ülke kodu dahil).
+  ///
+  /// Boş gelebilir: panelden silinmiş olabilir. O durumda uygulama
+  /// düğmeyi hiç göstermiyor — çalışmayan bir düğme, olmayan düğmeden
+  /// kötüdür.
+  final String? supportWhatsapp;
+
+  bool get destekHattiVar =>
+      supportWhatsapp != null && supportWhatsapp!.isNotEmpty;
 }
 
 class PaymentRequestInfo {
