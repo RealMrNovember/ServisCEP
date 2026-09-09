@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../subscription/abonelik_kapisi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -273,19 +275,28 @@ class _HizliEylemler extends ConsumerWidget {
           _EylemKutusu(
             ikon: TcIcons.plus,
             etiket: 'Yeni İş',
-            onTap: () => context.push('/jobs/new'),
+            onTap: () =>
+                abonelikliGit(context, ref, () => context.push('/jobs/new')),
           ),
           _EylemKutusu(
             ikon: TcIcons.file,
             etiket: 'Yeni Teklif',
-            onTap: () => Navigator.of(
+            onTap: () => abonelikliGit(
               context,
-            ).push(MaterialPageRoute(builder: (_) => const QuoteFormScreen())),
+              ref,
+              () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const QuoteFormScreen()),
+              ),
+            ),
           ),
           _EylemKutusu(
             ikon: TcIcons.userPlus,
             etiket: 'Müşteri',
-            onTap: () => context.push('/customers/new'),
+            onTap: () => abonelikliGit(
+              context,
+              ref,
+              () => context.push('/customers/new'),
+            ),
           ),
           _EylemKutusu(
             ikon: TcIcons.barcode,
@@ -532,13 +543,13 @@ class _MiniEylem extends StatelessWidget {
 /// Günün tamamı. Sıradaki iş yukarıda ayrıca gösterildiği için burada
 /// tekrar etmesi sorun değil: kullanıcı günü bir bütün olarak da görmek
 /// istiyor.
-class _BugununIsleri extends StatelessWidget {
+class _BugununIsleri extends ConsumerWidget {
   const _BugununIsleri({required this.isler});
 
   final List<JobWithCustomer> isler;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (isler.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -547,7 +558,8 @@ class _BugununIsleri extends StatelessWidget {
           title: 'Bugün için planlanmış iş yok',
           message: 'Yeni bir iş oluşturarak günü planla.',
           action: FilledButton(
-            onPressed: () => context.push('/jobs/new'),
+            onPressed: () =>
+                abonelikliGit(context, ref, () => context.push('/jobs/new')),
             child: const Text('Yeni İş'),
           ),
         ),

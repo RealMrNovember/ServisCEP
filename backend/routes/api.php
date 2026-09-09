@@ -104,7 +104,8 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
     Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         // Bu dış grup, abonelik süresi DOLMUŞ olsa da erişilebilir kalır:
         // kullanıcı kim olduğunu görebilmeli, çıkış yapabilmeli ve
-        // aboneliğini yenileyebilmelidir (bkz. EnsureSubscriptionIsActive).
+        // aboneliğini yenileyebilmelidir. (Veri uçlarındaki abonelik
+        // kapısı 2026-09-10'da kaldırıldı; bkz. aşağıdaki gerekçe.)
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
@@ -144,7 +145,29 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
         Route::post('/subscription/payment-requests', [SubscriptionPaymentRequestController::class, 'store'])
             ->name('subscription.payment-requests.store');
 
-        Route::middleware('subscription.active')->group(function (): void {
+        // ABONELİK KAPISI BURADAN KALDIRILDI (2026-09-10).
+        //
+        // Süresi dolmuş bir hesabın veri uçları 402 ile kesiliyordu.
+        // Sonucu şuydu: kullanıcı uygulamayı açıyor, kaydını giriyor,
+        // kayıt cihazda kuyruğa giriyor ve SUNUCUYA HİÇ ULAŞMIYOR.
+        // Kimlik uçları kapının dışında olduğu için kullanıcı "aktif"
+        // görünüyor, veri ise iki haftadır donmuş durumdaydı — canlıda
+        // tam olarak bu yaşandı (17 şirketin 9'u).
+        //
+        // Ödemesi gecikmiş bir müşterinin verisini rehin almak kabul
+        // edilebilir bir tahsilat yöntemi değil: telefonu kaybolursa
+        // yedeklenmemiş kaydı da kaybolur. Yedekleme HİÇBİR koşulda
+        // durmaz.
+        //
+        // Ücretlendirme kapısı istemciye taşındı: uygulama, süresi
+        // dolmuş hesapta YENİ KAYIT OLUŞTURMAYI engelliyor ve kullanıcıyı
+        // ödeme akışına yönlendiriyor (bkz. AbonelikKapisi). Sunucu
+        // birikeni kabul etmeye devam ediyor.
+        //
+        // Bilinçli ödünleşme: kapı yalnızca istemcide olduğu için, API'yi
+        // doğrudan çağıran biri sınırı aşabilir. Bu ürün için veri kaybı
+        // riski, o riskten kat kat ağır basıyor.
+        Route::group([], function (): void {
 
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
@@ -224,6 +247,6 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
                 Route::get('signatures/{signature}/download', [JobSignatureController::class, 'download'])->name('signatures.download');
             });
 
-        }); // subscription.active
+        }); // veri uçları — abonelikten bağımsız
     });
 });

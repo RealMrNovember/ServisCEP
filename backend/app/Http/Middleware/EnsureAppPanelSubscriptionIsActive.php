@@ -10,7 +10,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Abonelik yaptırımı (web/Filament App paneli) — API tarafındaki
- * EnsureSubscriptionIsActive'in panel karşılığı.
+ * Web panelinin abonelik kapısı.
+ *
+ * Mobil API'deki karşılığı 2026-09-10'da KALDIRILDI: veri uçlarını
+ * kesmek, ödemesi gecikmiş müşterinin yedeklemesini de durduruyordu.
+ * Panelde durum farklı — burada veri girişi doğrudan sunucuya yazılıyor,
+ * yani kapı "yedeklemeyi engellemek" değil "yeni kayıt girişini
+ * engellemek" anlamına geliyor ve amaç tam olarak bu.
  *
  * Süresi dolmuş şirketin kullanıcısı panelde yalnızca "Abonelik"
  * sayfasını görebilir; diğer sayfalara GET istekleri oraya yönlendirilir.

@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Support\PaymentConfig;
 use BackedEnum;
 use Filament\Forms\Components\Select;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -60,6 +61,10 @@ class PaymentSettings extends Page implements HasForms
             'merchant_id' => null,
             'merchant_key' => null,
             'merchant_salt' => null,
+            'support_whatsapp' => Setting::get(
+                SubscriptionController::KEY_SUPPORT_WHATSAPP,
+                SubscriptionController::VARSAYILAN_WHATSAPP,
+            ),
         ]);
     }
 
@@ -138,6 +143,25 @@ class PaymentSettings extends Page implements HasForms
                             ->autocomplete(false)
                             ->helperText($kayitli('payment.paytr.merchant_salt')),
                     ]),
+
+                Section::make('Destek')
+                    ->description(
+                        'Aboneliği dolduğu için yeni kayıt giremeyen '
+                        .'kullanıcının son çıkışı. Boş bırakılırsa '
+                        .'uygulamada WhatsApp düğmesi hiç görünmez — '
+                        .'çalışmayan bir düğme, olmayan düğmeden kötüdür.'
+                    )
+                    ->components([
+                        TextInput::make('support_whatsapp')
+                            ->label('Destek WhatsApp numarası')
+                            ->helperText(
+                                'Yalnızca rakam, ülke kodu dahil, artı '
+                                .'işareti ve boşluk olmadan. Örn. '
+                                .'905354895050'
+                            )
+                            ->rule('regex:/^[0-9]{10,15}$/')
+                            ->placeholder('905354895050'),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -172,6 +196,11 @@ class PaymentSettings extends Page implements HasForms
                 PaymentConfig::setSecret($anahtar, (string) $deger);
             }
         }
+
+        // Destek numarası: boş bırakılırsa ayar SİLİNİR ve koddaki
+        // varsayılana dönülür — "numarayı kaldırmak" mümkün olmalı.
+        $numara = trim((string) ($data['support_whatsapp'] ?? ''));
+        Setting::set(SubscriptionController::KEY_SUPPORT_WHATSAPP, $numara);
 
         $kip = PaymentConfig::mode();
 

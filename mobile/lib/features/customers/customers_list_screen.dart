@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../subscription/abonelik_kapisi.dart';
+
 import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -95,7 +97,11 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
 
                 if (customers.isEmpty) {
                   return _EmptyState(
-                    onAdd: () => context.push('/customers/new'),
+                    onAdd: () => abonelikliGit(
+                      context,
+                      ref,
+                      () => context.push('/customers/new'),
+                    ),
                   );
                 }
                 if (filtered.isEmpty) {
@@ -120,7 +126,8 @@ class _CustomersListScreenState extends ConsumerState<CustomersListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/customers/new'),
+        onPressed: () =>
+            abonelikliGit(context, ref, () => context.push('/customers/new')),
         icon: const TcIcon(TcIcons.plus),
         label: const Text('Yeni Müşteri'),
       ),

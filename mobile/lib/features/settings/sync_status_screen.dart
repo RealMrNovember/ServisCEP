@@ -11,6 +11,8 @@ import '../../core/sync/device_storage.dart';
 import '../../core/sync/sync_status.dart';
 import '../../shared/ui.dart';
 import '../../core/sync/sync_trigger.dart';
+import '../subscription/data/subscription_repository.dart';
+import '../subscription/subscription_screen.dart';
 import '../sync/data/sync_conflict_repository.dart';
 import '../sync/sync_conflicts_screen.dart';
 
@@ -39,6 +41,18 @@ class SyncStatusScreen extends ConsumerWidget {
     final pending = ref.watch(pendingSyncCountProvider).valueOrNull ?? 0;
     final failed = ref.watch(failedSyncCountProvider).valueOrNull ?? 0;
     final conflicts = ref.watch(localConflictCountProvider).valueOrNull ?? 0;
+
+    // Abonelik süresi dolduğunda sunucu veri uçlarını 402 ile kesiyor ve
+    // senkron kuyruğu PENDING kalıyor (bkz. EnsureSubscriptionIsActive,
+    // sync_service.dart). Bu ekran bunu HİÇ bilmiyordu ve "bağlantı
+    // kurulduğunda otomatik gönderilir" diyordu — bağlantı gayet iyiyken.
+    // Kullanıcı, kayıtların neden gitmediğini anlamıyor; ürünün sahibi
+    // bile bunu bir sunucu arızası sandı.
+    //
+    // `/subscription` ucu bilinçli olarak 402 kapısının DIŞINDA, bu yüzden
+    // süresi dolmuş bir hesapta da okunabiliyor.
+    final abonelik = ref.watch(subscriptionStatusProvider).valueOrNull;
+    final abonelikBitti = abonelik != null && !abonelik.hasActiveSubscription;
     final online = ref.watch(isOnlineProvider).valueOrNull;
 
     // "Eşitlendi" demek için kuyruğun boş olması YETMEZ.
@@ -61,16 +75,21 @@ class SyncStatusScreen extends ConsumerWidget {
     // bekleyen: 0 kayıt" yazarken başlığın "bekleyen değişiklik" demesi
     // kullanıcıyı neyin yanlış olduğunu aramaya bırakıyordu — üstelik
     // asıl sorun (gönderilemeyen kayıt) kendiliğinden düzelmiyor.
+    // Abonelik, diğer her şeyin ÖNÜNDE: kuyruk dolu olsa da çakışma olsa
+    // da, hiçbiri abonelik yenilenmeden çözülmüyor. Önce çözülmesi
+    // gereken sorunu söylemek gerekiyor.
     final (String baslik, String ikon) = switch ((
+      abonelikBitti,
       failed > 0,
       conflicts > 0,
       pending > 0,
       taze,
     )) {
-      (true, _, _, _) => ('Gönderilemeyen kayıt var', TcIcons.alertCircle),
-      (_, true, _, _) => ('Çakışma çözülmeyi bekliyor', TcIcons.syncProblem),
-      (_, _, true, _) => ('Gönderilmeyi bekleyenler var', TcIcons.sync),
-      (_, _, _, true) => ('Her şey eşitlendi', TcIcons.cloudOk),
+      (true, _, _, _, _) => ('Abonelik süresi doldu', TcIcons.alertCircle),
+      (_, true, _, _, _) => ('Gönderilemeyen kayıt var', TcIcons.alertCircle),
+      (_, _, true, _, _) => ('Çakışma çözülmeyi bekliyor', TcIcons.syncProblem),
+      (_, _, _, true, _) => ('Gönderilmeyi bekleyenler var', TcIcons.sync),
+      (_, _, _, _, true) => ('Her şey eşitlendi', TcIcons.cloudOk),
       _ when lastSync == null => ('Henüz eşitlenmedi', TcIcons.cloudOff),
       _ => ('Bir süredir eşitlenemedi', TcIcons.cloudOff),
     };
@@ -97,7 +116,7 @@ class SyncStatusScreen extends ConsumerWidget {
                   size: 40,
                   color: allClear
                       ? palet.successText
-                      : (failed > 0 || conflicts > 0
+                      : (abonelikBitti || failed > 0 || conflicts > 0
                             ? palet.dangerText
                             : palet.warningText),
                 ),
@@ -157,6 +176,18 @@ class SyncStatusScreen extends ConsumerWidget {
                   orElse: () => const <Widget>[],
                 ),
 
+          if (abonelikBitti)
+            _StatusRow(
+              icon: TcIcons.alertCircle,
+              label: 'Abonelik',
+              value: 'Süresi doldu',
+              hint: 'Dokun, paket seç',
+              warn: true,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+              ),
+            ),
+
           if (conflicts > 0)
             _StatusRow(
               icon: TcIcons.syncProblem,
@@ -209,20 +240,31 @@ class SyncStatusScreen extends ConsumerWidget {
             // gönderildi", başlık "Bekleyen değişiklikler var", burası
             // "Verilerin sunucuyla eşitlenmiş durumda" diyordu — hepsi
             // aynı anda, bir kayıt gönderilememişken.
-            switch ((failed > 0, conflicts > 0, pending > 0, taze)) {
-              (true, _, _, _) =>
+            switch ((
+              abonelikBitti,
+              failed > 0,
+              conflicts > 0,
+              pending > 0,
+              taze,
+            )) {
+              (true, _, _, _, _) =>
+                'Kayıtların cihazında duruyor ve KAYBOLMAYACAK, ama '
+                    'abonelik yenilenene kadar sunucuya gönderilemiyor. '
+                    'Yenilediğinde birikenlerin tamamı kendiliğinden '
+                    'gidecek.',
+              (_, true, _, _, _) =>
                 'Bu kayıtlar kalıcı bir hata aldı ve kendiliğinden '
                     'gönderilmeyecek. Satıra dokunup yeniden dene; sorun '
                     'sürerse kayıt cihazında duruyor, kaybolmaz.',
-              (_, true, _, _) =>
+              (_, _, true, _, _) =>
                 'Aynı kayıt hem bu cihazda hem sunucuda değişmiş. Hangi '
                     'halin kalacağını sen seçene kadar hiçbir veri '
                     'üzerine yazılmaz.',
-              (_, _, true, _) =>
+              (_, _, _, true, _) =>
                 'Bekleyen kayıtlar cihazında güvenle duruyor. Bağlantı '
                     'kurulduğunda otomatik gönderilir; uygulama kapalıyken de '
                     'arka planda düzenli olarak denenir.',
-              (_, _, _, true) =>
+              (_, _, _, _, true) =>
                 'Verilerin sunucuyla eşitlenmiş durumda. Uygulama bağlantı '
                     'geldiğinde, öne alındığında ve birkaç dakikada bir '
                     'otomatik senkronlanır.',
