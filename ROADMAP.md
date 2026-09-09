@@ -505,6 +505,14 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
       derlemeyi taşıdığı için hangi kanaldan beslendikleri fark
       etmiyor. Grubun iç teste de eklenmesi isteniyorsa Console'dan,
       elle.
+- [x] **Uçtan uca ekran (Android 15 / SDK 35)** (2026-09-10) — Play
+      Console "önerilen işlem" olarak bildirdi. İnceleme: gereken iki şey
+      zaten yapılmış — AppBar'ı olmayan yedi ekranın hepsi `SafeArea`
+      kullanıyor ve alt gezinme çubuğu `MediaQuery.paddingOf().bottom`
+      ile jest alanını hesaba katıyor. `enableEdgeToEdge()` bizde
+      geçersiz: o yerel Android uygulamaları için, `MainActivity` düz
+      `FlutterActivity` ve pencere kurulumunu Flutter motoru yapıyor.
+      Android 15 cihazda (Poco X7 Pro) elle doğrulandı, kırpılma yok.
 - [ ] **Sürüm derlemesi ağa bağımlı** — `sqlite3` paketi derleme anında
       `release-assets.githubusercontent.com` üzerinden hazır ikili
       indiriyor; v0.8.2'de bağlantı koptu ve yayın hattı düştü (yeniden
