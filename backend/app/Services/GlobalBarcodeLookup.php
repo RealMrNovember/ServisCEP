@@ -196,15 +196,26 @@ class GlobalBarcodeLookup
 
         // Icecat: BT/elektronik kataloğu — bu iş kolu için en isabetli
         // kaynak. Open Icecat hesabı ÜCRETSİZ, yalnızca kayıt istiyor.
+        //
+        // app_key, hesabın "Profilim" sayfasından alınıyor. Anahtarsız
+        // da çağrılabiliyor ama o zaman Icecat çoğu ürün için
+        // "StatusCode 9 / Forbidden — app_key gereklidir" dönüyor
+        // (canlıda doğrulandı). Tanımlıysa gönderiliyor.
         if (($k = $anahtar('icecat_user')) !== '') {
+            $icecatSorgu = [
+                'UserName' => $k,
+                'Language' => 'tr',
+                'GTIN' => $barkod,
+                'Content' => 'GeneralInfo',
+            ];
+
+            if (($appKey = $anahtar('icecat_app_key')) !== '') {
+                $icecatSorgu['app_key'] = $appKey;
+            }
+
             $liste['icecat'] = [
                 'url' => 'https://live.icecat.biz/api',
-                'query' => [
-                    'UserName' => $k,
-                    'Language' => 'tr',
-                    'GTIN' => $barkod,
-                    'Content' => 'GeneralInfo',
-                ],
+                'query' => $icecatSorgu,
                 'ayikla' => function (Response $y): ?array {
                     $genel = $y->json('data.GeneralInfo');
                     if (! is_array($genel)) {

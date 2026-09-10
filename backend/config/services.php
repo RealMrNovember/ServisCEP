@@ -73,6 +73,9 @@ return [
         // Icecat: BT/elektronik katalogu. Open Icecat hesabi UCRETSIZ,
         // yalnizca kayit istiyor — bu is kolu icin en isabetli kaynak.
         'icecat_user' => env('ICECAT_USER', ''),
+        // Hesabin "Profilim" sayfasindan alinir. Yoksa Icecat cogu
+        // urun icin 403 doner ve o kaynak sessizce atlanir.
+        'icecat_app_key' => env('ICECAT_APP_KEY', ''),
         'eansearch_key' => env('EANSEARCH_KEY', ''),
         'upcdatabase_key' => env('UPCDATABASE_KEY', ''),
         // Anahtarsiz da calisir ("trial" ucu, gunde 100 sorgu).
