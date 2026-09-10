@@ -84,10 +84,28 @@ void main() {
   test('kaldırılan bağ sunucuya bildirilir', () async {
     final urun = await kamera();
     await repo.barkodBagla(urun: urun, barcode: 'UNW0101024101228');
-    await servis().runOnce(_companyId);
-
     final bag = (await repo.barkodlariIzle(urun.id).first).single;
+
+    // Sahte sunucu gönderimden SONRA bağı biliyor olmalı — gerçekte
+    // öyle olur. Aksi hâlde aynı turdaki pull, satırı "sunucuda yok"
+    // sayıp siler ve test kendi kurgusundan düşer.
+    api.productBarcodesToPull = [
+      RemoteRecord(
+        id: bag.id,
+        version: 1,
+        raw: {
+          'id': bag.id,
+          'product_id': urun.id,
+          'barcode': 'UNW0101024101228',
+        },
+      ),
+    ];
+    await servis().runOnce(_companyId);
+    expect(api.createProductBarcodeCalls, hasLength(1));
+
+    // Kullanıcı bağı kaldırıyor; sunucu da siliyor.
     await repo.barkodKaldir(bag);
+    api.productBarcodesToPull = [];
     await servis().runOnce(_companyId);
 
     expect(api.deleteProductBarcodeCalls, contains(bag.id));
