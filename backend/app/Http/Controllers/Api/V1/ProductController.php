@@ -78,7 +78,7 @@ class ProductController extends Controller
         $acilisStogu = (int) ($data['current_stock'] ?? 0);
         unset($data['current_stock']);
 
-        $product = DB::transaction(function () use ($data, $acilisStogu, $request): Product {
+        $product = DB::transaction(function () use ($data, $acilisStogu): Product {
             $product = Product::create($data + ['current_stock' => 0]);
 
             // Açılış stoğu bir HAREKET olarak yazılıyor; adet böylece her

@@ -383,8 +383,10 @@ class SyncService {
   /// sürüm yalnızca BİZİM başarılı yazmalarımızla ilerliyor — yani bir
   /// sonraki yazma için doğru taban tam olarak bu.
   ///
-  /// Kayıt yerelde yoksa kuyruktaki değere düşülür.
-  Future<int> _guncelSurum(SyncOperation op) async {
+  /// Kayıt yerelde yoksa kuyruktaki değere düşülür. Dönüş tipi
+  /// nullable: `baseVersion` kolonu da nullable ve önceki davranış
+  /// (bilinmiyorsa alanı boş göndermek) korunuyor.
+  Future<int?> _guncelSurum(SyncOperation op) async {
     final surum = switch (op.entityType) {
       'customer' =>
         (await (_db.select(_db.customers)

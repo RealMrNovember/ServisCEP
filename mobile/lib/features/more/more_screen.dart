@@ -340,9 +340,7 @@ Future<void> _cikisYap(BuildContext context, WidgetRef ref) async {
         title: const Text('Gönderilmemiş kayıt var'),
         content: Text(
           '$bekleyen kayıt henüz sunucuya gönderilmedi. Çıkış yaparsan bu '
-          'kayıtlar cihazdan silinir ve geri getirilemez.
-
-'
+          'kayıtlar cihazdan silinir ve geri getirilemez.\n\n'
           'Önce göndermeyi denemek ister misin?',
         ),
         actions: [
