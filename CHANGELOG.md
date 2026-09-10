@@ -17,6 +17,15 @@ Kurallar:
 
 ---
 
+## v1.1.0
+
+Yenilikler:
+• Aynı üründen gelen her kutunun barkodu farklı olsa bile tek dokunuşla aynı ürüne bağlanıyor — kutusunda seri numarası olan ürünlerde stok artık doğru işliyor.
+• Tanınmayan bir barkod okuttuğunuzda uygulama artık ne yapacağınızı soruyor: yeni ürün mü, yoksa mevcut bir ürüne mi eklensin.
+
+Düzeltmeler:
+• Barkod okutulduğunda boş form açılıp hiçbir açıklama yapılmıyordu.
+
 ## v1.0.0
 
 Yenilikler:

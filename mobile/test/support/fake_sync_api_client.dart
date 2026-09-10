@@ -19,6 +19,8 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<Map<String, dynamic>> createProductBarcodeCalls = [];
   final List<String> deleteProductBarcodeCalls = [];
   List<RemoteRecord> productBarcodesToPull = [];
+  /// Siradaki bag gonderimi gecici hata alsin (satir kuyrukta kalir).
+  bool failNextCreateProductBarcode = false;
   final List<Map<String, dynamic>> createJobCalls = [];
   final List<(String, Map<String, dynamic>)> updateJobCalls = [];
 
@@ -147,6 +149,10 @@ class FakeSyncApiClient implements SyncApiClient {
     Map<String, dynamic> payload,
   ) async {
     createProductBarcodeCalls.add(payload);
+    if (failNextCreateProductBarcode) {
+      failNextCreateProductBarcode = false;
+      throw ApiException(500, 'gecici hata');
+    }
     return SyncEntityResult(id: payload['id'] as String, version: 1);
   }
 
