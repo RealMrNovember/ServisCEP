@@ -220,6 +220,38 @@ class UsersTable
                             Notification::make()->title('Rol güncellendi')->success()->send();
                         }),
 
+                    // Silmeden erişimi kesmek.
+                    //
+                    // Destekte en sık gereken şey silme değil BU: telefon
+                    // kaybolmuş, kişi işten ayrılmış ya da hesabın ele
+                    // geçtiğinden şüpheleniliyor. Jeton silinince cihazdaki
+                    // oturum kapanır; hesap ve verisi olduğu gibi kalır,
+                    // kişi parolasıyla yeniden girebilir.
+                    Action::make('revoke')
+                        ->label('Oturumları Kapat')
+                        ->icon('heroicon-o-lock-closed')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn (User $record) => 'Oturumları kapat — '.$record->full_name)
+                        ->modalDescription(
+                            'Kullanıcının tüm cihazlardaki oturumu kapatılır ve '
+                            .'yeniden giriş yapması gerekir. Hesabı ve verileri silinmez.'
+                        )
+                        ->modalSubmitActionLabel('Oturumları kapat')
+                        // Açık oturumu olmayan kullanıcıda düğme anlamsız.
+                        ->visible(fn (User $record): bool => $record->tokens()->exists())
+                        ->action(function (User $record): void {
+                            $adet = $record->tokens()->count();
+                            $record->tokens()->delete();
+
+                            Notification::make()
+                                ->title('Oturumlar kapatıldı')
+                                ->body($adet.' cihaz oturumu sonlandırıldı. Kullanıcı '
+                                    .'parolasıyla yeniden giriş yapabilir.')
+                                ->success()
+                                ->send();
+                        }),
+
                     DeleteAction::make()
                         ->label('Sil')
                         ->before(function (User $record, DeleteAction $action): void {
