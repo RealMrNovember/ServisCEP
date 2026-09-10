@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -63,7 +64,7 @@ class SubscriptionEnforcementTest extends TestCase
         $this->withToken($user->createToken('test')->plainTextToken);
 
         $yanit = $this->postJson('/api/v1/customers', [
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'code' => 'MUS-001',
             'contact_name' => 'Gecikmis Odeme Musterisi',
             'type' => 'BIREYSEL',

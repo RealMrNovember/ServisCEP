@@ -11,6 +11,7 @@ use App\Models\Job;
 use App\Models\User;
 use App\Support\RolePermissions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
 
 /**
@@ -171,7 +172,7 @@ class PanelYetkiTest extends TestCase
             }
 
             $model = $sinif::getModel();
-            $policy = \Illuminate\Support\Facades\Gate::getPolicyFor($model);
+            $policy = Gate::getPolicyFor($model);
 
             if ($policy === null) {
                 $eksikler[] = "$model: politika YOK";

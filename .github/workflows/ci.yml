@@ -125,7 +125,9 @@ jobs:
           php artisan key:generate
 
       - name: Biçim denetimi
-        run: vendor/bin/pint --test
+        # -v: hata halinde hangi kuralin nerede kirildigini diff ile yazar;
+        # aksi halde yalnizca dosya adi ve kural adi gorunuyor.
+        run: vendor/bin/pint --test -v
 
       - name: Testler
         run: php artisan test

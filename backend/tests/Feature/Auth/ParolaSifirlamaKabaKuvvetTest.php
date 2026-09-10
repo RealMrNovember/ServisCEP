@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -32,7 +33,7 @@ class ParolaSifirlamaKabaKuvvetTest extends TestCase
             ->assertSuccessful();
     }
 
-    private function yanlisKodDene(User $user): \Illuminate\Testing\TestResponse
+    private function yanlisKodDene(User $user): TestResponse
     {
         return $this->postJson('/api/v1/auth/password/reset', [
             'email' => $user->email,

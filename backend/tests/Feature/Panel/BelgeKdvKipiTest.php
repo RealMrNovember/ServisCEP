@@ -79,7 +79,7 @@ class BelgeKdvKipiTest extends TestCase
             app_path('Filament/App/Resources/Proformas/Schemas/ProformaForm.php'),
         ] as $dosya) {
             $this->assertStringContainsString(
-                "vat_mode",
+                'vat_mode',
                 file_get_contents($dosya),
                 basename($dosya).' KDV kipi alanını içermiyor.'
             );

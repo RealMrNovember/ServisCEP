@@ -114,12 +114,17 @@ void main() {
   });
 
   testWidgets('ekranda SnackBar olarak görünür', (tester) async {
+    // İşin Future'i YAKALANIYOR ve bekleniyor. `pumpAndSettle` yalnızca
+    // zamanlanmış kareleri bekliyor; dokunma anında henüz animasyon
+    // yokken hemen dönüyor ve SnackBar sonradan ekleniyordu.
+    Future<bool>? islem;
+
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
-              onPressed: () => context.disBaglantiAc(
+              onPressed: () => islem = context.disBaglantiAc(
                 Uri.https('ornek.test', '/belge'),
                 baslatici: (_) async => false,
               ),
@@ -131,6 +136,7 @@ void main() {
     );
 
     await tester.tap(find.text('Aç'));
+    await islem;
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsOneWidget);
