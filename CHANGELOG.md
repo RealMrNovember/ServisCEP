@@ -17,6 +17,18 @@ Kurallar:
 
 ---
 
+## v1.0.0
+
+Yenilikler:
+• Ürün ve stok kayıtlarınız artık sunucuya yedekleniyor; telefonunuz kaybolsa da katalogunuz duruyor.
+• Ayarlar'a WhatsApp destek hattı eklendi.
+• Gizlilik Politikası ve Kullanım Koşulları uygulama içinden açılabiliyor.
+
+Düzeltmeler:
+• Müşteriyi arama, yol tarifi ve bağlantı açma tuşları çalışmıyordu.
+• Kayıtlı bir ürünü veya teklif kalemini düzenlerken fiyat kendiliğinden katlanıyordu.
+• Çevrimdışı yapılan arka arkaya iki değişiklikten ikincisi sunucuya ulaşmıyordu.
+
 ## v0.9.0
 
 Yenilikler:

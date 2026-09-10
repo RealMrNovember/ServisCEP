@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:serviscep/core/utils/dis_baglanti.dart';
 
@@ -114,17 +115,27 @@ void main() {
   });
 
   testWidgets('ekranda SnackBar olarak görünür', (tester) async {
-    // İşin Future'i YAKALANIYOR ve bekleniyor. `pumpAndSettle` yalnızca
-    // zamanlanmış kareleri bekliyor; dokunma anında henüz animasyon
-    // yokken hemen dönüyor ve SnackBar sonradan ekleniyordu.
-    Future<bool>? islem;
+    // Pano yazımı bir PLATFORM KANALI çağrısı ve testte karşılığı yok:
+    // yanıt hiç gelmiyor, `await` de testi on dakika asılı bırakıyordu.
+    // Kanal taklit edilince çağrı testin kendi zaman çizgisinde
+    // tamamlanıyor ve `pump` ile ilerletilebiliyor.
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (cagri) async => null,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
-              onPressed: () => islem = context.disBaglantiAc(
+              onPressed: () => context.disBaglantiAc(
                 Uri.https('ornek.test', '/belge'),
                 baslatici: (_) async => false,
               ),
@@ -136,11 +147,11 @@ void main() {
     );
 
     await tester.tap(find.text('Aç'));
-    // runAsync ŞART: DisBaglanti panoya kopyalarken bir platform kanalı
-    // çağrısı yapıyor ve o yanıt yalnızca GERÇEK olay döngüsünde geliyor.
-    // Düz `await islem` testi on dakika asılı bırakıyordu; `pumpAndSettle`
-    // tek başına ise SnackBar eklenmeden dönüyordu.
-    await tester.runAsync(() => islem!);
+    // Birkaç kare: önce başlatıcı, sonra pano yanıtı, sonra SnackBar'ın
+    // giriş animasyonu. Tek `pumpAndSettle` dokunma anında hiçbir şey
+    // zamanlanmadığı için erken dönüyordu.
+    await tester.pump();
+    await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsOneWidget);
