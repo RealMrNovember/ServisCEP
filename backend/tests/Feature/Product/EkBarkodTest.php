@@ -134,6 +134,22 @@ class EkBarkodTest extends TestCase
             'company_id' => $ikinci->company_id,
         ]);
 
+        // forgetGuards() ŞART — bu bir Laravel test tuzağı, uygulama
+        // hatası değil.
+        //
+        // RequestGuard, çözdüğü kullanıcıyı ÖRNEK ÜZERİNDE önbelleğe
+        // alıyor. Testte uygulama iki istek arasında yeniden
+        // kurulmadığı için ikinci `withToken` başlığı gönderse bile
+        // `$request->user()` hâlâ BİRİNCİ kullanıcıyı döndürüyor;
+        // doğrulama kuralları da yanlış şirkete bakıyordu. Üretimde her
+        // istek taze bir uygulama örneğiyle çalıştığı için böyle bir
+        // durum yok.
+        //
+        // Yukarıdaki iki assert bunu kanıtladı: şirketler gerçekten
+        // ayrı ve ürün doğru şirkette yazılı; geriye yalnızca bu
+        // önbellek kalıyordu.
+        $this->app['auth']->forgetGuards();
+
         $this->withToken($ikinci->createToken('t2')->plainTextToken);
         $this->postJson('/api/v1/product-barcodes', [
             'product_id' => $ikinciUrun->id,
