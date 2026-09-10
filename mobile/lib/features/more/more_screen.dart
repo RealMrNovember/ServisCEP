@@ -10,6 +10,7 @@ import '../../shared/app_version_label.dart';
 import '../../shared/ui.dart';
 import '../../shared/brand_footer.dart';
 import '../../core/utils/customer_display.dart';
+import '../auth/data/auth_repository.dart';
 import '../auth/data/session_controller.dart';
 import '../calendar/calendar_screen.dart';
 import '../finance/finance_screen.dart';
@@ -19,6 +20,7 @@ import '../stock/barcode_flow.dart';
 import '../stock/products_list_screen.dart';
 import '../subscription/payments_screen.dart';
 import '../subscription/subscription_screen.dart';
+import '../../core/sync/sync_trigger.dart';
 import '../../core/sync/sync_status.dart';
 import '../subscription/data/subscription_models.dart';
 import '../subscription/data/subscription_repository.dart';
@@ -185,10 +187,7 @@ class MoreScreen extends ConsumerWidget {
           ListTile(
             leading: TcIcon(TcIcons.logout, color: scheme.error),
             title: Text('Çıkış yap', style: TextStyle(color: scheme.error)),
-            onTap: () async {
-              await ref.read(sessionControllerProvider.notifier).logout();
-              if (context.mounted) context.go('/login');
-            },
+            onTap: () => _cikisYap(context, ref),
           ),
           const BrandFooter(),
           const AppVersionLabel(),
@@ -312,4 +311,78 @@ class _ProfilBasligi extends StatelessWidget {
     if (gun <= 0) return palet.dangerText;
     return gun <= 7 ? palet.warningText : palet.accent;
   }
+}
+
+/// Çıkış akışı.
+///
+/// Çıkışta cihazdaki yerel veri siliniyor (bkz. AuthRepository.logout —
+/// silinmezse bekleyen kayıtlar bir sonraki kullanıcının şirketine
+/// gönderiliyordu). Gönderilmemiş kayıt varsa bu, VERİ KAYBI demek;
+/// kullanıcıya sormadan yapılamaz.
+Future<void> _cikisYap(BuildContext context, WidgetRef ref) async {
+  final repo = ref.read(authRepositoryProvider);
+  final router = GoRouter.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+
+  var bekleyen = 0;
+  try {
+    bekleyen = await repo.bekleyenGonderimSayisi();
+  } on Object {
+    // Sayılamazsa akış durmasın; aşağıdaki onay yine de sorulur.
+  }
+
+  if (!context.mounted) return;
+
+  if (bekleyen > 0) {
+    final secim = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Gönderilmemiş kayıt var'),
+        content: Text(
+          '$bekleyen kayıt henüz sunucuya gönderilmedi. Çıkış yaparsan bu '
+          'kayıtlar cihazdan silinir ve geri getirilemez.
+
+'
+          'Önce göndermeyi denemek ister misin?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, 'vazgec'),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, 'yinede'),
+            child: const Text('Yine de çık'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, 'gonder'),
+            child: const Text('Önce gönder'),
+          ),
+        ],
+      ),
+    );
+
+    if (secim == null || secim == 'vazgec') return;
+
+    if (secim == 'gonder') {
+      final gonderildi = await ref.read(syncTriggerProvider).syncNowAndWait();
+      final kalan = await repo.bekleyenGonderimSayisi();
+
+      if (!gonderildi || kalan > 0) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              kalan > 0
+                  ? '$kalan kayıt hâlâ gönderilemedi. Bağlantını kontrol et.'
+                  : 'Gönderim başarısız oldu. Bağlantını kontrol et.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+  }
+
+  await ref.read(sessionControllerProvider.notifier).logout();
+  router.go('/login');
 }

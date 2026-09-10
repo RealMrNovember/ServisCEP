@@ -172,7 +172,7 @@ class SyncService {
           case ('customer', 'UPDATE'):
             final result = await _api.updateCustomer(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('customer', result);
           case ('customer', 'DELETE'):
@@ -183,7 +183,7 @@ class SyncService {
           case ('job', 'UPDATE'):
             final result = await _api.updateJob(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('job', result);
           case ('service_request', 'CREATE'):
@@ -192,7 +192,7 @@ class SyncService {
           case ('service_request', 'UPDATE'):
             final result = await _api.updateServiceRequest(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('service_request', result);
           case ('service_request', 'CONVERT'):
@@ -216,7 +216,7 @@ class SyncService {
           case ('quote', 'UPDATE'):
             final result = await _api.updateQuote(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('quote', result);
           case ('proforma', 'CREATE'):
@@ -347,6 +347,53 @@ class SyncService {
   /// eksik dosyayı sunucudan geri indirdiğinde) ilk satırın işaret ettiği
   /// dosya yok oluyordu. Satır o andan itibaren KALICI hataya alınıyor ve
   /// yeniden denemek de dahil hiçbir şey onu kurtaramıyordu — kullanıcı
+  /// Gönderim anındaki taban sürüm.
+  ///
+  /// NEDEN KUYRUKTAKİ DEĞER KULLANILMIYOR: yerel `version` kolonu yerel
+  /// düzenlemede artmıyor; yalnızca sunucu yanıtı uygulandığında
+  /// ([_markSynced]) güncelleniyor. Kuyruğa girildiği andaki değeri
+  /// göndermek, kullanıcının KENDİ iki düzenlemesini birbiriyle
+  /// çakıştırıyordu:
+  ///
+  ///   çevrimdışı: işi "Yolda" yap        -> op A, base=3
+  ///   çevrimdışı: işi tutarla tamamla    -> op B, base=3
+  ///   çevrimiçi:  A gider, sunucu 3 -> 4 (değişen alan: status)
+  ///               B base=3 ile gider; sunucu 3-4 arası `status`
+  ///               değiştiğini görür, B de `status` bildirir -> 409
+  ///
+  /// Sonuç: teknisyenin girdiği GERÇEKLEŞEN TUTAR ve TAMAMLANDI durumu
+  /// sunucuya hiç ulaşmıyor, cari hesaptaki borç yalnızca telefonda
+  /// kalıyordu. Kullanıcı da çakışma ekranında kendi iki düzenlemesi
+  /// arasında seçim yapmak zorunda kalıyordu.
+  ///
+  /// Gönderim anında okumak doğru: pull, bekleyen op'u olan satırın
+  /// üzerine yazmıyor (bkz. [_hasPendingOutboxFor]), dolayısıyla yerel
+  /// sürüm yalnızca BİZİM başarılı yazmalarımızla ilerliyor — yani bir
+  /// sonraki yazma için doğru taban tam olarak bu.
+  ///
+  /// Kayıt yerelde yoksa kuyruktaki değere düşülür.
+  Future<int> _guncelSurum(SyncOperation op) async {
+    final surum = switch (op.entityType) {
+      'customer' =>
+        (await (_db.select(_db.customers)
+              ..where((c) => c.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      'job' =>
+        (await (_db.select(_db.jobs)..where((j) => j.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      'service_request' =>
+        (await (_db.select(_db.serviceRequests)
+              ..where((r) => r.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      'quote' =>
+        (await (_db.select(_db.quotes)..where((q) => q.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      _ => null,
+    };
+
+    return surum ?? op.baseVersion;
+  }
+
   /// "Logo dosyası artık cihazda yok" diyen, asla temizlenmeyen bir
   /// kayıtla kalıyordu.
   ///
@@ -517,13 +564,38 @@ class SyncService {
     return failed.length;
   }
 
+  /// Bu kaydın sunucuya gönderilmemiş yerel değişikliği var mı?
+  ///
+  /// Pull, bu soruya "evet" diyen satırın üzerine YAZMAZ; aksi hâlde
+  /// kullanıcının az önce girdiği veri sunucudakiyle değişir.
+  ///
+  /// İKİ DÜZELTME BURADA:
+  ///
+  /// 1) CONFLICT de sayılıyor. Eskiden yalnızca PENDING sayılıyordu ve
+  ///    409 alan bir satır CONFLICT'e geçtiği anda bu koruma devre dışı
+  ///    kalıyordu. Aynı senkron turunda pull, sunucunun sürümünü yerel
+  ///    satırın üzerine yazıyor ve `syncStatus`'ü 'SYNCED' yaparak
+  ///    `_markConflicted`'in az önce koyduğu çakışma işaretini de
+  ///    siliyordu. Kullanıcı hem verisini kaybediyor hem de ekranda
+  ///    hiçbir uyarı görmüyordu.
+  ///
+  /// 2) `getSingleOrNull()` yerine sayım. Drift'te `getSingleOrNull`
+  ///    BİRDEN FAZLA satır dönerse `StateError` fırlatıyor ve aynı kayda
+  ///    ait iki bekleyen op oluşması kolay (ör. müşteri bilgisi + logo,
+  ///    ya da aynı işe iki kez UPDATE). O hata `_runOnce`'ın genel
+  ///    yakalayıcısına düşüp TURDAKİ BÜTÜN pull'ları (müşteri, iş, teklif,
+  ///    cari hesap) atlıyordu.
   Future<bool> _hasPendingOutboxFor(String entityId) async {
-    final row =
-        await (_db.select(_db.syncOperations)..where(
-              (o) => o.entityId.equals(entityId) & o.status.equals('PENDING'),
-            ))
-            .getSingleOrNull();
-    return row != null;
+    final satirlar =
+        await (_db.select(_db.syncOperations)
+              ..where(
+                (o) =>
+                    o.entityId.equals(entityId) &
+                    o.status.isIn(const ['PENDING', 'CONFLICT']),
+              )
+              ..limit(1))
+            .get();
+    return satirlar.isNotEmpty;
   }
 
   /// Şirket antedi ve logosu.

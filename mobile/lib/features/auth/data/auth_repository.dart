@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -419,6 +420,24 @@ class AuthRepository {
   /// Sıra önemli: sunucudaki jeton, YEREL jeton silinmeden önce iptal
   /// edilmeli. Aksi halde iptal isteği kimliksiz gidiyor ve 401 alıyordu —
   /// yani jeton sunucuda geçerli kalmaya devam ediyordu.
+  ///
+  /// Cihazdaki TÜM yerel veri de siliniyor. Bu bir gizlilik tercihi
+  /// değil, VERİ SIZINTISI DÜZELTMESİ:
+  ///
+  /// Eskiden yalnızca jeton ve oturum anahtarları siliniyordu; müşteriler,
+  /// işler ve en önemlisi `syncOperations` (gönderim kuyruğu) olduğu gibi
+  /// kalıyordu. Kuyrukta şirket/kullanıcı bilgisi yok ve `_drainOutbox`
+  /// filtre uygulamıyor. Sonuç: teknisyen A çevrimdışı kayıt girip çıkış
+  /// yapar, aynı telefonda B giriş yapar, ilk senkron turunda A'nın
+  /// kayıtları B'NİN JETONUYLA gönderilir ve B'nin şirketine düşer.
+  /// Şirketler arası veri sızıntısı ve yanlış hesaba kayıt.
+  ///
+  /// Ayrıca `companies`/`users` tablolarında iki satır kalıyordu; tekil
+  /// satır bekleyen okumalar bu durumda hata fırlatıyor.
+  ///
+  /// Gönderilmemiş kayıt varsa bunun kullanıcıya SORULMASI çağıranın
+  /// görevi (bkz. [bekleyenGonderimSayisi]) — burada soru sorulmaz,
+  /// çünkü bu katmanın ekranı yok.
   Future<void> logout() async {
     await _syncApiClient.logout();
 
@@ -429,6 +448,37 @@ class AuthRepository {
       // Silinemese bile oturum kapatma akışı sürmeli.
     }
     await _tokenStore.clear();
+    await _yerelVeriyiSil();
+  }
+
+  /// Henüz sunucuya gönderilememiş yazma sayısı (bekleyen + hatalı).
+  ///
+  /// Çıkışta bu kayıtlar silineceği için kullanıcıya önce sorulmalı.
+  Future<int> bekleyenGonderimSayisi() async {
+    final satirlar =
+        await (_db.select(_db.syncOperations)..where(
+              (o) => o.status.isIn(const ['PENDING', 'FAILED', 'CONFLICT']),
+            ))
+            .get();
+    return satirlar.length;
+  }
+
+  /// Yerel veritabanını tamamen boşaltır.
+  ///
+  /// Tablolar tek tek değil `allTables` üzerinden siliniyor: ileride
+  /// eklenen bir tablo burada unutulursa sızıntı geri gelir.
+  Future<void> _yerelVeriyiSil() async {
+    try {
+      await _db.transaction(() async {
+        for (final tablo in _db.allTables) {
+          await _db.delete(tablo).go();
+        }
+      });
+    } on Object catch (e) {
+      // Silinemezse bile çıkış tamamlanmalı; kullanıcıyı oturumda tutmak
+      // daha kötü. Bir sonraki girişte tekrar denenir.
+      debugPrint('Yerel veri silinemedi: $e');
+    }
   }
 }
 
