@@ -14,6 +14,7 @@ echo "==> Placeholder / statik dosyalar güncelleniyor"
 cp -f deploy/public-placeholder/index.html index.html
 cp -f deploy/public-placeholder/privacy.html privacy.html
 cp -f deploy/public-placeholder/account-deletion.html account-deletion.html
+cp -f deploy/public-placeholder/terms.html terms.html
 cp -f deploy/public-placeholder/robots.txt robots.txt
 cp -f deploy/public-placeholder/favicon.ico favicon.ico
 cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png
@@ -38,7 +39,7 @@ cp -f deploy/public-placeholder/google-play-badge-tr.png google-play-badge-tr.pn
 # yapılandırmasında çalışır. Uzantılı adresler de duruyor — daha önce
 # paylaşılmış bağlantılar kırılmasın.
 if [ -d backend/public ]; then
-  for sayfa in privacy account-deletion; do
+  for sayfa in privacy terms account-deletion; do
     mkdir -p "backend/public/$sayfa"
     cp -f "deploy/public-placeholder/$sayfa.html" "backend/public/$sayfa/index.html"
   done
@@ -75,7 +76,7 @@ fi
 echo "==> İzinler ayarlanıyor (yalnızca repo dosyaları — aaPanel'in yönettiği"
 echo "    .user.ini / .well-known gibi dosyalara dokunulmaz)"
 git ls-files -z | xargs -0 -r chown www:www
-chown www:www index.html robots.txt favicon.ico apple-touch-icon.png logo.png .gitignore 2>/dev/null || true
+chown www:www index.html robots.txt favicon.ico apple-touch-icon.png logo.png \n  google-play-badge-tr.png privacy.html terms.html account-deletion.html \n  .gitignore 2>/dev/null || true
 chown -R www:www .git 2>/dev/null || true
 
 echo "==> Deploy tamamlandı: $(git rev-parse --short HEAD)"
