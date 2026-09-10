@@ -11,14 +11,40 @@ SITE_DIR="/www/wwwroot/serviscep.cicibyte.com"
 cd "$SITE_DIR"
 
 echo "==> Placeholder / statik dosyalar güncelleniyor"
-cp -f deploy/public-placeholder/index.html index.html
-cp -f deploy/public-placeholder/privacy.html privacy.html
-cp -f deploy/public-placeholder/account-deletion.html account-deletion.html
-cp -f deploy/public-placeholder/robots.txt robots.txt
-cp -f deploy/public-placeholder/favicon.ico favicon.ico
-cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png
-cp -f deploy/public-placeholder/logo.png logo.png
-cp -f deploy/public-placeholder/google-play-badge-tr.png google-play-badge-tr.png
+
+# Statik dosyalar TEK LİSTEDEN yönetiliyor ve her biri için docroot
+# bağlantısı da burada kuruluyor.
+#
+# NEDEN: nginx'in kökü site kökü DEĞİL, backend/public. Site kökündeki
+# dosyalar oraya sembolik linklerle bağlı ve bu linkler bir kez, 2026-08-19'da
+# ELLE kurulmuştu. Sonradan eklenen her dosya sessizce 404 dönüyordu —
+# Google Play rozeti tam olarak böyle kırık yayına çıktı: dosya sunucuda
+# duruyordu, kimse bir şey yapmamıştı, sayfada bozuk görsel görünüyordu.
+# Üstelik Cloudflare 404'ü 4 saat önbelleğe aldığı için dosya düzeltildikten
+# sonra bile kırık kalmaya devam etti.
+STATIKLER=(
+  index.html
+  privacy.html
+  terms.html
+  account-deletion.html
+  robots.txt
+  favicon.ico
+  apple-touch-icon.png
+  logo.png
+  google-play-badge-tr.png
+)
+
+for dosya in "${STATIKLER[@]}"; do
+  cp -f "deploy/public-placeholder/$dosya" "$dosya"
+  chown www:www "$dosya"
+
+  # Link yalnızca yoksa ya da zaten sembolik linkse kuruluyor: docroot'ta
+  # gerçek bir dosya varsa ona dokunulmaz.
+  hedef="backend/public/$dosya"
+  if [ -d backend/public ] && { [ ! -e "$hedef" ] || [ -L "$hedef" ]; }; then
+    ln -sfn "../../$dosya" "$hedef"
+  fi
+done
 
 # Uzantısız adresler de çalışsın: /privacy ve /account-deletion.
 #
@@ -38,7 +64,7 @@ cp -f deploy/public-placeholder/google-play-badge-tr.png google-play-badge-tr.pn
 # yapılandırmasında çalışır. Uzantılı adresler de duruyor — daha önce
 # paylaşılmış bağlantılar kırılmasın.
 if [ -d backend/public ]; then
-  for sayfa in privacy account-deletion; do
+  for sayfa in privacy terms account-deletion; do
     mkdir -p "backend/public/$sayfa"
     cp -f "deploy/public-placeholder/$sayfa.html" "backend/public/$sayfa/index.html"
   done
@@ -75,7 +101,8 @@ fi
 echo "==> İzinler ayarlanıyor (yalnızca repo dosyaları — aaPanel'in yönettiği"
 echo "    .user.ini / .well-known gibi dosyalara dokunulmaz)"
 git ls-files -z | xargs -0 -r chown www:www
-chown www:www index.html robots.txt favicon.ico apple-touch-icon.png logo.png .gitignore 2>/dev/null || true
+# Statiklerin sahipligi yukaridaki dongude ayarlandi.
+chown www:www .gitignore 2>/dev/null || true
 chown -R www:www .git 2>/dev/null || true
 
 echo "==> Deploy tamamlandı: $(git rev-parse --short HEAD)"
