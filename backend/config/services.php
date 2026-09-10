@@ -53,6 +53,23 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID', 'serviscep'),
     ],
 
+    // Barkod sorgusu sağlayıcıları — bkz. GlobalBarcodeLookup.
+    //
+    // Open*Facts anahtar istemiyor ama GIDA/kozmetik kapsıyor. Bu
+    // uygulamanın kullanıcıları elektronik ve teknik malzeme stokluyor
+    // (güvenlik kamerası, switch, kablo); onlar için genel ticari ürün
+    // kapsayan bir kaynak şart.
+    //
+    // upcitemdb: anahtarsız "trial" ucu günde 100 sorgu (IP başına).
+    // Anahtar tanımlanırsa ücretli uca geçilir ve sınır kalkar.
+    //
+    // barcodelookup: anahtar YOKSA hiç denenmez. Elektronikte kapsamı
+    // belirgin biçimde daha iyi ama ücretli.
+    'barcode' => [
+        'upcitemdb_key' => env('UPCITEMDB_KEY', ''),
+        'barcodelookup_key' => env('BARCODELOOKUP_KEY', ''),
+    ],
+
     // Sürüm hattının yayındaki sürümü sunucuya bildirmesi için paylaşılan
     // jeton. Boşsa uç 503 döner — parolasız açık kalmasındansa kapalı
     // olması yeğdir.

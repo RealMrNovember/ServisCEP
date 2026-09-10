@@ -173,6 +173,93 @@ class BarkodSorgusuTest extends TestCase
             ->assertJsonPath('data.found', false);
     }
 
+    public function test_elektronik_urun_genel_kaynaktan_bulunur(): void
+    {
+        // ASIL KULLANIM: bu uygulamanın kullanıcıları elektronik ve
+        // teknik malzeme stokluyor (güvenlik kamerası, switch, kablo).
+        // Open*Facts GIDA kapsıyor; o ürünler orada hiçbir zaman
+        // bulunmaz, bu yüzden genel ticari kaynak ÖNCE denenmeli.
+        Http::fake([
+            'api.upcitemdb.com/*' => Http::response([
+                'items' => [[
+                    'title' => 'TP-Link TL-SG108 8 Port Gigabit Switch',
+                    'brand' => 'TP-Link',
+                    'category' => 'Electronics > Networking > Switches',
+                ]],
+            ]),
+            '*' => Http::response(['status' => 0]),
+        ]);
+
+        $this->girisYap();
+
+        $this->getJson('/api/v1/barcode-lookup?barcode=6935364052669')
+            ->assertOk()
+            ->assertJsonPath('data.found', true)
+            ->assertJsonPath('data.name', 'TP-Link TL-SG108 8 Port Gigabit Switch')
+            ->assertJsonPath('data.brand', 'TP-Link')
+            ->assertJsonPath('data.source', 'upcitemdb');
+    }
+
+    public function test_ucretli_saglayici_anahtarsiz_hic_denenmez(): void
+    {
+        // Anahtar yokken istek gondermek bosuna gecikme demek.
+        config(['services.barcode.barcodelookup_key' => '']);
+
+        Http::fake(['*' => Http::response(['status' => 0])]);
+
+        $this->girisYap();
+        $this->getJson('/api/v1/barcode-lookup?barcode=8690000000009')->assertOk();
+
+        foreach (Http::recorded() as [$istek]) {
+            $this->assertStringNotContainsString('barcodelookup.com', $istek->url());
+        }
+    }
+
+    public function test_ucretli_saglayici_anahtar_varsa_once_denenir(): void
+    {
+        // Kapsami en iyi olan kaynak once sorulmali.
+        config(['services.barcode.barcodelookup_key' => 'test-anahtar']);
+
+        Http::fake([
+            'api.barcodelookup.com/*' => Http::response([
+                'products' => [[
+                    'title' => 'Hikvision DS-2CD1043G0 IP Kamera',
+                    'brand' => 'Hikvision',
+                    'category' => 'Electronics > Security Cameras',
+                ]],
+            ]),
+            '*' => Http::response(['status' => 0]),
+        ]);
+
+        $this->girisYap();
+
+        $this->getJson('/api/v1/barcode-lookup?barcode=6954273663896')
+            ->assertOk()
+            ->assertJsonPath('data.found', true)
+            ->assertJsonPath('data.brand', 'Hikvision')
+            ->assertJsonPath('data.source', 'barcodelookup');
+    }
+
+    public function test_gunluk_sinir_dolunca_sonraki_kaynak_denenir(): void
+    {
+        // UPCitemdb anahtarsiz ucta 429 donuyor; bu bir ariza degil,
+        // akis durmamali.
+        Http::fake([
+            'api.upcitemdb.com/*' => Http::response([], 429),
+            'world.openfoodfacts.org/*' => Http::response($this->bulundu([
+                'product_name' => 'Market urunu',
+            ])),
+            '*' => Http::response(['status' => 0]),
+        ]);
+
+        $this->girisYap();
+
+        $this->getJson('/api/v1/barcode-lookup?barcode=8690000000010')
+            ->assertOk()
+            ->assertJsonPath('data.found', true)
+            ->assertJsonPath('data.source', 'openfoodfacts');
+    }
+
     public function test_giris_yapmadan_sorgulanamaz(): void
     {
         Http::fake();

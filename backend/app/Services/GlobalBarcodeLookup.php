@@ -91,16 +91,31 @@ class GlobalBarcodeLookup
      */
     private function saglayicilardanAra(string $barkod): array
     {
-        // Open*Facts ailesi: ücretsiz, anahtar istemiyor, açık veri.
-        // Sıra kapsam genişliğine göre — gıda en büyük veri kümesi.
-        $kaynaklar = [
-            'openfoodfacts' => 'https://world.openfoodfacts.org/api/v2/product/',
-            'openproductsfacts' => 'https://world.openproductsfacts.org/api/v2/product/',
-            'openbeautyfacts' => 'https://world.openbeautyfacts.org/api/v2/product/',
+        // SIRA ÖNEMLİ.
+        //
+        // Bu uygulamanın kullanıcıları elektronik ve teknik malzeme
+        // stokluyor: güvenlik kamerası, switch, kablo, konnektör.
+        // Open*Facts ailesi GIDA ve kozmetik kapsıyor — o ürünler orada
+        // hiçbir zaman bulunmaz. Bu yüzden genel ticari ürün kapsayan
+        // kaynaklar ÖNCE deneniyor; gıda veritabanları geride, çünkü
+        // market ürünü de stoklayan olabilir ve orada kapsamları daha
+        // iyi.
+        $saglayicilar = [
+            'barcodelookup' => fn () => $this->barcodeLookupSorgula($barkod),
+            'upcitemdb' => fn () => $this->upcItemDbSorgula($barkod),
+            'openfoodfacts' => fn () => $this->openFactsSorgula(
+                'https://world.openfoodfacts.org/api/v2/product/'.rawurlencode($barkod).'.json'
+            ),
+            'openproductsfacts' => fn () => $this->openFactsSorgula(
+                'https://world.openproductsfacts.org/api/v2/product/'.rawurlencode($barkod).'.json'
+            ),
+            'openbeautyfacts' => fn () => $this->openFactsSorgula(
+                'https://world.openbeautyfacts.org/api/v2/product/'.rawurlencode($barkod).'.json'
+            ),
         ];
 
-        foreach ($kaynaklar as $ad => $taban) {
-            $urun = $this->openFactsSorgula($taban.rawurlencode($barkod).'.json');
+        foreach ($saglayicilar as $ad => $sorgula) {
+            $urun = $sorgula();
 
             if ($urun !== null) {
                 return $urun + ['found' => true, 'source' => $ad];
@@ -114,6 +129,116 @@ class GlobalBarcodeLookup
             'category' => null,
             'source' => null,
         ];
+    }
+
+    /**
+     * UPCitemdb — genel ticari ürün (elektronik dâhil).
+     *
+     * Anahtarsız "trial" ucu günde 100 sorgu (IP başına) veriyor.
+     * Önbellek sayesinde her BENZERSİZ barkod bir kez sayılıyor.
+     *
+     * @return array{name: string, brand: ?string, category: ?string}|null
+     */
+    private function upcItemDbSorgula(string $barkod): ?array
+    {
+        $anahtar = (string) config('services.barcode.upcitemdb_key');
+
+        $url = $anahtar === ''
+            ? 'https://api.upcitemdb.com/prod/trial/lookup'
+            : 'https://api.upcitemdb.com/prod/v1/lookup';
+
+        try {
+            $istek = Http::timeout(self::ZAMAN_ASIMI);
+            if ($anahtar !== '') {
+                $istek = $istek->withHeaders([
+                    'user_key' => $anahtar,
+                    'key_type' => '3scale',
+                ]);
+            }
+
+            $yanit = $istek->get($url, ['upc' => $barkod]);
+        } catch (\Throwable $e) {
+            Log::warning('upcitemdb sorgusu düştü', ['hata' => $e->getMessage()]);
+
+            return null;
+        }
+
+        // 429 = günlük sınır doldu. Hata değil; sıradaki sağlayıcı denenir.
+        if (! $yanit->successful()) {
+            return null;
+        }
+
+        $kalem = $yanit->json('items.0');
+        if (! is_array($kalem)) {
+            return null;
+        }
+
+        $ad = trim((string) ($kalem['title'] ?? ''));
+        if ($ad === '') {
+            return null;
+        }
+
+        return [
+            'name' => $ad,
+            'brand' => $this->bosDegilse($kalem['brand'] ?? null),
+            'category' => $this->ilkDeger($kalem['category'] ?? null),
+        ];
+    }
+
+    /**
+     * Barcode Lookup — elektronikte kapsamı belirgin biçimde daha iyi.
+     *
+     * ÜCRETLİ: anahtar tanımlı değilse HİÇ denenmez, boşuna istek
+     * gönderilmez.
+     *
+     * @return array{name: string, brand: ?string, category: ?string}|null
+     */
+    private function barcodeLookupSorgula(string $barkod): ?array
+    {
+        $anahtar = (string) config('services.barcode.barcodelookup_key');
+        if ($anahtar === '') {
+            return null;
+        }
+
+        try {
+            $yanit = Http::timeout(self::ZAMAN_ASIMI)
+                ->get('https://api.barcodelookup.com/v3/products', [
+                    'barcode' => $barkod,
+                    'formatted' => 'y',
+                    'key' => $anahtar,
+                ]);
+        } catch (\Throwable $e) {
+            Log::warning('barcodelookup sorgusu düştü', ['hata' => $e->getMessage()]);
+
+            return null;
+        }
+
+        if (! $yanit->successful()) {
+            return null;
+        }
+
+        $urun = $yanit->json('products.0');
+        if (! is_array($urun)) {
+            return null;
+        }
+
+        $ad = trim((string) ($urun['title'] ?? ''));
+        if ($ad === '') {
+            return null;
+        }
+
+        return [
+            'name' => $ad,
+            'brand' => $this->bosDegilse($urun['brand'] ?? null),
+            'category' => $this->ilkDeger($urun['category'] ?? null),
+        ];
+    }
+
+    private function bosDegilse(?string $ham): ?string
+    {
+        $temiz = trim((string) $ham);
+
+        return $temiz === '' ? null : $temiz;
     }
 
     /**
