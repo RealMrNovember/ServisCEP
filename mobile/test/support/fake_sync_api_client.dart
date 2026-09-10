@@ -19,6 +19,9 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<Map<String, dynamic>> createProductBarcodeCalls = [];
   final List<String> deleteProductBarcodeCalls = [];
   List<RemoteRecord> productBarcodesToPull = [];
+  final List<String> lookupBarcodeCalls = [];
+  /// Kuresel sorgunun donecegi sonuc — varsayilan: bulunamadi.
+  GlobalBarcodeHit? lookupBarcodeResult;
   /// Siradaki bag gonderimi gecici hata alsin (satir kuyrukta kalir).
   bool failNextCreateProductBarcode = false;
   final List<Map<String, dynamic>> createJobCalls = [];
@@ -143,6 +146,12 @@ class FakeSyncApiClient implements SyncApiClient {
 
   @override
   Future<List<RemoteRecord>> listStockMovements() async => stockMovementsToPull;
+
+  @override
+  Future<GlobalBarcodeHit?> lookupBarcode(String barcode) async {
+    lookupBarcodeCalls.add(barcode);
+    return lookupBarcodeResult;
+  }
 
   @override
   Future<SyncEntityResult> createProductBarcode(

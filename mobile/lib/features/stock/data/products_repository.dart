@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/network/sync_api_client.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../auth/data/session_controller.dart';
 
@@ -23,8 +24,12 @@ extension StockStatusX on Product {
 }
 
 class ProductsRepository {
-  ProductsRepository(this._db);
+  ProductsRepository(this._db, [this._api]);
   final AppDatabase _db;
+
+  /// Küresel barkod sorgusu için — testlerde verilmiyor, o zaman sorgu
+  /// yapılmıyor ve akış "bulunamadı" ile devam ediyor.
+  final SyncApiClient? _api;
   final _uuid = const Uuid();
 
   Stream<List<Product>> watchAll(String companyId) {
@@ -313,7 +318,17 @@ class ProductsRepository {
   /// manuel forma yönlendirir. Bu, sessizce yanlış davranmaktan iyidir:
   /// özellik dürüstçe "henüz yok" der.
   Future<GlobalProductLookupResult?> lookupGlobalBarcode(String barcode) async {
-    return null;
+    final api = _api;
+    if (api == null) return null;
+
+    final bulunan = await api.lookupBarcode(barcode);
+    if (bulunan == null) return null;
+
+    return GlobalProductLookupResult(
+      name: bulunan.name,
+      brand: bulunan.brand,
+      category: bulunan.category,
+    );
   }
 }
 
@@ -329,7 +344,10 @@ class GlobalProductLookupResult {
 }
 
 final productsRepositoryProvider = Provider<ProductsRepository>((ref) {
-  return ProductsRepository(ref.watch(databaseProvider));
+  return ProductsRepository(
+    ref.watch(databaseProvider),
+    ref.watch(syncApiClientProvider),
+  );
 });
 
 final productsListProvider = StreamProvider<List<Product>>((ref) {
