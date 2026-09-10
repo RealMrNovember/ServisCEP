@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/palette.dart';
 import '../../app/theme.dart';
+import '../../core/utils/dis_baglanti.dart';
 import '../../shared/tc_icon.dart';
 import 'data/subscription_models.dart';
 import 'data/subscription_repository.dart';
+import 'destek.dart';
 import 'subscription_screen.dart';
 
 /// Aboneliği dolmuş hesapta YENİ KAYIT oluşturmayı engelleyen kapı.
@@ -85,16 +86,16 @@ class _AbonelikSayfasi extends StatelessWidget {
 
   final SubscriptionStatus durum;
 
-  Future<void> _whatsapp() async {
+  Future<void> _whatsapp(BuildContext context) async {
     final numara = durum.supportWhatsapp;
     if (numara == null || numara.isEmpty) return;
 
-    final mesaj = Uri.encodeComponent(
-      'Merhaba, TeknikCEP aboneliğim hakkında yardım almak istiyorum.',
-    );
-    await launchUrl(
-      Uri.parse('https://wa.me/$numara?text=$mesaj'),
-      mode: LaunchMode.externalApplication,
+    await context.disBaglantiAc(
+      destekWhatsappUri(
+        numara,
+        'Merhaba, TeknikCEP aboneliğim hakkında yardım almak istiyorum.',
+      ),
+      hataMesaji: 'WhatsApp açılamadı. Bağlantı panoya kopyalandı.',
     );
   }
 
@@ -175,7 +176,7 @@ class _AbonelikSayfasi extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
-                  onPressed: _whatsapp,
+                  onPressed: () => _whatsapp(context),
                   icon: const TcIcon(TcIcons.phone, size: 18),
                   label: const Text('WhatsApp ile bize ulaş'),
                 ),

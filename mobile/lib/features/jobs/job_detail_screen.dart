@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../../core/utils/dis_baglanti.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../app/palette.dart';
 import '../../shared/ui.dart';
 import '../../app/theme.dart';
@@ -192,7 +192,11 @@ class _JobDetailContent extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: telefon == null || telefon.isEmpty
                           ? null
-                          : () => launchUrl(Uri.parse('tel:$telefon')),
+                          : () => context.disBaglantiAc(
+                              Uri.parse('tel:$telefon'),
+                              hataMesaji:
+                                  'Arama başlatılamadı. Numara panoya kopyalandı.',
+                            ),
                       icon: const TcIcon(TcIcons.phone, size: 18),
                       label: const Text('Ara'),
                     ),
@@ -202,7 +206,7 @@ class _JobDetailContent extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: adres == null || adres.isEmpty
                           ? null
-                          : () => MapLauncher.openAddress(adres),
+                          : () => MapLauncher.openAddress(context, adres),
                       icon: const TcIcon(TcIcons.map, size: 18),
                       label: const Text('Yol Tarifi'),
                     ),

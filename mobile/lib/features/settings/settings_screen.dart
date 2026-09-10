@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 import '../../shared/tc_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/palette.dart';
 import '../../core/services/app_version_service.dart';
 import '../../core/services/update_prompt.dart';
 import '../../core/sync/sync_status.dart';
+import '../../core/utils/dis_baglanti.dart';
 import '../../shared/brand_footer.dart';
 import '../../shared/ui.dart';
 import '../auth/data/session_controller.dart';
 import '../feedback/feedback_screen.dart';
+import '../subscription/destek.dart';
 import 'company_settings_screen.dart';
 import 'data/theme_mode_controller.dart';
 import 'job_types_screen.dart';
@@ -21,11 +22,17 @@ import 'personnel_screen.dart';
 import 'profile_screen.dart';
 import 'sync_status_screen.dart';
 
-/// Gizlilik politikası ve kullanım koşullarının yayında olduğu adres.
+/// Yasal belgelerin yayında olduğu adresler.
 ///
-/// Play, uygulama içinden de ulaşılabilir olmasını istiyor; mağaza
+/// Play, bunlara uygulama İÇİNDEN de ulaşılabilmesini istiyor; mağaza
 /// listesindeki bağlantı tek başına yeterli sayılmıyor.
-final _gizlilikUri = Uri.https('serviscep.cicibyte.com', '/privacy.html');
+///
+/// Uzantısız biçim kullanılıyor — Play Console'a verilen adreslerle aynı
+/// olsun diye. Sunucuda her ikisi de servis ediliyor (bkz. deploy/apply.sh).
+const _yayinAlanAdi = 'serviscep.cicibyte.com';
+final _gizlilikUri = Uri.https(_yayinAlanAdi, '/privacy');
+final _kosullarUri = Uri.https(_yayinAlanAdi, '/terms');
+final _hesapSilmeUri = Uri.https(_yayinAlanAdi, '/account-deletion');
 
 /// Ayarlar — hesap, işletme ve uygulama ayarları tek yerde.
 ///
@@ -142,13 +149,23 @@ class SettingsScreen extends ConsumerWidget {
               context,
             ).push(MaterialPageRoute(builder: (_) => const FeedbackScreen())),
           ),
-          ListTile(
-            leading: const TcIcon(TcIcons.shield),
-            title: const Text('Gizlilik ve sözleşmeler'),
-            subtitle: const Text('Tarayıcıda açılır'),
-            trailing: const TcIcon(TcIcons.arrowRight),
-            onTap: () =>
-                launchUrl(_gizlilikUri, mode: LaunchMode.externalApplication),
+          const _WhatsappTile(),
+
+          const MenuGroupHeader('Yasal'),
+          _BelgeTile(
+            ikon: TcIcons.shield,
+            baslik: 'Gizlilik Politikası',
+            uri: _gizlilikUri,
+          ),
+          _BelgeTile(
+            ikon: TcIcons.file,
+            baslik: 'Kullanım Koşulları',
+            uri: _kosullarUri,
+          ),
+          _BelgeTile(
+            ikon: TcIcons.trash,
+            baslik: 'Hesap silme talebi',
+            uri: _hesapSilmeUri,
           ),
 
           const BrandFooter(),
@@ -185,6 +202,63 @@ class SettingsScreen extends ConsumerWidget {
     if (secim != null) {
       await ref.read(themeModeControllerProvider.notifier).ayarla(secim);
     }
+  }
+}
+
+/// Yasal belge satırı — tarayıcıda açılır.
+///
+/// Açılmazsa kullanıcı bunu ÖĞRENİR ve adres panoya kopyalanır: bu
+/// bağlantılar Android 11 paket görünürlüğü yüzünden aylarca sessizce
+/// ölü kaldı (bkz. core/utils/dis_baglanti.dart).
+class _BelgeTile extends StatelessWidget {
+  const _BelgeTile({
+    required this.ikon,
+    required this.baslik,
+    required this.uri,
+  });
+
+  final String ikon;
+  final String baslik;
+  final Uri uri;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: TcIcon(ikon),
+      title: Text(baslik),
+      subtitle: const Text('Tarayıcıda açılır'),
+      trailing: const TcIcon(TcIcons.arrowRight),
+      onTap: () => context.disBaglantiAc(uri),
+    );
+  }
+}
+
+/// WhatsApp destek hattı.
+///
+/// "Bize yaz" formu bir kaydı kuyruğa alıp cevabı bekletiyor; sahada
+/// işi duran kullanıcının istediği bu değil, anında birine ulaşmak.
+/// Numara yönetici tarafından boşaltılmışsa satır hiç çıkmaz.
+class _WhatsappTile extends ConsumerWidget {
+  const _WhatsappTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final numara = ref.watch(destekWhatsappProvider);
+    if (numara == null) return const SizedBox.shrink();
+
+    return ListTile(
+      leading: const TcIcon(TcIcons.send),
+      title: const Text('WhatsApp ile yaz'),
+      subtitle: const Text('Destek hattına doğrudan mesaj gönder'),
+      trailing: const TcIcon(TcIcons.arrowRight),
+      onTap: () => context.disBaglantiAc(
+        destekWhatsappUri(
+          numara,
+          'Merhaba, TeknikCEP hakkında yardım almak istiyorum.',
+        ),
+        hataMesaji: 'WhatsApp açılamadı. Bağlantı panoya kopyalandı.',
+      ),
+    );
   }
 }
 

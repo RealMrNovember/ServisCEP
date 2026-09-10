@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../core/utils/dis_baglanti.dart';
 
 /// Standart marka/geliştirici atfı — uygulama genelinde footer alanlarında
 /// (Dashboard, Daha Fazla/Hakkında ekranı vb.) kullanılır.
@@ -20,8 +20,7 @@ class BrandFooter extends StatelessWidget {
       child: Center(
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: () =>
-              launchUrl(_cicibyteUri, mode: LaunchMode.externalApplication),
+          onTap: () => context.disBaglantiAc(_cicibyteUri),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Text.rich(

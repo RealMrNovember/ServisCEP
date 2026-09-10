@@ -125,6 +125,25 @@ abstract interface class SyncApiClient {
   /// yükleme öncekinin yerine geçer.
   Future<void> uploadTaxCertificate(String customerId, String filePath);
 
+  /// ÜRÜN / STOK — 2026-09-10'da eklendi.
+  ///
+  /// Bu uçlar yokken kullanıcının ürün kataloğu ve stok geçmişi YALNIZCA
+  /// telefonunda duruyordu; telefon kaybolduğunda geri getirilemiyordu.
+  Future<SyncEntityResult> createProduct(Map<String, dynamic> payload);
+  Future<SyncEntityResult> updateProduct(
+    String id,
+    Map<String, dynamic> payload,
+  );
+  Future<void> deleteProduct(String id);
+
+  /// Silinenler dahil: mezar taşı olmadan cihaz, ofiste silinen ürünün
+  /// silindiğini öğrenemez.
+  Future<List<RemoteRecord>> listProducts();
+
+  /// Stok hareketi — defter değişmez, yalnızca ekleme var.
+  Future<SyncEntityResult> createStockMovement(Map<String, dynamic> payload);
+  Future<List<RemoteRecord>> listStockMovements();
+
   Future<SyncEntityResult> createJob(Map<String, dynamic> payload);
   Future<SyncEntityResult> updateJob(String id, Map<String, dynamic> payload);
   Future<List<RemoteRecord>> listJobs();
@@ -367,6 +386,38 @@ class DioSyncApiClient implements SyncApiClient {
       _client.throwApiException(e);
     }
   }
+
+  @override
+  Future<SyncEntityResult> createProduct(Map<String, dynamic> payload) =>
+      _create('/products', payload);
+
+  @override
+  Future<SyncEntityResult> updateProduct(
+    String id,
+    Map<String, dynamic> payload,
+  ) => _update('/products/$id', payload);
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    try {
+      await _dio.delete('/products/$id');
+    } on DioException catch (e) {
+      // Zaten silinmiş — idempotent kabul edilir.
+      if (e.response?.statusCode == 404) return;
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<List<RemoteRecord>> listProducts() => _listAllPages('/products');
+
+  @override
+  Future<SyncEntityResult> createStockMovement(Map<String, dynamic> payload) =>
+      _create('/stock-movements', payload);
+
+  @override
+  Future<List<RemoteRecord>> listStockMovements() =>
+      _listAllPages('/stock-movements');
 
   @override
   Future<List<RemoteRecord>> listCustomers() => _listAllPages('/customers');

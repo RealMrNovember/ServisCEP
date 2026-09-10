@@ -115,6 +115,10 @@ class SyncService {
         () => _pullQuotes(companyId),
         () => _pullProformas(companyId),
         () => _pullLedgerEntries(companyId),
+        // Ürünler stok hareketlerinden ÖNCE: hareketin bağlı olduğu ürün
+        // yerelde yoksa satır yabancı anahtar yüzünden yazılamaz.
+        () => _pullProducts(companyId),
+        () => _pullStockMovements(companyId),
       ]) {
         if (await _tokenStore.read() == null) return false;
         await pull();
@@ -172,7 +176,7 @@ class SyncService {
           case ('customer', 'UPDATE'):
             final result = await _api.updateCustomer(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('customer', result);
           case ('customer', 'DELETE'):
@@ -183,7 +187,7 @@ class SyncService {
           case ('job', 'UPDATE'):
             final result = await _api.updateJob(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('job', result);
           case ('service_request', 'CREATE'):
@@ -192,7 +196,7 @@ class SyncService {
           case ('service_request', 'UPDATE'):
             final result = await _api.updateServiceRequest(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('service_request', result);
           case ('service_request', 'CONVERT'):
@@ -216,7 +220,7 @@ class SyncService {
           case ('quote', 'UPDATE'):
             final result = await _api.updateQuote(op.entityId, {
               ...payload,
-              'base_version': op.baseVersion,
+              'base_version': await _guncelSurum(op),
             });
             await _markSynced('quote', result);
           case ('proforma', 'CREATE'):
@@ -227,6 +231,14 @@ class SyncService {
             final body = Map<String, dynamic>.from(payload)
               ..remove('customer_id');
             await _api.createPayment(payload['customer_id'] as String, body);
+          case ('product', 'CREATE'):
+            await _api.createProduct(payload);
+          case ('product', 'UPDATE'):
+            await _api.updateProduct(op.entityId, payload);
+          case ('product', 'DELETE'):
+            await _api.deleteProduct(op.entityId);
+          case ('stock_movement', 'CREATE'):
+            await _api.createStockMovement(payload);
           case ('income_entry', 'CREATE'):
             await _api.createIncomeEntry(payload);
           case ('expense_entry', 'CREATE'):
@@ -347,6 +359,55 @@ class SyncService {
   /// eksik dosyayı sunucudan geri indirdiğinde) ilk satırın işaret ettiği
   /// dosya yok oluyordu. Satır o andan itibaren KALICI hataya alınıyor ve
   /// yeniden denemek de dahil hiçbir şey onu kurtaramıyordu — kullanıcı
+  /// Gönderim anındaki taban sürüm.
+  ///
+  /// NEDEN KUYRUKTAKİ DEĞER KULLANILMIYOR: yerel `version` kolonu yerel
+  /// düzenlemede artmıyor; yalnızca sunucu yanıtı uygulandığında
+  /// ([_markSynced]) güncelleniyor. Kuyruğa girildiği andaki değeri
+  /// göndermek, kullanıcının KENDİ iki düzenlemesini birbiriyle
+  /// çakıştırıyordu:
+  ///
+  ///   çevrimdışı: işi "Yolda" yap        -> op A, base=3
+  ///   çevrimdışı: işi tutarla tamamla    -> op B, base=3
+  ///   çevrimiçi:  A gider, sunucu 3 -> 4 (değişen alan: status)
+  ///               B base=3 ile gider; sunucu 3-4 arası `status`
+  ///               değiştiğini görür, B de `status` bildirir -> 409
+  ///
+  /// Sonuç: teknisyenin girdiği GERÇEKLEŞEN TUTAR ve TAMAMLANDI durumu
+  /// sunucuya hiç ulaşmıyor, cari hesaptaki borç yalnızca telefonda
+  /// kalıyordu. Kullanıcı da çakışma ekranında kendi iki düzenlemesi
+  /// arasında seçim yapmak zorunda kalıyordu.
+  ///
+  /// Gönderim anında okumak doğru: pull, bekleyen op'u olan satırın
+  /// üzerine yazmıyor (bkz. [_hasPendingOutboxFor]), dolayısıyla yerel
+  /// sürüm yalnızca BİZİM başarılı yazmalarımızla ilerliyor — yani bir
+  /// sonraki yazma için doğru taban tam olarak bu.
+  ///
+  /// Kayıt yerelde yoksa kuyruktaki değere düşülür. Dönüş tipi
+  /// nullable: `baseVersion` kolonu da nullable ve önceki davranış
+  /// (bilinmiyorsa alanı boş göndermek) korunuyor.
+  Future<int?> _guncelSurum(SyncOperation op) async {
+    final surum = switch (op.entityType) {
+      'customer' =>
+        (await (_db.select(_db.customers)
+              ..where((c) => c.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      'job' =>
+        (await (_db.select(_db.jobs)..where((j) => j.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      'service_request' =>
+        (await (_db.select(_db.serviceRequests)
+              ..where((r) => r.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      'quote' =>
+        (await (_db.select(_db.quotes)..where((q) => q.id.equals(op.entityId)))
+            .getSingleOrNull())?.version,
+      _ => null,
+    };
+
+    return surum ?? op.baseVersion;
+  }
+
   /// "Logo dosyası artık cihazda yok" diyen, asla temizlenmeyen bir
   /// kayıtla kalıyordu.
   ///
@@ -517,13 +578,38 @@ class SyncService {
     return failed.length;
   }
 
+  /// Bu kaydın sunucuya gönderilmemiş yerel değişikliği var mı?
+  ///
+  /// Pull, bu soruya "evet" diyen satırın üzerine YAZMAZ; aksi hâlde
+  /// kullanıcının az önce girdiği veri sunucudakiyle değişir.
+  ///
+  /// İKİ DÜZELTME BURADA:
+  ///
+  /// 1) CONFLICT de sayılıyor. Eskiden yalnızca PENDING sayılıyordu ve
+  ///    409 alan bir satır CONFLICT'e geçtiği anda bu koruma devre dışı
+  ///    kalıyordu. Aynı senkron turunda pull, sunucunun sürümünü yerel
+  ///    satırın üzerine yazıyor ve `syncStatus`'ü 'SYNCED' yaparak
+  ///    `_markConflicted`'in az önce koyduğu çakışma işaretini de
+  ///    siliyordu. Kullanıcı hem verisini kaybediyor hem de ekranda
+  ///    hiçbir uyarı görmüyordu.
+  ///
+  /// 2) `getSingleOrNull()` yerine sayım. Drift'te `getSingleOrNull`
+  ///    BİRDEN FAZLA satır dönerse `StateError` fırlatıyor ve aynı kayda
+  ///    ait iki bekleyen op oluşması kolay (ör. müşteri bilgisi + logo,
+  ///    ya da aynı işe iki kez UPDATE). O hata `_runOnce`'ın genel
+  ///    yakalayıcısına düşüp TURDAKİ BÜTÜN pull'ları (müşteri, iş, teklif,
+  ///    cari hesap) atlıyordu.
   Future<bool> _hasPendingOutboxFor(String entityId) async {
-    final row =
-        await (_db.select(_db.syncOperations)..where(
-              (o) => o.entityId.equals(entityId) & o.status.equals('PENDING'),
-            ))
-            .getSingleOrNull();
-    return row != null;
+    final satirlar =
+        await (_db.select(_db.syncOperations)
+              ..where(
+                (o) =>
+                    o.entityId.equals(entityId) &
+                    o.status.isIn(const ['PENDING', 'CONFLICT']),
+              )
+              ..limit(1))
+            .get();
+    return satirlar.isNotEmpty;
   }
 
   /// Şirket antedi ve logosu.
@@ -599,6 +685,98 @@ class SyncService {
     );
     await (_db.update(_db.companies)..where((c) => c.id.equals(companyId)))
         .write(CompaniesCompanion(logoPath: Value(path)));
+  }
+
+  /// Ürün kataloğu.
+  ///
+  /// Sürüm karşılaştırması YOK — `products` tablosunda `version` kolonu
+  /// yok ve katalog kaydı pratikte tek kişi tarafından, seyrek
+  /// düzenleniyor. Koruma tek kural üzerinden yürüyor: cihazda
+  /// gönderilmemiş bir değişiklik varsa üzerine YAZILMAZ.
+  ///
+  /// Asıl çakışma riski taşıyan stok adedi ise sunucuda hareket
+  /// defterinden türetiliyor, dolayısıyla buradaki değer güvenilir.
+  Future<void> _pullProducts(String companyId) async {
+    final remoteRecords = await _api.listProducts();
+    for (final remote in remoteRecords) {
+      if (await _hasPendingOutboxFor(remote.id)) continue;
+
+      final r = remote.raw;
+      final silinme = r['deleted_at'] as String?;
+
+      await _db
+          .into(_db.products)
+          .insertOnConflictUpdate(
+            ProductsCompanion(
+              id: Value(remote.id),
+              companyId: Value(companyId),
+              barcode: Value(r['barcode'] as String?),
+              sku: Value(r['sku'] as String?),
+              name: Value(r['name'] as String),
+              brand: Value(r['brand'] as String?),
+              model: Value(r['model'] as String?),
+              category: Value(r['category'] as String?),
+              unit: Value((r['unit'] as String?) ?? 'adet'),
+              purchasePriceMinor: Value(
+                (r['purchase_price_minor'] as num?)?.toInt() ?? 0,
+              ),
+              salePriceMinor: Value(
+                (r['sale_price_minor'] as num?)?.toInt() ?? 0,
+              ),
+              currentStock: Value((r['current_stock'] as num?)?.toInt() ?? 0),
+              minStock: Value((r['min_stock'] as num?)?.toInt() ?? 0),
+              source: Value((r['source'] as String?) ?? 'MANUAL'),
+              // Mezar taşı: ofiste silinen ürün telefonda da kaybolsun.
+              deletedAt: Value(
+                silinme == null ? null : DateTime.tryParse(silinme),
+              ),
+            ),
+          );
+    }
+  }
+
+  /// Stok hareketleri — yalnızca EKLEME.
+  ///
+  /// Defter değişmez: var olan bir satır güncellenmez, silinmez. Zaten
+  /// bilinen bir hareket sessizce atlanır.
+  Future<void> _pullStockMovements(String companyId) async {
+    final remoteRecords = await _api.listStockMovements();
+    for (final remote in remoteRecords) {
+      final varOlan = await (_db.select(
+        _db.stockMovements,
+      )..where((m) => m.id.equals(remote.id))).getSingleOrNull();
+      if (varOlan != null) continue;
+
+      final r = remote.raw;
+      final urunId = r['product_id'] as String;
+
+      // Ürün yerelde yoksa satır yazılamaz (yabancı anahtar). Bir sonraki
+      // turda ürün gelmiş olur; hareket o zaman eklenir.
+      final urun = await (_db.select(
+        _db.products,
+      )..where((pr) => pr.id.equals(urunId))).getSingleOrNull();
+      if (urun == null) continue;
+
+      final olusma = r['created_at'] as String?;
+      await _db
+          .into(_db.stockMovements)
+          .insertOnConflictUpdate(
+            StockMovementsCompanion(
+              id: Value(remote.id),
+              companyId: Value(companyId),
+              productId: Value(urunId),
+              type: Value(r['type'] as String),
+              quantity: Value((r['quantity'] as num).toInt()),
+              referenceType: Value(r['reference_type'] as String),
+              referenceId: Value(r['reference_id'] as String?),
+              note: Value(r['note'] as String?),
+              createdAt: Value(
+                (olusma == null ? null : DateTime.tryParse(olusma)) ??
+                    DateTime.now(),
+              ),
+            ),
+          );
+    }
   }
 
   Future<void> _pullCustomers(String companyId) async {

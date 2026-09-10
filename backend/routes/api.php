@@ -23,10 +23,12 @@ use App\Http\Controllers\Api\V1\LogoController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PersonnelController;
 use App\Http\Controllers\Api\V1\PlanController;
+use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProformaController;
 use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\ServiceRequestController;
+use App\Http\Controllers\Api\V1\StockMovementController;
 use App\Http\Controllers\Api\V1\SubscriptionCheckoutController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SubscriptionHistoryController;
@@ -224,6 +226,21 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
 
             Route::apiResource('quotes', QuoteController::class)->only(['index', 'store', 'show', 'update']);
             Route::apiResource('proformas', ProformaController::class)->only(['index', 'store', 'show', 'update']);
+
+            // ÜRÜN / STOK — 2026-09-10'da eklendi.
+            //
+            // Tablolar baştan beri vardı ama HİÇBİR ucu yoktu: kullanıcının
+            // ürün kataloğu ve stok geçmişi yalnızca telefonunda duruyordu,
+            // telefon kaybolduğunda geri getirilemiyordu. Uygulamanın kendi
+            // vaadiyle de çelişiyordu (allowBackup="false" gerekçesi:
+            // "tüm veri sunucuyla eşitleniyor").
+            //
+            // Stok hareketlerinde update/destroy YOK: defter değişmez,
+            // yanlış hareket ters yönde ikinci bir hareketle düzeltilir.
+            Route::apiResource('products', ProductController::class)
+                ->only(['index', 'store', 'show', 'update', 'destroy']);
+            Route::apiResource('stock-movements', StockMovementController::class)
+                ->only(['index', 'store']);
 
             Route::apiResource('income-entries', IncomeEntryController::class)->only(['index', 'store']);
             Route::apiResource('expense-entries', ExpenseEntryController::class)->only(['index', 'store']);
