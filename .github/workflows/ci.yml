@@ -91,3 +91,41 @@ jobs:
       # release imzasına bağlı ve anahtarlar yalnızca sürüm işinde var.
       - name: Android derlemesi
         run: flutter build apk --debug --flavor github
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+
+      # NEDEN BU İŞ VAR: depoda mobil tarafı denetleyen bir iş vardı ama
+      # backend'in HİÇBİR CI'ı yoktu (ROADMAP'te kayıtlıydı). Testler
+      # yalnızca birinin yerelde Docker'ı ayakta tutmasına bağlıydı ve
+      # pratikte çoğu zaman hiç çalışmıyordu. Bu yüzden panelde politika
+      # eksikliği gibi ciddi yetki açıkları aylarca fark edilmedi.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          # Testler SQLite bellek içi çalışıyor (bkz. phpunit.xml);
+          # pdo_pgsql yine de kurulu, üretim sürücüsü o ve eksikliği
+          # ancak canlıda patlar.
+          extensions: pdo_sqlite, sqlite3, pdo_pgsql, intl, bcmath, gd, zip, mbstring, exif
+          coverage: none
+
+      # --no-interaction: CI'da soru sorulursa iş asılı kalır.
+      # Kilit dosyası depoda; composer.json ile tutmuyorsa kırılsın.
+      - name: Bağımlılıklar
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Uygulama anahtarı
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Biçim denetimi
+        run: vendor/bin/pint --test
+
+      - name: Testler
+        run: php artisan test

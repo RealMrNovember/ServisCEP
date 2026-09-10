@@ -15,16 +15,33 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Sunucu Cloudflare arkasında (nginx, PHP-FPM'e unix socket ile
-        // bağlanıyor) — gerçek istemci IP'si her zaman Cloudflare'in edge
-        // IP'si olarak görünür ve bu aralıklar değişken olduğu için tek
-        // tek IP güvenmek yerine tüm proxy'lere güvenip yalnızca
-        // X-Forwarded-* başlıklarını kabul ediyoruz (Laravel'in resmi
-        // önerisi). Bunun eksik olması, signed URL doğrulamasının şemayı
-        // (http/https) yanlış çözmesine ve her zaman 403 dönmesine yol
-        // açıyordu (bkz. docs/09 § Dosya Güvenliği).
-        $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR
-            | Request::HEADER_X_FORWARDED_HOST
+        // Sunucu Cloudflare arkasında. Şema/host/port başlıklarına
+        // güvenilmesi ŞART: eksik olduğunda signed URL doğrulaması şemayı
+        // (http/https) yanlış çözüyor ve her zaman 403 dönüyordu
+        // (bkz. docs/09 § Dosya Güvenliği).
+        //
+        // X-Forwarded-For BİLEREK DIŞARIDA — bu bir güvenlik düzeltmesi:
+        //
+        // Burada eskiden HEADER_X_FORWARDED_FOR da vardı. `at: '*'` ile
+        // birlikte Symfony, XFF zincirindeki bütün adresleri güvenilir
+        // sayıp eliyor ve geriye EN SOLDAKİ, yani İSTEMCİNİN KENDİ
+        // yazdığı değer kalıyordu (Request::getClientIps). Cloudflare
+        // gelen XFF'i silmiyor, sonuna ekliyor. Sonuç: her istekte farklı
+        // bir `X-Forwarded-For` göndererek TÜM hız sınırları
+        // atlatılabiliyordu — giriş (throttle:10,1), parola sıfırlama
+        // (throttle:5,10) ve veri uçları dahil. AppLog.ip ve ödeme
+        // sağlayıcısına giden user_ip de sahteydi.
+        //
+        // Buna hiç gerek yok: nginx'te `real_ip_header CF-Connecting-IP`
+        // Cloudflare aralıklarıyla birlikte zaten kurulu
+        // (conf/cloudflare-realip.conf, nginx.conf'tan include ediliyor)
+        // ve `fastcgi_param REMOTE_ADDR $remote_addr` ile PHP'ye GERÇEK
+        // istemci IP'si geliyor. CF-Connecting-IP yalnızca Cloudflare'in
+        // kendi IP'lerinden kabul edildiği için taklit edilemiyor.
+        // Dolayısıyla XFF'e güvenmek, zaten doğru olan bir değerin
+        // istemci tarafından ezilmesine izin vermekten başka bir işe
+        // yaramıyordu.
+        $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_HOST
             | Request::HEADER_X_FORWARDED_PORT
             | Request::HEADER_X_FORWARDED_PROTO);
 

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:serviscep/core/utils/dis_baglanti.dart';
 
@@ -70,33 +69,60 @@ void main() {
     );
   });
 
-  testWidgets('açılamayan bağlantıda kullanıcı bilgilendirilir', (
-    tester,
-  ) async {
-    // Hedefi açacak uygulama YOKMUŞ gibi davranılıyor: gerçek üretim
-    // hatasında Android tam olarak bunu yapıyordu — istisna yok,
-    // yalnızca `false`. Kanal elle taklit ediliyor ki test, eklentinin
-    // test ortamındaki rastlantısal davranışına değil, BİZİM
-    // davranışımıza baksın.
-    final mesajci = tester.binding.defaultBinaryMessenger;
-    mesajci.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/url_launcher'),
-      (cagri) async => false,
-    );
-    addTearDown(
-      () => mesajci.setMockMethodCallHandler(
-        const MethodChannel('plugins.flutter.io/url_launcher'),
-        null,
-      ),
+  test('açılamayan bağlantıda çağıran bilgilendirilir', () async {
+    // Hedefi açacak uygulama YOKMUŞ gibi: gerçek üretim hatasında
+    // Android tam olarak bunu yapıyordu — istisna yok, yalnızca `false`.
+    final mesajlar = <String>[];
+
+    final sonuc = await DisBaglanti.ac(
+      Uri.https('ornek.test', '/belge'),
+      mesajGoster: mesajlar.add,
+      baslatici: (_) async => false,
     );
 
+    expect(sonuc, isFalse);
+    expect(mesajlar, hasLength(1));
+    expect(mesajlar.single, contains('açılamadı'));
+  });
+
+  test('başlatıcı istisna fırlatsa da sessiz kalınmaz', () async {
+    // Eklenti ileride başka bir istisna türü eklerse de kullanıcı
+    // bilgilendirilmeli; bu yüzden `on Object` yakalanıyor.
+    final mesajlar = <String>[];
+
+    final sonuc = await DisBaglanti.ac(
+      Uri.https('ornek.test', '/belge'),
+      mesajGoster: mesajlar.add,
+      baslatici: (_) async => throw StateError('hedef yok'),
+    );
+
+    expect(sonuc, isFalse);
+    expect(mesajlar, hasLength(1));
+  });
+
+  test('açılabilen bağlantıda kullanıcı rahatsız edilmez', () async {
+    final mesajlar = <String>[];
+
+    final sonuc = await DisBaglanti.ac(
+      Uri.https('ornek.test', '/belge'),
+      mesajGoster: mesajlar.add,
+      baslatici: (_) async => true,
+    );
+
+    expect(sonuc, isTrue);
+    expect(mesajlar, isEmpty);
+  });
+
+  testWidgets('ekranda SnackBar olarak görünür', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: Builder(
             builder: (context) => ElevatedButton(
-              onPressed: () =>
-                  context.disBaglantiAc(Uri.https('ornek.test', '/belge')),
+              onPressed: () => context.disBaglantiAc(
+                Uri.https('ornek.test', '/belge'),
+                baslatici: (_) async => false,
+              ),
               child: const Text('Aç'),
             ),
           ),

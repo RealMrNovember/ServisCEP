@@ -23,6 +23,9 @@ class AuthService
     /** Parola sıfırlama kodunun geçerlilik süresi (dakika). */
     private const PAROLA_KODU_DAKIKA = 15;
 
+    /** Bir kod için toplam yanlış deneme hakkı; dolunca kod iptal olur. */
+    private const PAROLA_KODU_DENEME_HAKKI = 5;
+
     /**
      * Yeni şirketi ve şirketin ilk (OWNER) kullanıcısını birlikte oluşturur —
      * bkz. ROADMAP.md M2, mobil onboarding akışıyla (şirket bilgileri +
@@ -299,7 +302,8 @@ class AuthService
 
         DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $user->email],
-            ['token' => Hash::make($code), 'created_at' => now()],
+            // attempts sıfırlanıyor: yeni kod = yeni deneme hakkı.
+            ['token' => Hash::make($code), 'created_at' => now(), 'attempts' => 0],
         );
 
         $user->notify(new PasswordResetCode($code, self::PAROLA_KODU_DAKIKA));
@@ -330,14 +334,49 @@ class AuthService
                 ->addMinutes(self::PAROLA_KODU_DAKIKA)
                 ->isPast();
 
-        if ($satir === null || $suresiDoldu || ! Hash::check($data['code'], $satir->token)) {
+        $kodDogru = $satir !== null
+            && ! $suresiDoldu
+            && Hash::check($data['code'], $satir->token);
+
+        if (! $kodDogru) {
+            // Deneme sayacı — kaba kuvvete karşı asıl savunma.
+            //
+            // Kod 6 haneli. Sayaç yokken yanlış kod satırı olduğu gibi
+            // bırakıyordu ve 15 dakikalık pencere boyunca sınırsız deneme
+            // yapılabiliyordu. IP başına hız sınırı tek başına yetmez:
+            // saldırgan IP değiştirebilir ya da pencereyi bekleyebilir.
+            // Hak bitince satır siliniyor, yani kullanıcının yeni kod
+            // istemesi gerekiyor.
+            $kalanHakBitti = false;
+
+            if ($satir !== null && ! $suresiDoldu) {
+                $deneme = (int) ($satir->attempts ?? 0) + 1;
+                $kalanHakBitti = $deneme >= self::PAROLA_KODU_DENEME_HAKKI;
+
+                if ($kalanHakBitti) {
+                    DB::table('password_reset_tokens')
+                        ->where('email', $data['email'])
+                        ->delete();
+                } else {
+                    DB::table('password_reset_tokens')
+                        ->where('email', $data['email'])
+                        ->update(['attempts' => $deneme]);
+                }
+            }
+
             AppLog::event(
                 'Parola sıfırlama başarısız',
-                ['email' => $data['email'], 'sebep' => $satir === null ? 'kod yok' : ($suresiDoldu ? 'süre doldu' : 'kod hatalı')],
+                [
+                    'email' => $data['email'],
+                    'sebep' => $satir === null ? 'kod yok' : ($suresiDoldu ? 'süre doldu' : 'kod hatalı'),
+                    'deneme_hakki_bitti' => $kalanHakBitti,
+                ],
                 null,
                 'warning',
             );
 
+            // Mesaj her durumda AYNI: "kaç hakkın kaldı" demek,
+            // saldırgana bilgi vermek olur.
             throw ValidationException::withMessages([
                 'code' => ['Kod geçersiz ya da süresi dolmuş. Yeniden kod iste.'],
             ]);

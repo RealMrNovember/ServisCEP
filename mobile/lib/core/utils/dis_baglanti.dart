@@ -18,6 +18,9 @@ import 'package:url_launcher/url_launcher.dart';
 /// profili) kullanıcı bunu ÖĞRENİR ve adres panoya kopyalandığı için
 /// elinde bir çıkış yolu kalır.
 abstract final class DisBaglanti {
+  static Future<bool> _urlLauncherIle(Uri uri) =>
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+
   /// Bağlantıyı harici uygulamada açar.
   ///
   /// Dönüş: açıldıysa true. Açılamadıysa çağıran tarafın ek bir şey
@@ -30,14 +33,17 @@ abstract final class DisBaglanti {
     Uri uri, {
     required void Function(String mesaj) mesajGoster,
     String? hataMesaji,
+    @visibleForTesting Future<bool> Function(Uri uri)? baslatici,
   }) async {
     var acildi = false;
     try {
-      acildi = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } on PlatformException {
-      // ACTIVITY_NOT_FOUND — hedefi açabilecek uygulama yok.
-      acildi = false;
-    } on MissingPluginException {
+      acildi = await (baslatici ?? _urlLauncherIle)(uri);
+    } on Object {
+      // Her şey yakalanıyor — tür ayıklamak burada işe yaramaz. Bu
+      // fonksiyonun tek görevi "sessiz kalma"; hangi istisnanın geldiği
+      // (PlatformException, MissingPluginException, eklentinin ileride
+      // ekleyeceği bir tür) sonucu değiştirmiyor: kullanıcı yine
+      // bilgilendirilmeli.
       acildi = false;
     }
 
@@ -67,11 +73,16 @@ abstract final class DisBaglanti {
 /// Messenger `await`'ten ÖNCE yakalanıyor: bağlantı denemesi sürerken
 /// ekran kapanırsa elde ölü bir `BuildContext` kalmaz.
 extension DisBaglantiContext on BuildContext {
-  Future<bool> disBaglantiAc(Uri uri, {String? hataMesaji}) {
+  Future<bool> disBaglantiAc(
+    Uri uri, {
+    String? hataMesaji,
+    @visibleForTesting Future<bool> Function(Uri uri)? baslatici,
+  }) {
     final messenger = ScaffoldMessenger.of(this);
     return DisBaglanti.ac(
       uri,
       hataMesaji: hataMesaji,
+      baslatici: baslatici,
       mesajGoster: (mesaj) =>
           messenger.showSnackBar(SnackBar(content: Text(mesaj))),
     );

@@ -37,6 +37,16 @@ class QuoteForm
                             ->default('TASLAK')
                             ->required()
                             ->native(false),
+                        Select::make('vat_mode')
+                            ->label('KDV')
+                            ->options([
+                                'EXCLUDED' => '+ KDV (hariç)',
+                                'INCLUDED' => 'KDV dahil',
+                            ])
+                            ->default('EXCLUDED')
+                            ->required()
+                            ->native(false)
+                            ->helperText('Belgenin toplamı buna göre hesaplanır.'),
                         Textarea::make('notes')
                             ->label('Notlar')
                             ->columnSpanFull(),

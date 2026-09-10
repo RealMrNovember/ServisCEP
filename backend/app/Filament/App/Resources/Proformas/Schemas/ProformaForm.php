@@ -28,6 +28,16 @@ class ProformaForm
                         DatePicker::make('valid_until')
                             ->label('Geçerlilik Tarihi')
                             ->native(false),
+                        Select::make('vat_mode')
+                            ->label('KDV')
+                            ->options([
+                                'EXCLUDED' => '+ KDV (hariç)',
+                                'INCLUDED' => 'KDV dahil',
+                            ])
+                            ->default('EXCLUDED')
+                            ->required()
+                            ->native(false)
+                            ->helperText('Belgenin toplamı buna göre hesaplanır.'),
                         Textarea::make('notes')
                             ->label('Notlar')
                             ->columnSpanFull(),
