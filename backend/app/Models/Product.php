@@ -33,6 +33,12 @@ class Product extends Model
         ];
     }
 
+    /** Bu ürüne bağlanmış ek barkodlar (seri numaraları dâhil). */
+    public function barcodes(): HasMany
+    {
+        return $this->hasMany(ProductBarcode::class);
+    }
+
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);

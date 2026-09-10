@@ -25,6 +25,7 @@ part 'app_database.g.dart';
     ExpenseEntries,
     CustomerLedgerEntries,
     Products,
+    ProductBarcodes,
     StockMovements,
     SyncOperations,
   ],
@@ -38,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -160,6 +161,17 @@ class AppDatabase extends _$AppDatabase {
         // goc hicbir mevcut belgenin toplamini degistirmiyor.
         await m.addColumn(quoteItems, quoteItems.discountRate);
         await m.addColumn(proformaItems, proformaItems.discountRate);
+      }
+
+      if (from < 11) {
+        // Bir urune birden fazla barkod baglanabilsin.
+        //
+        // Seri numarali urunlerde (kamera vb.) her kutu FARKLI kod
+        // okutuyor; tek `products.barcode` alani bunu karsilamiyordu ve
+        // ayni modelin ikinci kutusu hicbir zaman eslesmiyordu.
+        // Mevcut kayitlara dokunulmuyor: products.barcode oldugu gibi
+        // kaliyor ve arama her iki kaynaga da bakiyor.
+        await m.createTable(productBarcodes);
       }
     },
   );

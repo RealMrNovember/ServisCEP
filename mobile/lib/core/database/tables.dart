@@ -409,6 +409,32 @@ class Products extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Bir ürüne bağlanan EK barkodlar.
+///
+/// NEDEN: [Products.barcode] tek kod tutuyor ve bu, sahadaki en yaygın
+/// durumu karşılamıyor. Güvenlik kamerası gibi ürünlerin kutusunda
+/// perakende barkodu (EAN) yerine SERİ NUMARASI oluyor; seri her kutuda
+/// farklı. Kullanıcı ilk kamerayı elle tanımlasa bile aynı modelin
+/// ikinci kutusu başka bir kod okutuyor ve hiçbir zaman eşleşmiyordu.
+///
+/// Kod ŞİRKET içinde benzersiz: aynı barkod iki ayrı ürüne bağlanamaz,
+/// yoksa tarama hangi ürünü açacağını bilemez.
+class ProductBarcodes extends Table {
+  TextColumn get id => text()();
+  TextColumn get companyId => text().references(Companies, #id)();
+  TextColumn get productId => text().references(Products, #id)();
+  TextColumn get barcode => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {companyId, barcode},
+  ];
+}
+
 /// Stok hareketleri — immutable, cari hesapla aynı felsefe (bkz. docs/16).
 class StockMovements extends Table {
   TextColumn get id => text()();

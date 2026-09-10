@@ -34,6 +34,85 @@ class ProductsRepository {
         .watch();
   }
 
+  /// Barkodla ürün arar.
+  ///
+  /// İKİ kaynağa birden bakar: ürünün kendi `barcode` alanı ve ona
+  /// sonradan bağlanmış ek kodlar. İkincisi olmadan seri numaralı
+  /// ürünlerde aynı modelin ikinci kutusu hiçbir zaman eşleşmiyordu.
+  Future<Product?> barkodlaBul(String companyId, String barcode) async {
+    final dogrudan = await findByBarcode(companyId, barcode);
+    if (dogrudan != null) return dogrudan;
+
+    final bag = await (_db.select(_db.productBarcodes)..where(
+          (b) => b.companyId.equals(companyId) & b.barcode.equals(barcode),
+        ))
+        .getSingleOrNull();
+    if (bag == null) return null;
+
+    final urun = await byId(bag.productId);
+    // Ürün silinmişse bağ da anlamsız; "bulunamadı" doğru cevap.
+    return urun?.deletedAt == null ? urun : null;
+  }
+
+  /// Okunan kodu var olan bir ürüne bağlar.
+  ///
+  /// Kurulumcunun asıl ihtiyacı bu: aynı modelden gelen her kutunun
+  /// serisi farklı ve her birini ayrı ürün olarak tanımlamak stoku
+  /// anlamsız hâle getiriyordu.
+  Future<void> barkodBagla({
+    required Product urun,
+    required String barcode,
+  }) async {
+    final id = _uuid.v4();
+    await _db.transaction(() async {
+      await _db
+          .into(_db.productBarcodes)
+          .insert(
+            ProductBarcodesCompanion.insert(
+              id: id,
+              companyId: urun.companyId,
+              productId: urun.id,
+              barcode: barcode,
+            ),
+          );
+
+      await _enqueue(
+        entityType: 'product_barcode',
+        entityId: id,
+        operation: 'CREATE',
+        payload: {
+          'id': id,
+          'product_id': urun.id,
+          'barcode': barcode,
+        },
+      );
+    });
+  }
+
+  /// Ürüne bağlı ek kodlar.
+  Stream<List<ProductBarcode>> barkodlariIzle(String urunId) {
+    return (_db.select(_db.productBarcodes)
+          ..where((b) => b.productId.equals(urunId))
+          ..orderBy([(b) => OrderingTerm.asc(b.createdAt)]))
+        .watch();
+  }
+
+  /// Yanlış bağlanmış bir kodu kaldırır.
+  Future<void> barkodKaldir(ProductBarcode bag) async {
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.productBarcodes,
+      )..where((b) => b.id.equals(bag.id))).go();
+
+      await _enqueue(
+        entityType: 'product_barcode',
+        entityId: bag.id,
+        operation: 'DELETE',
+        payload: const {},
+      );
+    });
+  }
+
   Future<Product?> findByBarcode(String companyId, String barcode) {
     return (_db.select(_db.products)..where(
           (p) =>

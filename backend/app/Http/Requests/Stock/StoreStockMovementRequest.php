@@ -28,7 +28,10 @@ class StoreStockMovementRequest extends FormRequest
                 'required',
                 'uuid',
                 Rule::exists((new Product)->getTable(), 'id')
-                    ->where('company_id', $this->user()?->company_id),
+                    ->where(fn ($query) => $query->where(
+                        'company_id',
+                        $this->user()->company_id,
+                    )),
             ],
             'type' => ['required', 'string', 'in:IN,OUT'],
             'quantity' => ['required', 'integer', 'min:1'],

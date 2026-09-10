@@ -119,6 +119,7 @@ class SyncService {
         // yerelde yoksa satır yabancı anahtar yüzünden yazılamaz.
         () => _pullProducts(companyId),
         () => _pullStockMovements(companyId),
+        () => _pullProductBarcodes(companyId),
       ]) {
         if (await _tokenStore.read() == null) return false;
         await pull();
@@ -239,6 +240,10 @@ class SyncService {
             await _api.deleteProduct(op.entityId);
           case ('stock_movement', 'CREATE'):
             await _api.createStockMovement(payload);
+          case ('product_barcode', 'CREATE'):
+            await _api.createProductBarcode(payload);
+          case ('product_barcode', 'DELETE'):
+            await _api.deleteProductBarcode(op.entityId);
           case ('income_entry', 'CREATE'):
             await _api.createIncomeEntry(payload);
           case ('expense_entry', 'CREATE'):
@@ -732,6 +737,50 @@ class SyncService {
               ),
             ),
           );
+    }
+  }
+
+  /// Ürüne bağlı ek barkodlar.
+  ///
+  /// Sunucudaki liste DOĞRULUK KAYNAĞI: ofiste kaldırılan bir bağ
+  /// telefonda da kalkmalı, yoksa tarama var olmayan bir ürünü açar.
+  /// Gönderilmemiş yerel bağlar korunuyor.
+  Future<void> _pullProductBarcodes(String companyId) async {
+    final uzaktakiler = await _api.listProductBarcodes();
+    final uzakIdler = uzaktakiler.map((r) => r.id).toSet();
+
+    for (final remote in uzaktakiler) {
+      final r = remote.raw;
+      final urunId = r['product_id'] as String;
+
+      // Ürün henüz inmemişse bağ yazılamaz (yabancı anahtar); bir
+      // sonraki turda ürün gelince eklenir.
+      final urun = await (_db.select(
+        _db.products,
+      )..where((p) => p.id.equals(urunId))).getSingleOrNull();
+      if (urun == null) continue;
+
+      await _db
+          .into(_db.productBarcodes)
+          .insertOnConflictUpdate(
+            ProductBarcodesCompanion(
+              id: Value(remote.id),
+              companyId: Value(companyId),
+              productId: Value(urunId),
+              barcode: Value(r['barcode'] as String),
+            ),
+          );
+    }
+
+    // Sunucuda olmayanları temizle — ama gönderilmemiş olanlara dokunma.
+    final yereldekiler = await _db.select(_db.productBarcodes).get();
+    for (final yerel in yereldekiler) {
+      if (uzakIdler.contains(yerel.id)) continue;
+      if (await _hasPendingOutboxFor(yerel.id)) continue;
+
+      await (_db.delete(
+        _db.productBarcodes,
+      )..where((b) => b.id.equals(yerel.id))).go();
     }
   }
 
