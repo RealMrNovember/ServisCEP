@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BarcodeLookupController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerLedgerController;
@@ -248,6 +249,17 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
             // okutuyor; tek `products.barcode` alani bunu karsilamiyordu.
             Route::apiResource('product-barcodes', ProductBarcodeController::class)
                 ->only(['index', 'store', 'destroy']);
+
+            // Taranan kodu acik urun veritabanlarinda arar (sunucu vekil
+            // olarak cikiyor; onbellek paylasilsin ve saglayici degisikligi
+            // uygulama surumu gerektirmesin diye).
+            //
+            // throttle: sorgu DISARI cikiyor. Sinirsiz birakmak, ucretsiz
+            // saglayicilarin gunluk kotasini tek kullanicinin yakmasina
+            // izin vermek olurdu.
+            Route::get('/barcode-lookup', BarcodeLookupController::class)
+                ->middleware('throttle:60,1')
+                ->name('barcode-lookup');
 
             Route::apiResource('income-entries', IncomeEntryController::class)->only(['index', 'store']);
             Route::apiResource('expense-entries', ExpenseEntryController::class)->only(['index', 'store']);

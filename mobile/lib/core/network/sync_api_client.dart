@@ -57,6 +57,14 @@ class SyncEntityResult {
   final int version;
 }
 
+/// Açık ürün veritabanlarından dönen ürün bilgisi.
+class GlobalBarcodeHit {
+  const GlobalBarcodeHit({required this.name, this.brand, this.category});
+  final String name;
+  final String? brand;
+  final String? category;
+}
+
 /// Sunucudan çekilen (pull) tek bir Customer/Job satırı — sadece merge
 /// kararı için gereken alanlar.
 class RemoteRecord {
@@ -143,6 +151,12 @@ abstract interface class SyncApiClient {
   /// Stok hareketi — defter değişmez, yalnızca ekleme var.
   Future<SyncEntityResult> createStockMovement(Map<String, dynamic> payload);
   Future<List<RemoteRecord>> listStockMovements();
+
+  /// Taranan kodu açık ürün veritabanlarında arar (sunucu vekil).
+  ///
+  /// Bulunamazsa null döner — bu bir arıza değil, kapsamın sınırı:
+  /// veritabanları ağırlıklı olarak market ürünlerini içeriyor.
+  Future<GlobalBarcodeHit?> lookupBarcode(String barcode);
 
   /// Bir ürüne bağlanan EK barkodlar — seri numaralı ürünler için.
   Future<SyncEntityResult> createProductBarcode(Map<String, dynamic> payload);
@@ -423,6 +437,28 @@ class DioSyncApiClient implements SyncApiClient {
   @override
   Future<List<RemoteRecord>> listStockMovements() =>
       _listAllPages('/stock-movements');
+
+  @override
+  Future<GlobalBarcodeHit?> lookupBarcode(String barcode) async {
+    try {
+      final yanit = await _dio.get<Map<String, dynamic>>(
+        '/barcode-lookup',
+        queryParameters: {'barcode': barcode},
+      );
+      final veri = yanit.data?['data'] as Map<String, dynamic>?;
+      if (veri == null || veri['found'] != true) return null;
+
+      return GlobalBarcodeHit(
+        name: veri['name'] as String,
+        brand: veri['brand'] as String?,
+        category: veri['category'] as String?,
+      );
+    } on DioException {
+      // Sorgu bir KOLAYLIK; başarısız olması taramayı durdurmamalı.
+      // Kullanıcı formu elle doldurmaya devam edebilir.
+      return null;
+    }
+  }
 
   @override
   Future<SyncEntityResult> createProductBarcode(Map<String, dynamic> payload) =>
