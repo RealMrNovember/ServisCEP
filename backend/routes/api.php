@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\LogoController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PersonnelController;
 use App\Http\Controllers\Api\V1\PlanController;
+use App\Http\Controllers\Api\V1\ProductBarcodeController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProformaController;
@@ -241,6 +242,12 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
                 ->only(['index', 'store', 'show', 'update', 'destroy']);
             Route::apiResource('stock-movements', StockMovementController::class)
                 ->only(['index', 'store']);
+
+            // Ek barkodlar: bir urune birden fazla kod baglanabilsin.
+            // Seri numarali urunlerde (kamera vb.) her kutu farkli kod
+            // okutuyor; tek `products.barcode` alani bunu karsilamiyordu.
+            Route::apiResource('product-barcodes', ProductBarcodeController::class)
+                ->only(['index', 'store', 'destroy']);
 
             Route::apiResource('income-entries', IncomeEntryController::class)->only(['index', 'store']);
             Route::apiResource('expense-entries', ExpenseEntryController::class)->only(['index', 'store']);

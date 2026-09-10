@@ -1,0 +1,67 @@
+name: Kod üretimi (drift)
+
+# Üretilmiş dosyaları (*.g.dart) CI'da yeniden üretip dala geri iter.
+#
+# NEDEN VAR: `app_database.g.dart` depoda TUTULUYOR (bkz. ci.yml) ve
+# `tables.dart` değiştiğinde build_runner ile yeniden üretilmesi gerekiyor.
+# Bunun için Flutter SDK'sı lazım; geliştirme makinelerinden birinde kurulu
+# değil ve bu yüzden şema değişiklikleri elle yapılamıyordu.
+#
+# Elle tetiklenir (workflow_dispatch): şema değiştiren dalı seç, çalıştır,
+# üretilmiş dosyalar aynı dala commit edilir.
+#
+# Not: GITHUB_TOKEN ile atılan push yeni workflow tetiklemez (GitHub'ın
+# kasıtlı davranışı), dolayısıyla döngü oluşmaz. Üretim sonrası CI'ı
+# çalıştırmak için dala normal bir commit itmek ya da CI'ı elle tetiklemek
+# gerekir.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: kod-uretimi-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  uret:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+
+      - name: Bağımlılıklar
+        run: flutter pub get --enforce-lockfile
+
+      # --delete-conflicting-outputs: şema değişince eski üretilmiş dosya
+      # yeni çıktıyla çakışıyor ve build_runner sormadan durmuyor.
+      - name: build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Üretilen dosyalar derleniyor mu
+        run: flutter analyze
+
+      - name: Commit
+        run: |
+          if git diff --quiet -- '*.g.dart'; then
+            echo "Üretilmiş dosyalarda değişiklik yok."
+            exit 0
+          fi
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add '*.g.dart'
+          git commit -m "chore: uretilmis drift dosyalari yenilendi"
+          git push origin HEAD:${{ github.ref_name }}
+        working-directory: .

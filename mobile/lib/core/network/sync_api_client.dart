@@ -144,6 +144,11 @@ abstract interface class SyncApiClient {
   Future<SyncEntityResult> createStockMovement(Map<String, dynamic> payload);
   Future<List<RemoteRecord>> listStockMovements();
 
+  /// Bir ürüne bağlanan EK barkodlar — seri numaralı ürünler için.
+  Future<SyncEntityResult> createProductBarcode(Map<String, dynamic> payload);
+  Future<void> deleteProductBarcode(String id);
+  Future<List<RemoteRecord>> listProductBarcodes();
+
   Future<SyncEntityResult> createJob(Map<String, dynamic> payload);
   Future<SyncEntityResult> updateJob(String id, Map<String, dynamic> payload);
   Future<List<RemoteRecord>> listJobs();
@@ -418,6 +423,25 @@ class DioSyncApiClient implements SyncApiClient {
   @override
   Future<List<RemoteRecord>> listStockMovements() =>
       _listAllPages('/stock-movements');
+
+  @override
+  Future<SyncEntityResult> createProductBarcode(Map<String, dynamic> payload) =>
+      _create('/product-barcodes', payload);
+
+  @override
+  Future<void> deleteProductBarcode(String id) async {
+    try {
+      await _dio.delete('/product-barcodes/$id');
+    } on DioException catch (e) {
+      // Zaten silinmiş — idempotent kabul edilir.
+      if (e.response?.statusCode == 404) return;
+      _client.throwApiException(e);
+    }
+  }
+
+  @override
+  Future<List<RemoteRecord>> listProductBarcodes() =>
+      _listAllPages('/product-barcodes');
 
   @override
   Future<List<RemoteRecord>> listCustomers() => _listAllPages('/customers');

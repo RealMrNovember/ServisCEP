@@ -16,6 +16,9 @@ class FakeSyncApiClient implements SyncApiClient {
   /// Sıradaki ürün güncellemesi geçici hata alsın (satır kuyrukta kalır).
   bool failNextUpdateProduct = false;
   List<RemoteRecord> stockMovementsToPull = [];
+  final List<Map<String, dynamic>> createProductBarcodeCalls = [];
+  final List<String> deleteProductBarcodeCalls = [];
+  List<RemoteRecord> productBarcodesToPull = [];
   final List<Map<String, dynamic>> createJobCalls = [];
   final List<(String, Map<String, dynamic>)> updateJobCalls = [];
 
@@ -138,6 +141,23 @@ class FakeSyncApiClient implements SyncApiClient {
 
   @override
   Future<List<RemoteRecord>> listStockMovements() async => stockMovementsToPull;
+
+  @override
+  Future<SyncEntityResult> createProductBarcode(
+    Map<String, dynamic> payload,
+  ) async {
+    createProductBarcodeCalls.add(payload);
+    return SyncEntityResult(id: payload['id'] as String, version: 1);
+  }
+
+  @override
+  Future<void> deleteProductBarcode(String id) async {
+    deleteProductBarcodeCalls.add(id);
+  }
+
+  @override
+  Future<List<RemoteRecord>> listProductBarcodes() async =>
+      productBarcodesToPull;
 
   @override
   Future<List<RemoteRecord>> listCustomers() async => customersToPull;
