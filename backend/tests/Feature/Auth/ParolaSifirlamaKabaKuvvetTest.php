@@ -6,6 +6,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -25,6 +26,19 @@ use Tests\TestCase;
 class ParolaSifirlamaKabaKuvvetTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Hız sınırı BURADA devre dışı — ölçülen şey o değil.
+        //
+        // Rotanın kendi `throttle:5,10` sınırı var ve testteki bütün
+        // istekler aynı IP'den geliyor; sayaç ölçmek istediğimiz
+        // DENEME HAKKI'na sıra gelmeden 429 dönüyordu. Hız sınırının
+        // kendisi ayrıca IstemciIpTest'te doğrulanıyor.
+        $this->withoutMiddleware(ThrottleRequests::class);
+    }
 
     private function kodIste(User $user): void
     {

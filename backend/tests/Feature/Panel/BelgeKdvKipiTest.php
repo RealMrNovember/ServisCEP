@@ -58,7 +58,14 @@ class BelgeKdvKipiTest extends TestCase
             app_path('Filament/App/Resources/Quotes/Pages/EditQuote.php'),
             app_path('Filament/App/Resources/Proformas/Pages/EditProforma.php'),
         ] as $dosya) {
-            $icerik = file_get_contents($dosya);
+            // YORUMLAR AYIKLANIYOR: düzeltmeyi ANLATAN yorum, eski
+            // kodun metnini birebir içeriyor ve ham dosyada arama
+            // yapmak bu testi kendi açıklamasına takıyordu.
+            $icerik = preg_replace(
+                '/^\s*(\/\/|\*|\/\*).*$/m',
+                '',
+                file_get_contents($dosya)
+            );
 
             $this->assertStringNotContainsString(
                 "\$data['vat_mode'] ?? 'EXCLUDED'",

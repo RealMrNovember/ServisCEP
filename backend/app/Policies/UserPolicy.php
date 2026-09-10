@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Models\AdminUser;
 use App\Models\User;
 use App\Support\RolePermissions;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
  * Personel yönetimi yetkisi.
@@ -23,27 +25,49 @@ use App\Support\RolePermissions;
  */
 class UserPolicy
 {
-    public function viewAny(User $user): bool
+    /**
+     * DİKKAT — tip ipucu `User` DEĞİL, `Authenticatable`.
+     *
+     * Bu politika İKİ ayrı guard tarafından çağrılıyor: `/panel`'de
+     * işletme kullanıcısı (`User`), `/admin`'de bizim yönetici hesabımız
+     * (`AdminUser`). Metotlar `User` ile daraltıldığında `/admin`'deki
+     * kullanıcı listesi TypeError ile çöküyordu — yönetim paneli
+     * tamamen açılmaz hâle geliyordu. CI'da yakalandı; canlıya gitseydi
+     * paneli kapatırdı.
+     */
+    public function viewAny(Authenticatable $user): bool
     {
-        return $user->hasPermission(RolePermissions::PERSONNEL_MANAGE);
+        // Yönetici paneli listeyi SALT OKUNUR gösterir.
+        if ($user instanceof AdminUser) {
+            return true;
+        }
+
+        return $user instanceof User
+            && $user->hasPermission(RolePermissions::PERSONNEL_MANAGE);
     }
 
-    public function view(User $user, User $personel): bool
+    public function view(Authenticatable $user, User $personel): bool
+    {
+        if ($user instanceof AdminUser) {
+            return true;
+        }
+
+        return $this->yonetebilir($user, $personel);
+    }
+
+    public function create(Authenticatable $user): bool
+    {
+        // Yönetici, işletmenin personelini onun adına OLUŞTURMAZ.
+        return $user instanceof User
+            && $user->hasPermission(RolePermissions::PERSONNEL_MANAGE);
+    }
+
+    public function update(Authenticatable $user, User $personel): bool
     {
         return $this->yonetebilir($user, $personel);
     }
 
-    public function create(User $user): bool
-    {
-        return $user->hasPermission(RolePermissions::PERSONNEL_MANAGE);
-    }
-
-    public function update(User $user, User $personel): bool
-    {
-        return $this->yonetebilir($user, $personel);
-    }
-
-    public function delete(User $user, User $personel): bool
+    public function delete(Authenticatable $user, User $personel): bool
     {
         if (! $this->yonetebilir($user, $personel)) {
             return false;
@@ -59,12 +83,12 @@ class UserPolicy
         return ! $this->sonSahip($personel);
     }
 
-    public function restore(User $user, User $personel): bool
+    public function restore(Authenticatable $user, User $personel): bool
     {
         return $this->yonetebilir($user, $personel);
     }
 
-    public function forceDelete(User $user, User $personel): bool
+    public function forceDelete(Authenticatable $user, User $personel): bool
     {
         return false;
     }
@@ -76,7 +100,7 @@ class UserPolicy
      * rolünü değiştirmesi (yetki yükseltmenin en kısa yolu) ve son
      * sahibin rolünün düşürülmesi.
      */
-    public function changeRole(User $user, User $personel): bool
+    public function changeRole(Authenticatable $user, User $personel): bool
     {
         if (! $this->yonetebilir($user, $personel)) {
             return false;
@@ -89,9 +113,12 @@ class UserPolicy
         return ! $this->sonSahip($personel);
     }
 
-    private function yonetebilir(User $user, User $personel): bool
+    private function yonetebilir(Authenticatable $user, User $personel): bool
     {
-        return $user->company_id !== null
+        // Yönetici (AdminUser) buradan GEÇEMEZ: şirketin personelini
+        // düzenlemek ya da silmek onun işi değil.
+        return $user instanceof User
+            && $user->company_id !== null
             && $user->company_id === $personel->company_id
             && $user->hasPermission(RolePermissions::PERSONNEL_MANAGE);
     }

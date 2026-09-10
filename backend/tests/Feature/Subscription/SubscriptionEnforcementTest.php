@@ -107,6 +107,9 @@ class SubscriptionEnforcementTest extends TestCase
 
         $this->postJson('/api/v1/subscription/payment-requests', [
             'plan_id' => $plan->id,
+            // Zorunlu alan (StorePaymentRequestRequest). Eksikti ve test
+            // 422 alıyordu; backend'in CI'ı olmadığı için kimse görmedi.
+            'billing_period' => 'MONTHLY',
             'note' => 'Havale yaptım',
         ])->assertSuccessful();
     }

@@ -1,3 +1,4 @@
+import 'package:serviscep/core/network/api_client.dart';
 import 'package:serviscep/core/network/sync_api_client.dart';
 
 /// Elle yazılmış sahte — bkz. dart/testing.md "Fakes Over Mocks". Her
@@ -12,6 +13,8 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<String> deleteProductCalls = [];
   final List<Map<String, dynamic>> createStockMovementCalls = [];
   List<RemoteRecord> productsToPull = [];
+  /// Sıradaki ürün güncellemesi geçici hata alsın (satır kuyrukta kalır).
+  bool failNextUpdateProduct = false;
   List<RemoteRecord> stockMovementsToPull = [];
   final List<Map<String, dynamic>> createJobCalls = [];
   final List<(String, Map<String, dynamic>)> updateJobCalls = [];
@@ -110,6 +113,10 @@ class FakeSyncApiClient implements SyncApiClient {
     Map<String, dynamic> payload,
   ) async {
     updateProductCalls.add((id, payload));
+    if (failNextUpdateProduct) {
+      failNextUpdateProduct = false;
+      throw ApiException(500, 'gecici hata');
+    }
     return SyncEntityResult(id: id, version: 1);
   }
 

@@ -136,7 +136,11 @@ void main() {
     );
 
     await tester.tap(find.text('Aç'));
-    await islem;
+    // runAsync ŞART: DisBaglanti panoya kopyalarken bir platform kanalı
+    // çağrısı yapıyor ve o yanıt yalnızca GERÇEK olay döngüsünde geliyor.
+    // Düz `await islem` testi on dakika asılı bırakıyordu; `pumpAndSettle`
+    // tek başına ise SnackBar eklenmeden dönüyordu.
+    await tester.runAsync(() => islem!);
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsOneWidget);
