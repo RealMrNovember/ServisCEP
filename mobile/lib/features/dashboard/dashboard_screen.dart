@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/dis_baglanti.dart';
 
 import '../subscription/abonelik_kapisi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/palette.dart';
 import '../../app/typography.dart';
@@ -460,8 +460,10 @@ class _SiradakiIs extends StatelessWidget {
                         etiket: 'Ara',
                         onTap: is_.customer.phone == null
                             ? null
-                            : () => launchUrl(
+                            : () => context.disBaglantiAc(
                                 Uri.parse('tel:${is_.customer.phone}'),
+                                hataMesaji:
+                                    'Arama başlatılamadı. Numara panoya kopyalandı.',
                               ),
                       ),
                     ),
@@ -472,12 +474,13 @@ class _SiradakiIs extends StatelessWidget {
                         etiket: 'Yol Tarifi',
                         onTap: _adres(is_) == null
                             ? null
-                            : () => launchUrl(
+                            : () => context.disBaglantiAc(
                                 Uri.parse(
                                   'https://www.google.com/maps/search/?api=1'
                                   '&query=${Uri.encodeComponent(_adres(is_)!)}',
                                 ),
-                                mode: LaunchMode.externalApplication,
+                                hataMesaji:
+                                    'Harita açılamadı. Adres panoya kopyalandı.',
                               ),
                       ),
                     ),

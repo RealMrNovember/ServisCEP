@@ -197,7 +197,7 @@ class _GeneralTab extends ConsumerWidget {
             trailing: IconButton(
               icon: const TcIcon(TcIcons.map, size: 20),
               tooltip: 'Haritada Aç',
-              onPressed: () => MapLauncher.openAddress(customer.address!),
+              onPressed: () => MapLauncher.openAddress(context, customer.address!),
             ),
           ),
         if (customer.taxInfo?.isNotEmpty == true)

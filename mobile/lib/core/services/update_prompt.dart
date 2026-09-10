@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../utils/dis_baglanti.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/palette.dart';
 import '../../app/theme.dart';
@@ -132,13 +132,12 @@ Future<void> startUpdate(
     return;
   }
 
-  final opened = await launchUrl(
+  await DisBaglanti.ac(
     Uri.parse(url),
-    mode: LaunchMode.externalApplication,
+    mesajGoster: (mesaj) =>
+        messenger.showSnackBar(SnackBar(content: Text(mesaj))),
+    hataMesaji: 'Mağaza açılamadı. Bağlantı panoya kopyalandı.',
   );
-  if (!opened) {
-    messenger.showSnackBar(const SnackBar(content: Text('Mağaza açılamadı.')));
-  }
 }
 
 /// Zorunlu güncelleme diyaloğu — tasarım teslimatı ekran 38.
