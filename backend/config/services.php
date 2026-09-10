@@ -66,8 +66,17 @@ return [
     // barcodelookup: anahtar YOKSA hiç denenmez. Elektronikte kapsamı
     // belirgin biçimde daha iyi ama ücretli.
     'barcode' => [
-        'upcitemdb_key' => env('UPCITEMDB_KEY', ''),
+        // Anahtarli kaynaklar — tanimli DEGILSE hic sorgulanmaz.
+        // Sira kapsam kalitesine gore (bkz. GlobalBarcodeLookup).
         'barcodelookup_key' => env('BARCODELOOKUP_KEY', ''),
+        'goupc_key' => env('GOUPC_KEY', ''),
+        // Icecat: BT/elektronik katalogu. Open Icecat hesabi UCRETSIZ,
+        // yalnizca kayit istiyor — bu is kolu icin en isabetli kaynak.
+        'icecat_user' => env('ICECAT_USER', ''),
+        'eansearch_key' => env('EANSEARCH_KEY', ''),
+        'upcdatabase_key' => env('UPCDATABASE_KEY', ''),
+        // Anahtarsiz da calisir ("trial" ucu, gunde 100 sorgu).
+        'upcitemdb_key' => env('UPCITEMDB_KEY', ''),
     ],
 
     // Sürüm hattının yayındaki sürümü sunucuya bildirmesi için paylaşılan

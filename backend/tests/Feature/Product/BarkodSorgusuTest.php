@@ -215,6 +215,93 @@ class BarkodSorgusuTest extends TestCase
         }
     }
 
+    public function test_icecat_elektronikte_once_gelir(): void
+    {
+        // Bu is kolu icin en isabetli kaynak; anahtar varsa listede
+        // UPCitemdb'den ONCE oldugu icin onun cevabi kazanmali.
+        config(['services.barcode.icecat_user' => 'test-kullanici']);
+
+        Http::fake([
+            'live.icecat.biz/*' => Http::response([
+                'data' => ['GeneralInfo' => [
+                    'Title' => 'TP-Link TL-SG108 8-Port Gigabit Switch',
+                    'Brand' => 'TP-Link',
+                    'Category' => ['Name' => ['Value' => 'Ag Anahtari']],
+                ]],
+            ]),
+            'api.upcitemdb.com/*' => Http::response([
+                'items' => [['title' => 'Daha kotu bir kayit']],
+            ]),
+            '*' => Http::response(['status' => 0]),
+        ]);
+
+        $this->girisYap();
+
+        $this->getJson('/api/v1/barcode-lookup?barcode=6935364052669')
+            ->assertOk()
+            ->assertJsonPath('data.found', true)
+            ->assertJsonPath('data.name', 'TP-Link TL-SG108 8-Port Gigabit Switch')
+            ->assertJsonPath('data.brand', 'TP-Link')
+            ->assertJsonPath('data.source', 'icecat');
+    }
+
+    public function test_isbn_disinda_kitap_kaynaklari_sorgulanmaz(): void
+    {
+        // Sonucu bastan belli bir istek daha eklemek, herkesi bekletir.
+        Http::fake(['*' => Http::response(['status' => 0])]);
+
+        $this->girisYap();
+        $this->getJson('/api/v1/barcode-lookup?barcode=6935364052669')->assertOk();
+
+        foreach (Http::recorded() as [$istek]) {
+            $this->assertStringNotContainsString('googleapis.com/books', $istek->url());
+            $this->assertStringNotContainsString('openlibrary.org', $istek->url());
+        }
+    }
+
+    public function test_isbn_kodunda_kitap_kaynagi_sorgulanir(): void
+    {
+        Http::fake([
+            'googleapis.com/*' => Http::response([
+                'items' => [['volumeInfo' => [
+                    'title' => 'Clean Code',
+                    'authors' => ['Robert C. Martin'],
+                    'categories' => ['Computers'],
+                ]]],
+            ]),
+            '*' => Http::response(['status' => 0]),
+        ]);
+
+        $this->girisYap();
+
+        $this->getJson('/api/v1/barcode-lookup?barcode=9780132350884')
+            ->assertOk()
+            ->assertJsonPath('data.found', true)
+            ->assertJsonPath('data.name', 'Clean Code')
+            ->assertJsonPath('data.brand', 'Robert C. Martin')
+            ->assertJsonPath('data.source', 'googlebooks');
+    }
+
+    public function test_bir_kaynak_cokse_digerleri_calismaya_devam_eder(): void
+    {
+        // Paralel sorguda bir kaynagin erisilemez olmasi digerlerini
+        // etkilememeli.
+        Http::fake([
+            'api.upcitemdb.com/*' => fn () => throw new \RuntimeException('ag hatasi'),
+            'world.openfoodfacts.org/*' => Http::response($this->bulundu([
+                'product_name' => 'Market urunu',
+            ])),
+            '*' => Http::response(['status' => 0]),
+        ]);
+
+        $this->girisYap();
+
+        $this->getJson('/api/v1/barcode-lookup?barcode=8690000000011')
+            ->assertOk()
+            ->assertJsonPath('data.found', true)
+            ->assertJsonPath('data.source', 'openfoodfacts');
+    }
+
     public function test_ucretli_saglayici_anahtar_varsa_once_denenir(): void
     {
         // Kapsami en iyi olan kaynak once sorulmali.
@@ -240,10 +327,11 @@ class BarkodSorgusuTest extends TestCase
             ->assertJsonPath('data.source', 'barcodelookup');
     }
 
-    public function test_gunluk_sinir_dolunca_sonraki_kaynak_denenir(): void
+    public function test_gunluk_sinir_dolunca_sonraki_kaynak_kullanilir(): void
     {
-        // UPCitemdb anahtarsiz ucta 429 donuyor; bu bir ariza degil,
-        // akis durmamali.
+        // UPCitemdb anahtarsiz ucta 429 donuyor; bu bir ariza degil.
+        // Istekler paralel gittigi icin "sonraki" demek, yanitlar
+        // okunurken sirada gelen kaynak demek.
         Http::fake([
             'api.upcitemdb.com/*' => Http::response([], 429),
             'world.openfoodfacts.org/*' => Http::response($this->bulundu([
