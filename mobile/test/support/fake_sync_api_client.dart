@@ -7,6 +7,12 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<Map<String, dynamic>> createCustomerCalls = [];
   final List<(String, Map<String, dynamic>)> updateCustomerCalls = [];
   final List<String> deleteCustomerCalls = [];
+  final List<Map<String, dynamic>> createProductCalls = [];
+  final List<(String, Map<String, dynamic>)> updateProductCalls = [];
+  final List<String> deleteProductCalls = [];
+  final List<Map<String, dynamic>> createStockMovementCalls = [];
+  List<RemoteRecord> productsToPull = [];
+  List<RemoteRecord> stockMovementsToPull = [];
   final List<Map<String, dynamic>> createJobCalls = [];
   final List<(String, Map<String, dynamic>)> updateJobCalls = [];
 
@@ -91,6 +97,40 @@ class FakeSyncApiClient implements SyncApiClient {
   Future<void> deleteCustomer(String id) async {
     deleteCustomerCalls.add(id);
   }
+
+  @override
+  Future<SyncEntityResult> createProduct(Map<String, dynamic> payload) async {
+    createProductCalls.add(payload);
+    return SyncEntityResult(id: payload['id'] as String, version: 1);
+  }
+
+  @override
+  Future<SyncEntityResult> updateProduct(
+    String id,
+    Map<String, dynamic> payload,
+  ) async {
+    updateProductCalls.add((id, payload));
+    return SyncEntityResult(id: id, version: 1);
+  }
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    deleteProductCalls.add(id);
+  }
+
+  @override
+  Future<List<RemoteRecord>> listProducts() async => productsToPull;
+
+  @override
+  Future<SyncEntityResult> createStockMovement(
+    Map<String, dynamic> payload,
+  ) async {
+    createStockMovementCalls.add(payload);
+    return SyncEntityResult(id: payload['id'] as String, version: 1);
+  }
+
+  @override
+  Future<List<RemoteRecord>> listStockMovements() async => stockMovementsToPull;
 
   @override
   Future<List<RemoteRecord>> listCustomers() async => customersToPull;

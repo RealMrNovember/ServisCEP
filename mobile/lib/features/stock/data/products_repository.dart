@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -64,31 +66,94 @@ class ProductsRepository {
     String source = 'MANUAL',
   }) async {
     final id = _uuid.v4();
-    await _db
-        .into(_db.products)
-        .insert(
-          ProductsCompanion.insert(
-            id: id,
-            companyId: companyId,
-            name: name,
-            barcode: Value(barcode),
-            sku: Value(sku),
-            brand: Value(brand),
-            model: Value(model),
-            category: Value(category),
-            unit: Value(unit),
-            purchasePriceMinor: Value(purchasePriceMinor),
-            salePriceMinor: Value(salePriceMinor),
-            currentStock: Value(currentStock),
-            minStock: Value(minStock),
-            source: Value(source),
-          ),
-        );
+    // Yazma ve kuyruk satırı AYNI transaction'da: bir kayıt asla kuyruk
+    // satırı olmadan yerelde kalmaz.
+    await _db.transaction(() async {
+      await _db
+          .into(_db.products)
+          .insert(
+            ProductsCompanion.insert(
+              id: id,
+              companyId: companyId,
+              name: name,
+              barcode: Value(barcode),
+              sku: Value(sku),
+              brand: Value(brand),
+              model: Value(model),
+              category: Value(category),
+              unit: Value(unit),
+              purchasePriceMinor: Value(purchasePriceMinor),
+              salePriceMinor: Value(salePriceMinor),
+              currentStock: Value(currentStock),
+              minStock: Value(minStock),
+              source: Value(source),
+            ),
+          );
+
+      await _enqueue(
+        entityId: id,
+        operation: 'CREATE',
+        payload: {
+          'id': id,
+          'name': name,
+          'barcode': barcode,
+          'sku': sku,
+          'brand': brand,
+          'model': model,
+          'category': category,
+          'unit': unit,
+          'purchase_price_minor': purchasePriceMinor,
+          'sale_price_minor': salePriceMinor,
+          // Açılış stoğu; sunucu bunu bir hareket olarak yazıyor.
+          'current_stock': currentStock,
+          'min_stock': minStock,
+          'source': source,
+        },
+      );
+    });
     return (await byId(id))!;
   }
 
-  Future<void> update(Product product) {
-    return _db.update(_db.products).replace(product);
+  Future<void> update(Product product) async {
+    await _db.transaction(() async {
+      await _db.update(_db.products).replace(product);
+
+      // current_stock BİLEREK gönderilmiyor: adet sunucuda hareket
+      // defterinden türetiliyor. Buradan yazmak, çevrimdışı iki cihazın
+      // stok düşüşünden birini yok sayardı.
+      await _enqueue(
+        entityId: product.id,
+        operation: 'UPDATE',
+        payload: {
+          'name': product.name,
+          'barcode': product.barcode,
+          'sku': product.sku,
+          'brand': product.brand,
+          'model': product.model,
+          'category': product.category,
+          'unit': product.unit,
+          'purchase_price_minor': product.purchasePriceMinor,
+          'sale_price_minor': product.salePriceMinor,
+          'min_stock': product.minStock,
+        },
+      );
+    });
+  }
+
+  /// Ürünü siler (yerelde mezar taşı, sunucuda soft delete).
+  Future<void> delete(Product product) async {
+    await _db.transaction(() async {
+      await (_db.update(
+        _db.products,
+      )..where((p) => p.id.equals(product.id))).write(
+        ProductsCompanion(deletedAt: Value(DateTime.now())),
+      );
+      await _enqueue(
+        entityId: product.id,
+        operation: 'DELETE',
+        payload: const {},
+      );
+    });
   }
 
   /// Stok hareketi + mevcut miktar güncellemesi — tek transaction (bkz.
@@ -106,11 +171,12 @@ class ProductsRepository {
           .update(_db.products)
           .replace(product.copyWith(currentStock: newStock));
 
+      final hareketId = _uuid.v4();
       await _db
           .into(_db.stockMovements)
           .insert(
             StockMovementsCompanion.insert(
-              id: _uuid.v4(),
+              id: hareketId,
               companyId: product.companyId,
               productId: product.id,
               type: delta >= 0 ? 'IN' : 'OUT',
@@ -120,7 +186,44 @@ class ProductsRepository {
               note: Value(note),
             ),
           );
+
+      // Sunucuya HAREKET gönderiliyor, adet değil. Hareket defteri
+      // değişmez ve toplanabilir; iki cihaz çevrimdışı stok düşerse
+      // ikisi de sayılır.
+      await _enqueue(
+        entityType: 'stock_movement',
+        entityId: hareketId,
+        operation: 'CREATE',
+        payload: {
+          'id': hareketId,
+          'product_id': product.id,
+          'type': delta >= 0 ? 'IN' : 'OUT',
+          'quantity': delta.abs(),
+          'reference_type': referenceType,
+          'reference_id': referenceId,
+          'note': note,
+        },
+      );
     });
+  }
+
+  Future<void> _enqueue({
+    required String entityId,
+    required String operation,
+    required Map<String, dynamic> payload,
+    String entityType = 'product',
+  }) {
+    return _db
+        .into(_db.syncOperations)
+        .insert(
+          SyncOperationsCompanion.insert(
+            id: _uuid.v4(),
+            entityType: entityType,
+            entityId: entityId,
+            operation: operation,
+            payload: jsonEncode(payload),
+          ),
+        );
   }
 
   /// Global barkod veri kaynağı sorgusu — bkz. docs/16 § Barkod Okuma Akışı.

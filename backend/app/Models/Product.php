@@ -15,7 +15,9 @@ class Product extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'company_id', 'barcode', 'sku', 'name', 'brand', 'model', 'category', 'unit',
+        // 'id': mobil, cevrimdisi olusturdugu kaydin UUID'sini korur
+        // (bkz. AcceptsClientGeneratedId) — iliskiler kopmasin.
+        'id', 'company_id', 'barcode', 'sku', 'name', 'brand', 'model', 'category', 'unit',
         'purchase_price_minor', 'sale_price_minor', 'current_stock', 'min_stock', 'source',
     ];
 
