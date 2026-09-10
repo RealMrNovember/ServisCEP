@@ -17,6 +17,14 @@ Kurallar:
 
 ---
 
+## v1.2.0
+
+Yenilikler:
+• Tanımadığınız bir barkodu okuttuğunuzda uygulama artık internetten arıyor; bulursa ürün adı ve markası forma kendiliğinden yazılıyor.
+• Bulunamayan kodlarda ne olduğu açıkça söyleniyor, boş formla baş başa kalmıyorsunuz.
+
+Not: İnternetteki ürün veritabanları ağırlıklı olarak market ürünlerini kapsar. Kutusunda seri numarası olan ürünler (kamera, elektrik malzemesi) bulunamaz; onları bir kez tanımlayıp sonraki kutuları mevcut ürüne bağlayın.
+
 ## v1.1.0
 
 Yenilikler:
