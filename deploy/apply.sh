@@ -18,6 +18,7 @@ cp -f deploy/public-placeholder/robots.txt robots.txt
 cp -f deploy/public-placeholder/favicon.ico favicon.ico
 cp -f deploy/public-placeholder/apple-touch-icon.png apple-touch-icon.png
 cp -f deploy/public-placeholder/logo.png logo.png
+cp -f deploy/public-placeholder/google-play-badge-tr.png google-play-badge-tr.png
 
 # Uzantısız adresler de çalışsın: /privacy ve /account-deletion.
 #
