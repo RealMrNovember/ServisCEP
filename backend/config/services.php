@@ -53,6 +53,32 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID', 'serviscep'),
     ],
 
+    // Barkod sorgusu sağlayıcıları — bkz. GlobalBarcodeLookup.
+    //
+    // Open*Facts anahtar istemiyor ama GIDA/kozmetik kapsıyor. Bu
+    // uygulamanın kullanıcıları elektronik ve teknik malzeme stokluyor
+    // (güvenlik kamerası, switch, kablo); onlar için genel ticari ürün
+    // kapsayan bir kaynak şart.
+    //
+    // upcitemdb: anahtarsız "trial" ucu günde 100 sorgu (IP başına).
+    // Anahtar tanımlanırsa ücretli uca geçilir ve sınır kalkar.
+    //
+    // barcodelookup: anahtar YOKSA hiç denenmez. Elektronikte kapsamı
+    // belirgin biçimde daha iyi ama ücretli.
+    'barcode' => [
+        // Anahtarli kaynaklar — tanimli DEGILSE hic sorgulanmaz.
+        // Sira kapsam kalitesine gore (bkz. GlobalBarcodeLookup).
+        'barcodelookup_key' => env('BARCODELOOKUP_KEY', ''),
+        'goupc_key' => env('GOUPC_KEY', ''),
+        // Icecat: BT/elektronik katalogu. Open Icecat hesabi UCRETSIZ,
+        // yalnizca kayit istiyor — bu is kolu icin en isabetli kaynak.
+        'icecat_user' => env('ICECAT_USER', ''),
+        'eansearch_key' => env('EANSEARCH_KEY', ''),
+        'upcdatabase_key' => env('UPCDATABASE_KEY', ''),
+        // Anahtarsiz da calisir ("trial" ucu, gunde 100 sorgu).
+        'upcitemdb_key' => env('UPCITEMDB_KEY', ''),
+    ],
+
     // Sürüm hattının yayındaki sürümü sunucuya bildirmesi için paylaşılan
     // jeton. Boşsa uç 503 döner — parolasız açık kalmasındansa kapalı
     // olması yeğdir.
