@@ -123,9 +123,20 @@ class EkBarkodTest extends TestCase
             'barcode' => 'ORTAK-KOD',
         ])->assertCreated();
 
+        // Kanit: fabrikanin her kullaniciya ayri sirket urettigi ve
+        // urunun gercekten o sirkete yazildigi. Bu iki sey dogruysa
+        // kalan tek degisken dogrulama kuralinin kapsami olur.
+        $this->assertNotSame($birinci->company_id, $ikinci->company_id);
+
+        $ikinciUrun = $this->urun($ikinci);
+        $this->assertDatabaseHas('products', [
+            'id' => $ikinciUrun->id,
+            'company_id' => $ikinci->company_id,
+        ]);
+
         $this->withToken($ikinci->createToken('t2')->plainTextToken);
         $this->postJson('/api/v1/product-barcodes', [
-            'product_id' => $this->urun($ikinci)->id,
+            'product_id' => $ikinciUrun->id,
             'barcode' => 'ORTAK-KOD',
         ])->assertCreated();
     }
