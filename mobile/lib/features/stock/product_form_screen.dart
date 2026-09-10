@@ -50,14 +50,19 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late final _unitController = TextEditingController(
     text: widget.existing?.unit ?? 'adet',
   );
+  // Money.formatMinorPlain ŞART — bkz. money.dart:88. "(minor/100)
+  // .toString()" burada "2400.0" üretiyordu ve parseToMinor noktayı
+  // binlik ayıracı sayıp fiyatı her kaydedişte on katına çıkarıyordu.
+  // Ürün fiyatı tekliflere kalem olarak giriyor: hata müşteriye giden
+  // PDF'e kadar yürüyor.
   late final _salePriceController = TextEditingController(
     text: widget.existing != null
-        ? (widget.existing!.salePriceMinor / 100).toString()
+        ? Money.formatMinorPlain(widget.existing!.salePriceMinor)
         : '',
   );
   late final _purchasePriceController = TextEditingController(
     text: widget.existing != null
-        ? (widget.existing!.purchasePriceMinor / 100).toString()
+        ? Money.formatMinorPlain(widget.existing!.purchasePriceMinor)
         : '',
   );
   late final _stockController = TextEditingController(

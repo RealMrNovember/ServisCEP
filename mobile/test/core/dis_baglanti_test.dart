@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:serviscep/core/utils/dis_baglanti.dart';
 
@@ -72,8 +73,23 @@ void main() {
   testWidgets('açılamayan bağlantıda kullanıcı bilgilendirilir', (
     tester,
   ) async {
-    // Platform kanalı testte yok -> launchUrl başarısız olur; asıl
-    // doğrulanan şey bu: başarısızlık SESSİZ KALMIYOR.
+    // Hedefi açacak uygulama YOKMUŞ gibi davranılıyor: gerçek üretim
+    // hatasında Android tam olarak bunu yapıyordu — istisna yok,
+    // yalnızca `false`. Kanal elle taklit ediliyor ki test, eklentinin
+    // test ortamındaki rastlantısal davranışına değil, BİZİM
+    // davranışımıza baksın.
+    final mesajci = tester.binding.defaultBinaryMessenger;
+    mesajci.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/url_launcher'),
+      (cagri) async => false,
+    );
+    addTearDown(
+      () => mesajci.setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/url_launcher'),
+        null,
+      ),
+    );
+
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

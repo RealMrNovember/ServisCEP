@@ -412,15 +412,19 @@ class _ItemSheetState extends State<_ItemSheet> {
   late final _unitController = TextEditingController(
     text: widget.existing?.unit ?? 'adet',
   );
+  // Money.formatMinorPlain ŞART: parseToMinor ile gidip gelmesi gereken
+  // tek biçim o. "2400.00" gibi NOKTALI bir metin yazılırsa parseToMinor
+  // noktayı binlik ayıracı sayıp siliyor ve kalem her düzenlenişinde
+  // fiyat yüz katına çıkıyor.
   late final _priceController = TextEditingController(
     text: widget.existing == null
         ? ''
-        : (widget.existing!.unitPriceMinor / 100).toStringAsFixed(2),
+        : Money.formatMinorPlain(widget.existing!.unitPriceMinor),
   );
   late final _discountController = TextEditingController(
     text: (widget.existing?.discountMinor ?? 0) == 0
         ? ''
-        : (widget.existing!.discountMinor / 100).toStringAsFixed(2),
+        : Money.formatMinorPlain(widget.existing!.discountMinor),
   );
   late int _vatRate = widget.existing?.taxRate ?? widget.defaultVatRate;
 
