@@ -39,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -172,6 +172,18 @@ class AppDatabase extends _$AppDatabase {
         // Mevcut kayitlara dokunulmuyor: products.barcode oldugu gibi
         // kaliyor ve arama her iki kaynaga da bakiyor.
         await m.createTable(productBarcodes);
+      }
+
+      if (from < 12) {
+        // Belgenin sonradan duzenlendigini isaretleyen alan.
+        //
+        // NULL kaliyor: mevcut belgelerin duzenlenip duzenlenmedigini
+        // bilmiyoruz. Hepsini "duzenlendi" ya da "duzenlenmedi" diye
+        // isaretlemek, bilmedigimiz bir seyi biliyormus gibi gostermek
+        // olurdu. Rozet yalnizca bu surumden sonraki duzenlemeleri
+        // gosteriyor.
+        await m.addColumn(quotes, quotes.editedAt);
+        await m.addColumn(proformas, proformas.editedAt);
       }
     },
   );

@@ -35,6 +35,7 @@ class FakeSyncApiClient implements SyncApiClient {
   final List<Map<String, dynamic>> createQuoteCalls = [];
   final List<(String, Map<String, dynamic>)> updateQuoteCalls = [];
   final List<Map<String, dynamic>> createProformaCalls = [];
+  final List<(String, Map<String, dynamic>)> updateProformaCalls = [];
   final List<(String, Map<String, dynamic>)> createPaymentCalls = [];
   final List<Map<String, dynamic>> createIncomeCalls = [];
   final List<Map<String, dynamic>> createExpenseCalls = [];
@@ -371,6 +372,15 @@ class FakeSyncApiClient implements SyncApiClient {
   Future<SyncEntityResult> createProforma(Map<String, dynamic> payload) async {
     createProformaCalls.add(payload);
     return _resolve(_nextOrDefault(proformaResponses, payload['id'] as String));
+  }
+
+  @override
+  Future<SyncEntityResult> updateProforma(
+    String id,
+    Map<String, dynamic> payload,
+  ) async {
+    updateProformaCalls.add((id, payload));
+    return _resolve(_nextOrDefault(proformaResponses, id));
   }
 
   @override

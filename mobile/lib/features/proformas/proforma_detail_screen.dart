@@ -9,6 +9,7 @@ import '../../core/utils/money.dart';
 import '../../shared/document_detail.dart';
 import '../auth/data/session_controller.dart';
 import '../customers/data/customers_repository.dart';
+import '../documents/document_form_screen.dart';
 import '../settings/data/company_repository.dart';
 import 'data/proformas_repository.dart';
 
@@ -105,6 +106,14 @@ class ProformaDetailScreen extends ConsumerWidget {
                     (items) => items.map((i) => i.toLineItem()).toList(),
                   ),
               onShare: () => _sharePdf(context, ref, proforma),
+              onEdit: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DocumentFormScreen(
+                    initialKind: DocumentKind.proforma,
+                    editingId: proforma.id,
+                  ),
+                ),
+              ),
             );
           },
         );

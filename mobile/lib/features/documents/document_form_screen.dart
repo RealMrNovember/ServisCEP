@@ -93,11 +93,20 @@ class DocumentFormScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialKind = DocumentKind.quote,
     this.preselectedCustomerId,
+    this.editingId,
   });
 
   /// Ekran hangi türle açıldı — kullanıcı formun içinden değiştirebilir.
   final DocumentKind initialKind;
   final String? preselectedCustomerId;
+
+  /// Dolu ise form DUZENLEME kipindedir ve bu kimlikteki belge yuklenir.
+  ///
+  /// Duzenleme kipinde belgenin TURU ve NUMARASI degistirilemez. Ikisi de
+  /// musteriye gitmis belgenin kimligi; numara ayrica numaralandirma
+  /// sirasinin parcasi (bkz. DocumentNumbering) ve sonradan degistirmek
+  /// sirayi bozar.
+  final String? editingId;
 
   @override
   ConsumerState<DocumentFormScreen> createState() => _DocumentFormScreenState();
@@ -193,13 +202,37 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
   final _customDaysController = TextEditingController();
   bool _isSubmitting = false;
 
+  bool get _isEditing => widget.editingId != null;
+
+  /// Duzenleme kipinde belge okunana kadar form gosterilmez; bos bir
+  /// forma bakip "kayitlarim gitmis" diye dusunmek kolaydir.
+  bool _loading = false;
+
+  /// Duzenlenen belgenin KENDI gecerlilik tarihi.
+  ///
+  /// `_validUntil` gun sayisindan BUGUNE gore turetiliyor. Duzenlemede
+  /// bunu oldugu gibi kullanmak, kullanici tarihe hic dokunmasa bile her
+  /// kaydediste gecerliligi ileri kaydirirdi. Kullanici gun secimine
+  /// dokunursa bu deger birakilir ve yeniden turetilir.
+  DateTime? _validUntilOverride;
+
   @override
   void initState() {
     super.initState();
     _customerId = widget.preselectedCustomerId;
     _codeController.addListener(() => _codeEdited = true);
-    // İlk numara önerisi, kaydedilmiş son belgeden türetilir.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _suggestCode());
+
+    if (_isEditing) {
+      _loading = true;
+      // Sirket varsayilanlari belgenin KENDI metinlerinin uzerine
+      // yazmamali: belge olusturuldugunda o gunku ayarlar kopyalanmisti,
+      // ayar sonradan degistiyse bu belge degismemeli.
+      _defaultsApplied = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _belgeyiYukle());
+    } else {
+      // İlk numara önerisi, kaydedilmiş son belgeden türetilir.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _suggestCode());
+    }
   }
 
   @override
@@ -217,6 +250,98 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  /// Duzenlenecek belgeyi forma yukler.
+  Future<void> _belgeyiYukle() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final id = widget.editingId!;
+
+    final bulundu = switch (_kind) {
+      DocumentKind.quote => await _teklifiYukle(id),
+      DocumentKind.proforma => await _proformayiYukle(id),
+    };
+
+    if (!mounted) return;
+
+    if (!bulundu) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Belge bulunamadı.')),
+      );
+      navigator.pop();
+      return;
+    }
+
+    setState(() => _loading = false);
+  }
+
+  Future<bool> _teklifiYukle(String id) async {
+    final repo = ref.read(quotesRepositoryProvider);
+    final teklif = await repo.byId(id);
+    if (teklif == null) return false;
+
+    _codeController.text = teklif.code;
+    _customerId = teklif.customerId;
+    _notesController.text = teklif.notes ?? '';
+    _introController.text = teklif.introText ?? '';
+    _paymentTermsController.text = teklif.paymentTerms ?? '';
+    _deliveryTimeController.text = teklif.deliveryTime ?? '';
+    _warrantyTermsController.text = teklif.warrantyTerms ?? '';
+    _vatRateController.text = teklif.vatRate.toString();
+    _currency = Currency.fromCode(teklif.currency);
+    _vatMode = VatMode.fromCode(teklif.vatMode);
+    _validUntilOverride = teklif.validUntil;
+
+    _items
+      ..clear()
+      ..addAll(
+        (await repo.itemsOf(id)).map(
+          (kalem) => DocItemDraft(
+            description: kalem.description,
+            quantity: kalem.quantity,
+            unit: kalem.unit,
+            unitPriceMinor: kalem.unitPriceMinor,
+            taxRate: kalem.taxRate,
+            discountMinor: kalem.discountMinor,
+          ),
+        ),
+      );
+    return true;
+  }
+
+  Future<bool> _proformayiYukle(String id) async {
+    final repo = ref.read(proformasRepositoryProvider);
+    final proforma = await repo.byId(id);
+    if (proforma == null) return false;
+
+    _codeController.text = proforma.code;
+    _customerId = proforma.customerId;
+    _notesController.text = proforma.notes ?? '';
+    _introController.text = proforma.introText ?? '';
+    _paymentTermsController.text = proforma.paymentTerms ?? '';
+    _deliveryTimeController.text = proforma.deliveryTime ?? '';
+    _warrantyTermsController.text = proforma.warrantyTerms ?? '';
+    _vatRateController.text = proforma.vatRate.toString();
+    _currency = Currency.fromCode(proforma.currency);
+    _vatMode = VatMode.fromCode(proforma.vatMode);
+    _validUntilOverride = proforma.validUntil;
+
+    _items
+      ..clear()
+      ..addAll(
+        (await repo.itemsOf(id)).map(
+          (kalem) => DocItemDraft(
+            description: kalem.description,
+            quantity: kalem.quantity,
+            unit: kalem.unit,
+            unitPriceMinor: kalem.unitPriceMinor,
+            taxRate: kalem.taxRate,
+            discountMinor: kalem.discountMinor,
+          ),
+        ),
+      );
+    return true;
   }
 
   /// Şirket ayarlarındaki metinleri forma taşır.
@@ -264,6 +389,10 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
 
   /// Gün sayısından hesaplanan geçerlilik tarihi.
   DateTime? get _validUntil {
+    // Duzenlemede belgenin KENDI tarihi korunur — bkz.
+    // [_validUntilOverride]. Kullanici gun secimine dokunursa bu deger
+    // temizlenir ve tarih yeniden turetilir.
+    if (_validUntilOverride != null) return _validUntilOverride;
     final days = _validityDays;
     if (days == null) return null;
     final today = DateTime.now();
@@ -272,6 +401,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
 
   void _setValidityDays(int? days) {
     setState(() {
+      _validUntilOverride = null;
       _validityDays = days;
       if (days == null || _quickValidityOptions.contains(days)) {
         _customDaysController.clear();
@@ -342,16 +472,20 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      final taken = switch (_kind) {
-        DocumentKind.quote =>
-          await ref
-              .read(quotesRepositoryProvider)
-              .isCodeTaken(session.companyId, code),
-        DocumentKind.proforma =>
-          await ref
-              .read(proformasRepositoryProvider)
-              .isCodeTaken(session.companyId, code),
-      };
+      // Numara benzersizligi yalnizca YENI belgede sorulur. Duzenlemede
+      // numara degismiyor ve kendi numarasi "zaten kullanilmis" cikardi.
+      final taken = _isEditing
+          ? false
+          : switch (_kind) {
+              DocumentKind.quote =>
+                await ref
+                    .read(quotesRepositoryProvider)
+                    .isCodeTaken(session.companyId, code),
+              DocumentKind.proforma =>
+                await ref
+                    .read(proformasRepositoryProvider)
+                    .isCodeTaken(session.companyId, code),
+            };
       if (taken) {
         messenger.showSnackBar(
           SnackBar(
@@ -376,6 +510,21 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
         warrantyTerms: _trimmed(_warrantyTermsController),
       );
 
+      if (_isEditing) {
+        switch (_kind) {
+          case DocumentKind.quote:
+            await _teklifiGuncelle(draft);
+          case DocumentKind.proforma:
+            await _proformayiGuncelle(draft);
+        }
+        if (!mounted) return;
+        // Duzenleme detay ekranindan baslatiliyor ve o ekran belgeyi
+        // zaten izliyor (bkz. proformaByIdProvider); geri donmek yeni
+        // hali gostermeye yetiyor.
+        Navigator.of(context).pop();
+        return;
+      }
+
       final destination = switch (_kind) {
         DocumentKind.quote => await _saveQuote(session.companyId, draft),
         DocumentKind.proforma => await _saveProforma(session.companyId, draft),
@@ -391,6 +540,42 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  Future<void> _teklifiGuncelle(DocumentDraft draft) async {
+    await ref
+        .read(quotesRepositoryProvider)
+        .update(
+          id: widget.editingId!,
+          items: draft.items,
+          notes: draft.notes,
+          introText: draft.introText,
+          paymentTerms: draft.paymentTerms,
+          deliveryTime: draft.deliveryTime,
+          warrantyTerms: draft.warrantyTerms,
+          currency: draft.currency,
+          vatMode: draft.vatMode,
+          vatRate: draft.vatRate,
+          validUntil: draft.validUntil,
+        );
+  }
+
+  Future<void> _proformayiGuncelle(DocumentDraft draft) async {
+    await ref
+        .read(proformasRepositoryProvider)
+        .update(
+          id: widget.editingId!,
+          items: draft.items,
+          notes: draft.notes,
+          introText: draft.introText,
+          paymentTerms: draft.paymentTerms,
+          deliveryTime: draft.deliveryTime,
+          warrantyTerms: draft.warrantyTerms,
+          currency: draft.currency,
+          vatMode: draft.vatMode,
+          vatRate: draft.vatRate,
+          validUntil: draft.validUntil,
+        );
   }
 
   Future<Widget> _saveQuote(String companyId, DocumentDraft draft) async {
@@ -445,9 +630,20 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
     final company = ref.watch(currentCompanyProvider).valueOrNull;
     if (company != null) _applyCompanyDefaults(company);
 
+    // Belge okunana kadar form gosterilmez: yari dolu bir form, kullanici
+    // kaydederse eksik haliyle kaydedilirdi.
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('${_kind.label} Düzenle')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Yeni ${_kind.label}'),
+        title: Text(
+          _isEditing ? '${_kind.label} Düzenle' : 'Yeni ${_kind.label}',
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(20),
           child: Padding(
@@ -491,27 +687,33 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SegmentedButton<DocumentKind>(
-                          segments: [
-                            for (final kind in DocumentKind.values)
-                              ButtonSegment(
-                                value: kind,
-                                label: Text(kind.label),
-                              ),
-                          ],
-                          selected: {_kind},
-                          onSelectionChanged: (value) =>
-                              _changeKind(value.first),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
+                        // Duzenlemede tur degistirilemez: numara ture gore
+                        // uretiliyor ve belge musteriye o numarayla gitti.
+                        if (!_isEditing) ...[
+                          SegmentedButton<DocumentKind>(
+                            segments: [
+                              for (final kind in DocumentKind.values)
+                                ButtonSegment(
+                                  value: kind,
+                                  label: Text(kind.label),
+                                ),
+                            ],
+                            selected: {_kind},
+                            onSelectionChanged: (value) =>
+                                _changeKind(value.first),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                        ],
                         TextField(
                           controller: _codeController,
-                          decoration: const InputDecoration(
+                          readOnly: _isEditing,
+                          decoration: InputDecoration(
                             labelText: 'Belge numarası',
                             isDense: true,
-                            helperText:
-                                'Değiştirebilirsin; sonraki belgeler buradan devam '
-                                'eder.',
+                            helperText: _isEditing
+                                ? 'Belge numarası değiştirilemez.'
+                                : 'Değiştirebilirsin; sonraki belgeler buradan '
+                                      'devam eder.',
                             helperMaxLines: 2,
                           ),
                         ),

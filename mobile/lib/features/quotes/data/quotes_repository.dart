@@ -198,6 +198,126 @@ class QuotesRepository {
     return (await byId(id))!;
   }
 
+  /// Olusmus bir teklifi gunceller. Gerekceler proformadakiyle ayni
+  /// (bkz. ProformasRepository.update): kalemler topluca degistiriliyor
+  /// ve `total_minor` her zaman degisen alan olarak bildiriliyor, cunku
+  /// sunucunun alan bazli birlestirmesi ayri tablodaki kalemleri goremez.
+  ///
+  /// DURUM burada DEGISMIYOR. Teklifi "Gonderildi" isaretlemek bir
+  /// duzenleme degil ve ayri bir yoldan gidiyor (bkz. updateStatus);
+  /// ikisi karissaydi durum degistiren her teklif listede "Duzenlendi"
+  /// gorunurdu.
+  Future<Quote> update({
+    required String id,
+    required List<DocItemDraft> items,
+    DateTime? validUntil,
+    String? notes,
+    String? introText,
+    String? paymentTerms,
+    String? deliveryTime,
+    String? warrantyTerms,
+    Currency currency = Currency.try_,
+    VatMode vatMode = VatMode.excluded,
+    int vatRate = 20,
+  }) async {
+    final total = DocumentTotals.from(
+      items.map((item) => item.amounts(vatMode)),
+    ).grossMinor;
+    final editedAt = DateTime.now();
+
+    await _db.transaction(() async {
+      final mevcut = await (_db.select(
+        _db.quotes,
+      )..where((q) => q.id.equals(id))).getSingle();
+
+      final degisenler = <String>['total_minor', 'edited_at'];
+      void bildir(String alan, Object? eski, Object? yeni) {
+        if (eski != yeni) degisenler.add(alan);
+      }
+
+      bildir('valid_until', mevcut.validUntil, validUntil);
+      bildir('notes', mevcut.notes, notes);
+      bildir('intro_text', mevcut.introText, introText);
+      bildir('payment_terms', mevcut.paymentTerms, paymentTerms);
+      bildir('delivery_time', mevcut.deliveryTime, deliveryTime);
+      bildir('warranty_terms', mevcut.warrantyTerms, warrantyTerms);
+      bildir('currency', mevcut.currency, currency.code);
+      bildir('vat_mode', mevcut.vatMode, vatMode.code);
+      bildir('vat_rate', mevcut.vatRate, vatRate);
+
+      await (_db.update(_db.quotes)..where((q) => q.id.equals(id))).write(
+        QuotesCompanion(
+          validUntil: Value(validUntil),
+          notes: Value(notes),
+          introText: Value(introText),
+          paymentTerms: Value(paymentTerms),
+          deliveryTime: Value(deliveryTime),
+          warrantyTerms: Value(warrantyTerms),
+          totalMinor: Value(total),
+          currency: Value(currency.code),
+          vatMode: Value(vatMode.code),
+          vatRate: Value(vatRate),
+          editedAt: Value(editedAt),
+          syncStatus: const Value('PENDING'),
+        ),
+      );
+
+      await (_db.delete(
+        _db.quoteItems,
+      )..where((i) => i.quoteId.equals(id))).go();
+
+      final itemPayloads = <Map<String, dynamic>>[];
+      for (final item in items) {
+        final itemId = _uuid.v4();
+        await _db
+            .into(_db.quoteItems)
+            .insert(
+              QuoteItemsCompanion.insert(
+                id: itemId,
+                quoteId: id,
+                description: item.description,
+                quantity: Value(item.quantity),
+                unit: Value(item.unit),
+                unitPriceMinor: Value(item.unitPriceMinor),
+                taxRate: Value(item.taxRate),
+                discountMinor: Value(item.discountMinor),
+              ),
+            );
+        itemPayloads.add({
+          'id': itemId,
+          'description': item.description,
+          'quantity': item.quantity,
+          'unit': item.unit,
+          'unit_price_minor': item.unitPriceMinor,
+          'tax_rate': item.taxRate,
+          'discount_minor': item.discountMinor,
+        });
+      }
+
+      await _enqueue(
+        entityId: id,
+        operation: 'UPDATE',
+        baseVersion: mevcut.version,
+        payload: {
+          'valid_until': validUntil?.toIso8601String(),
+          'notes': notes,
+          'intro_text': introText,
+          'payment_terms': paymentTerms,
+          'delivery_time': deliveryTime,
+          'warranty_terms': warrantyTerms,
+          'currency': currency.code,
+          'vat_mode': vatMode.code,
+          'vat_rate': vatRate,
+          'edited_at': editedAt.toIso8601String(),
+          'items': itemPayloads,
+          'changed_fields': degisenler,
+        },
+      );
+    });
+
+    return (await byId(id))!;
+  }
+
   Future<void> updateStatus(String id, String status) async {
     await _db.transaction(() async {
       final quote = await (_db.select(

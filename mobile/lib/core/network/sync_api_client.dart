@@ -185,6 +185,7 @@ abstract interface class SyncApiClient {
   Future<List<RemoteRecord>> listQuotes();
 
   Future<SyncEntityResult> createProforma(Map<String, dynamic> payload);
+  Future<SyncEntityResult> updateProforma(String id, Map<String, dynamic> payload);
   Future<List<RemoteRecord>> listProformas();
 
   /// Tahsilat müşteri altına yuvalı: POST /customers/{customerId}/payments.
@@ -556,6 +557,12 @@ class DioSyncApiClient implements SyncApiClient {
   @override
   Future<SyncEntityResult> createProforma(Map<String, dynamic> payload) =>
       _create('/proformas', payload);
+
+  @override
+  Future<SyncEntityResult> updateProforma(
+    String id,
+    Map<String, dynamic> payload,
+  ) => _update('/proformas/$id', payload);
 
   @override
   Future<List<RemoteRecord>> listProformas() => _listAllPages('/proformas');

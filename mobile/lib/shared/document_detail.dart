@@ -21,11 +21,13 @@ final _dateFormat = DateFormat('d MMMM y', 'tr_TR');
 /// güncellenip diğeri geride kalıyordu. Farklılıkları ([statusPill],
 /// [onChangeStatus]) parametre olarak alınır.
 ///
-/// NOT: tasarımda ayrıca "Belge geçmişi" (oluşturuldu / gönderildi /
-/// müşteri görüntüledi) ve "Düzenle" var. İkisinin de arkasında veri yok:
-/// belge olayları hiçbir yerde tutulmuyor ve oluşmuş bir belgeyi düzenleme
-/// akışı bulunmuyor. Boş bir zaman çizelgesi ya da hiçbir şey yapmayan bir
-/// düğme koymak yerine ikisi de dışarıda bırakıldı (bkz. ROADMAP).
+/// NOT: tasarımdaki "Belge geçmişi" (oluşturuldu / gönderildi / müşteri
+/// görüntüledi) zaman çizelgesi hâlâ yok — belge olayları hiçbir yerde
+/// tutulmuyor ve boş bir zaman çizelgesi göstermek yerine bırakıldı
+/// (bkz. ROADMAP).
+///
+/// "Düzenle" ise artık var ([onEdit]): belgeyi oluşturan form düzenleme
+/// kipiyle açılıyor. Düğme yalnızca geri çağrı verildiğinde gösterilir.
 class DocumentDetailScaffold extends ConsumerWidget {
   const DocumentDetailScaffold({
     super.key,
@@ -42,6 +44,7 @@ class DocumentDetailScaffold extends ConsumerWidget {
     this.notes,
     this.statusPill,
     this.onChangeStatus,
+    this.onEdit,
     this.shareLabel = 'PDF Gönder',
   });
 
@@ -61,6 +64,9 @@ class DocumentDetailScaffold extends ConsumerWidget {
 
   final Widget? statusPill;
   final VoidCallback? onChangeStatus;
+
+  /// Belgeyi düzenleme formunda açar. Null ise düğme hiç gösterilmez.
+  final VoidCallback? onEdit;
   final VoidCallback onShare;
   final String shareLabel;
 
@@ -73,7 +79,17 @@ class DocumentDetailScaffold extends ConsumerWidget {
     final telefon = musteri?.phone?.trim() ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: Text(code)),
+      appBar: AppBar(
+        title: Text(code),
+        actions: [
+          if (onEdit != null)
+            TextButton.icon(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Düzenle'),
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl,

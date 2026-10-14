@@ -194,6 +194,141 @@ class ProformasRepository {
 
     return (await byId(id))!;
   }
+
+  /// Olusmus bir belgeyi gunceller.
+  ///
+  /// Kalemler TOPLUCA degistiriliyor: gelen liste kaydin yeni hali,
+  /// eklenti degil. Tek tek eslestirmek silinen kalemi tespit etmek icin
+  /// ayri bir iz gerektirirdi ve oyle bir iz tutulmuyor. Sunucu tarafi da
+  /// ayni kurali uyguluyor (bkz. backend ProformaController::update).
+  ///
+  /// `changed_fields` icinde `total_minor` HER ZAMAN bildiriliyor.
+  /// Sunucunun alan bazli birlestirmesi (bkz. DetectsSyncConflicts) ayri
+  /// bir tablodaki kalemleri goremez; kalem degisikligi sunucuda yalnizca
+  /// `total_minor` olarak iz birakir. Ayni alani burada da bildirmek,
+  /// ofiste yapilmis bir kalem degisikliginin sessizce ezilmesi yerine
+  /// kullaniciya cakisma olarak gosterilmesini saglar. Tutar degismemis
+  /// olsa bile bildiriliyor: fazladan bir cakisma ekrani, kaybolan bir
+  /// duzenlemeden iyidir.
+  Future<Proforma> update({
+    required String id,
+    required List<DocItemDraft> items,
+    DateTime? validUntil,
+    String? notes,
+    String? introText,
+    String? paymentTerms,
+    String? deliveryTime,
+    String? warrantyTerms,
+    Currency currency = Currency.try_,
+    VatMode vatMode = VatMode.excluded,
+    int vatRate = 20,
+  }) async {
+    final total = DocumentTotals.from(
+      items.map((item) => item.amounts(vatMode)),
+    ).grossMinor;
+    // Duzenlemenin GERCEK ani. Cihaz offline ise bu kayit gunler sonra
+    // senkron olabilir; sunucuya kendi saatini yazdirmak o ani
+    // kaybettirirdi (bkz. backend edited_at gocu).
+    final editedAt = DateTime.now();
+
+    await _db.transaction(() async {
+      final mevcut = await (_db.select(
+        _db.proformas,
+      )..where((p) => p.id.equals(id))).getSingle();
+
+      final degisenler = <String>['total_minor', 'edited_at'];
+      void bildir(String alan, Object? eski, Object? yeni) {
+        if (eski != yeni) degisenler.add(alan);
+      }
+
+      bildir('valid_until', mevcut.validUntil, validUntil);
+      bildir('notes', mevcut.notes, notes);
+      bildir('intro_text', mevcut.introText, introText);
+      bildir('payment_terms', mevcut.paymentTerms, paymentTerms);
+      bildir('delivery_time', mevcut.deliveryTime, deliveryTime);
+      bildir('warranty_terms', mevcut.warrantyTerms, warrantyTerms);
+      bildir('currency', mevcut.currency, currency.code);
+      bildir('vat_mode', mevcut.vatMode, vatMode.code);
+      bildir('vat_rate', mevcut.vatRate, vatRate);
+
+      await (_db.update(_db.proformas)..where((p) => p.id.equals(id))).write(
+        ProformasCompanion(
+          validUntil: Value(validUntil),
+          notes: Value(notes),
+          introText: Value(introText),
+          paymentTerms: Value(paymentTerms),
+          deliveryTime: Value(deliveryTime),
+          warrantyTerms: Value(warrantyTerms),
+          totalMinor: Value(total),
+          currency: Value(currency.code),
+          vatMode: Value(vatMode.code),
+          vatRate: Value(vatRate),
+          editedAt: Value(editedAt),
+          syncStatus: const Value('PENDING'),
+        ),
+      );
+
+      await (_db.delete(
+        _db.proformaItems,
+      )..where((i) => i.proformaId.equals(id))).go();
+
+      final itemPayloads = <Map<String, dynamic>>[];
+      for (final item in items) {
+        final itemId = _uuid.v4();
+        await _db
+            .into(_db.proformaItems)
+            .insert(
+              ProformaItemsCompanion.insert(
+                id: itemId,
+                proformaId: id,
+                description: item.description,
+                quantity: Value(item.quantity),
+                unit: Value(item.unit),
+                unitPriceMinor: Value(item.unitPriceMinor),
+                taxRate: Value(item.taxRate),
+                discountMinor: Value(item.discountMinor),
+              ),
+            );
+        itemPayloads.add({
+          'id': itemId,
+          'description': item.description,
+          'quantity': item.quantity,
+          'unit': item.unit,
+          'unit_price_minor': item.unitPriceMinor,
+          'tax_rate': item.taxRate,
+          'discount_minor': item.discountMinor,
+        });
+      }
+
+      await _db
+          .into(_db.syncOperations)
+          .insert(
+            SyncOperationsCompanion.insert(
+              id: _uuid.v4(),
+              entityType: 'proforma',
+              entityId: id,
+              operation: 'UPDATE',
+              baseVersion: Value(mevcut.version),
+              payload: jsonEncode({
+                'valid_until': validUntil?.toIso8601String(),
+                'notes': notes,
+                'intro_text': introText,
+                'payment_terms': paymentTerms,
+                'delivery_time': deliveryTime,
+                'warranty_terms': warrantyTerms,
+                'currency': currency.code,
+                'vat_mode': vatMode.code,
+                'vat_rate': vatRate,
+                'edited_at': editedAt.toIso8601String(),
+                'items': itemPayloads,
+                'changed_fields': degisenler,
+              }),
+            ),
+          );
+    });
+
+    return (await byId(id))!;
+  }
 }
 
 final proformasRepositoryProvider = Provider<ProformasRepository>((ref) {
