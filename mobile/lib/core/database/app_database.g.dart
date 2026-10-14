@@ -6156,6 +6156,17 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _editedAtMeta = const VerificationMeta(
+    'editedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> editedAt = GeneratedColumn<DateTime>(
+    'edited_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -6176,6 +6187,7 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
     syncStatus,
     version,
     createdAt,
+    editedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -6311,6 +6323,12 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('edited_at')) {
+      context.handle(
+        _editedAtMeta,
+        editedAt.isAcceptableOrUnknown(data['edited_at']!, _editedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -6392,6 +6410,10 @@ class $QuotesTable extends Quotes with TableInfo<$QuotesTable, Quote> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      editedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}edited_at'],
+      ),
     );
   }
 
@@ -6438,6 +6460,15 @@ class Quote extends DataClass implements Insertable<Quote> {
   /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
   final int version;
   final DateTime createdAt;
+
+  /// Belge olusturulduktan SONRA duzenlendiyse duzenleme ani, aksi halde
+  /// null. Liste ekranindaki "Duzenlendi" rozeti bundan besleniyor.
+  ///
+  /// Neden ayri bir alan: teklifin DURUMU degistiginde ("Gonderildi"
+  /// isaretlemek) belge satiri da yaziliyor. Satirin son yazilma anina
+  /// bakilsaydi hic duzenlenmemis her teklif listede "Duzenlendi"
+  /// gorunurdu ve rozet hicbir sey anlatmazdi.
+  final DateTime? editedAt;
   const Quote({
     required this.id,
     required this.companyId,
@@ -6457,6 +6488,7 @@ class Quote extends DataClass implements Insertable<Quote> {
     required this.syncStatus,
     required this.version,
     required this.createdAt,
+    this.editedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6491,6 +6523,9 @@ class Quote extends DataClass implements Insertable<Quote> {
     map['sync_status'] = Variable<String>(syncStatus);
     map['version'] = Variable<int>(version);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || editedAt != null) {
+      map['edited_at'] = Variable<DateTime>(editedAt);
+    }
     return map;
   }
 
@@ -6526,6 +6561,9 @@ class Quote extends DataClass implements Insertable<Quote> {
       syncStatus: Value(syncStatus),
       version: Value(version),
       createdAt: Value(createdAt),
+      editedAt: editedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(editedAt),
     );
   }
 
@@ -6553,6 +6591,7 @@ class Quote extends DataClass implements Insertable<Quote> {
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       version: serializer.fromJson<int>(json['version']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      editedAt: serializer.fromJson<DateTime?>(json['editedAt']),
     );
   }
   @override
@@ -6577,6 +6616,7 @@ class Quote extends DataClass implements Insertable<Quote> {
       'syncStatus': serializer.toJson<String>(syncStatus),
       'version': serializer.toJson<int>(version),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'editedAt': serializer.toJson<DateTime?>(editedAt),
     };
   }
 
@@ -6599,6 +6639,7 @@ class Quote extends DataClass implements Insertable<Quote> {
     String? syncStatus,
     int? version,
     DateTime? createdAt,
+    Value<DateTime?> editedAt = const Value.absent(),
   }) => Quote(
     id: id ?? this.id,
     companyId: companyId ?? this.companyId,
@@ -6620,6 +6661,7 @@ class Quote extends DataClass implements Insertable<Quote> {
     syncStatus: syncStatus ?? this.syncStatus,
     version: version ?? this.version,
     createdAt: createdAt ?? this.createdAt,
+    editedAt: editedAt.present ? editedAt.value : this.editedAt,
   );
   Quote copyWithCompanion(QuotesCompanion data) {
     return Quote(
@@ -6655,6 +6697,7 @@ class Quote extends DataClass implements Insertable<Quote> {
           : this.syncStatus,
       version: data.version.present ? data.version.value : this.version,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      editedAt: data.editedAt.present ? data.editedAt.value : this.editedAt,
     );
   }
 
@@ -6678,7 +6721,8 @@ class Quote extends DataClass implements Insertable<Quote> {
           ..write('validUntil: $validUntil, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('editedAt: $editedAt')
           ..write(')'))
         .toString();
   }
@@ -6703,6 +6747,7 @@ class Quote extends DataClass implements Insertable<Quote> {
     syncStatus,
     version,
     createdAt,
+    editedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -6725,7 +6770,8 @@ class Quote extends DataClass implements Insertable<Quote> {
           other.validUntil == this.validUntil &&
           other.syncStatus == this.syncStatus &&
           other.version == this.version &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.editedAt == this.editedAt);
 }
 
 class QuotesCompanion extends UpdateCompanion<Quote> {
@@ -6747,6 +6793,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
   final Value<String> syncStatus;
   final Value<int> version;
   final Value<DateTime> createdAt;
+  final Value<DateTime?> editedAt;
   final Value<int> rowid;
   const QuotesCompanion({
     this.id = const Value.absent(),
@@ -6767,6 +6814,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.editedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuotesCompanion.insert({
@@ -6788,6 +6836,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.editedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        companyId = Value(companyId),
@@ -6812,6 +6861,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     Expression<String>? syncStatus,
     Expression<int>? version,
     Expression<DateTime>? createdAt,
+    Expression<DateTime>? editedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6833,6 +6883,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
       if (syncStatus != null) 'sync_status': syncStatus,
       if (version != null) 'version': version,
       if (createdAt != null) 'created_at': createdAt,
+      if (editedAt != null) 'edited_at': editedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6856,6 +6907,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     Value<String>? syncStatus,
     Value<int>? version,
     Value<DateTime>? createdAt,
+    Value<DateTime?>? editedAt,
     Value<int>? rowid,
   }) {
     return QuotesCompanion(
@@ -6877,6 +6929,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
       syncStatus: syncStatus ?? this.syncStatus,
       version: version ?? this.version,
       createdAt: createdAt ?? this.createdAt,
+      editedAt: editedAt ?? this.editedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6938,6 +6991,9 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (editedAt.present) {
+      map['edited_at'] = Variable<DateTime>(editedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6965,6 +7021,7 @@ class QuotesCompanion extends UpdateCompanion<Quote> {
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
           ..write('createdAt: $createdAt, ')
+          ..write('editedAt: $editedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7747,6 +7804,17 @@ class $ProformasTable extends Proformas
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _editedAtMeta = const VerificationMeta(
+    'editedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> editedAt = GeneratedColumn<DateTime>(
+    'edited_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7766,6 +7834,7 @@ class $ProformasTable extends Proformas
     syncStatus,
     version,
     createdAt,
+    editedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7895,6 +7964,12 @@ class $ProformasTable extends Proformas
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('edited_at')) {
+      context.handle(
+        _editedAtMeta,
+        editedAt.isAcceptableOrUnknown(data['edited_at']!, _editedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -7972,6 +8047,10 @@ class $ProformasTable extends Proformas
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      editedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}edited_at'],
+      ),
     );
   }
 
@@ -8011,6 +8090,15 @@ class Proforma extends DataClass implements Insertable<Proforma> {
   /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
   final int version;
   final DateTime createdAt;
+
+  /// Belge olusturulduktan SONRA duzenlendiyse duzenleme ani, aksi halde
+  /// null. Liste ekranindaki "Duzenlendi" rozeti bundan besleniyor.
+  ///
+  /// Neden ayri bir alan: teklifin DURUMU degistiginde ("Gonderildi"
+  /// isaretlemek) belge satiri da yaziliyor. Satirin son yazilma anina
+  /// bakilsaydi hic duzenlenmemis her teklif listede "Duzenlendi"
+  /// gorunurdu ve rozet hicbir sey anlatmazdi.
+  final DateTime? editedAt;
   const Proforma({
     required this.id,
     required this.companyId,
@@ -8029,6 +8117,7 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     required this.syncStatus,
     required this.version,
     required this.createdAt,
+    this.editedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8062,6 +8151,9 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     map['sync_status'] = Variable<String>(syncStatus);
     map['version'] = Variable<int>(version);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || editedAt != null) {
+      map['edited_at'] = Variable<DateTime>(editedAt);
+    }
     return map;
   }
 
@@ -8096,6 +8188,9 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       syncStatus: Value(syncStatus),
       version: Value(version),
       createdAt: Value(createdAt),
+      editedAt: editedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(editedAt),
     );
   }
 
@@ -8122,6 +8217,7 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       version: serializer.fromJson<int>(json['version']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      editedAt: serializer.fromJson<DateTime?>(json['editedAt']),
     );
   }
   @override
@@ -8145,6 +8241,7 @@ class Proforma extends DataClass implements Insertable<Proforma> {
       'syncStatus': serializer.toJson<String>(syncStatus),
       'version': serializer.toJson<int>(version),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'editedAt': serializer.toJson<DateTime?>(editedAt),
     };
   }
 
@@ -8166,6 +8263,7 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     String? syncStatus,
     int? version,
     DateTime? createdAt,
+    Value<DateTime?> editedAt = const Value.absent(),
   }) => Proforma(
     id: id ?? this.id,
     companyId: companyId ?? this.companyId,
@@ -8186,6 +8284,7 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     syncStatus: syncStatus ?? this.syncStatus,
     version: version ?? this.version,
     createdAt: createdAt ?? this.createdAt,
+    editedAt: editedAt.present ? editedAt.value : this.editedAt,
   );
   Proforma copyWithCompanion(ProformasCompanion data) {
     return Proforma(
@@ -8220,6 +8319,7 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           : this.syncStatus,
       version: data.version.present ? data.version.value : this.version,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      editedAt: data.editedAt.present ? data.editedAt.value : this.editedAt,
     );
   }
 
@@ -8242,7 +8342,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           ..write('vatRate: $vatRate, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('editedAt: $editedAt')
           ..write(')'))
         .toString();
   }
@@ -8266,6 +8367,7 @@ class Proforma extends DataClass implements Insertable<Proforma> {
     syncStatus,
     version,
     createdAt,
+    editedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -8287,7 +8389,8 @@ class Proforma extends DataClass implements Insertable<Proforma> {
           other.vatRate == this.vatRate &&
           other.syncStatus == this.syncStatus &&
           other.version == this.version &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.editedAt == this.editedAt);
 }
 
 class ProformasCompanion extends UpdateCompanion<Proforma> {
@@ -8308,6 +8411,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
   final Value<String> syncStatus;
   final Value<int> version;
   final Value<DateTime> createdAt;
+  final Value<DateTime?> editedAt;
   final Value<int> rowid;
   const ProformasCompanion({
     this.id = const Value.absent(),
@@ -8327,6 +8431,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.editedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProformasCompanion.insert({
@@ -8347,6 +8452,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     this.syncStatus = const Value.absent(),
     this.version = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.editedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        companyId = Value(companyId),
@@ -8370,6 +8476,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     Expression<String>? syncStatus,
     Expression<int>? version,
     Expression<DateTime>? createdAt,
+    Expression<DateTime>? editedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8390,6 +8497,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
       if (syncStatus != null) 'sync_status': syncStatus,
       if (version != null) 'version': version,
       if (createdAt != null) 'created_at': createdAt,
+      if (editedAt != null) 'edited_at': editedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8412,6 +8520,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     Value<String>? syncStatus,
     Value<int>? version,
     Value<DateTime>? createdAt,
+    Value<DateTime?>? editedAt,
     Value<int>? rowid,
   }) {
     return ProformasCompanion(
@@ -8432,6 +8541,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
       syncStatus: syncStatus ?? this.syncStatus,
       version: version ?? this.version,
       createdAt: createdAt ?? this.createdAt,
+      editedAt: editedAt ?? this.editedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8490,6 +8600,9 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (editedAt.present) {
+      map['edited_at'] = Variable<DateTime>(editedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8516,6 +8629,7 @@ class ProformasCompanion extends UpdateCompanion<Proforma> {
           ..write('syncStatus: $syncStatus, ')
           ..write('version: $version, ')
           ..write('createdAt: $createdAt, ')
+          ..write('editedAt: $editedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20241,6 +20355,7 @@ typedef $$QuotesTableCreateCompanionBuilder =
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
+      Value<DateTime?> editedAt,
       Value<int> rowid,
     });
 typedef $$QuotesTableUpdateCompanionBuilder =
@@ -20263,6 +20378,7 @@ typedef $$QuotesTableUpdateCompanionBuilder =
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
+      Value<DateTime?> editedAt,
       Value<int> rowid,
     });
 
@@ -20409,6 +20525,11 @@ class $$QuotesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get editedAt => $composableBuilder(
+    column: $table.editedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20573,6 +20694,11 @@ class $$QuotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get editedAt => $composableBuilder(
+    column: $table.editedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CompaniesTableOrderingComposer get companyId {
     final $$CompaniesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -20688,6 +20814,9 @@ class $$QuotesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get editedAt =>
+      $composableBuilder(column: $table.editedAt, builder: (column) => column);
 
   $$CompaniesTableAnnotationComposer get companyId {
     final $$CompaniesTableAnnotationComposer composer = $composerBuilder(
@@ -20811,6 +20940,7 @@ class $$QuotesTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> editedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuotesCompanion(
                 id: id,
@@ -20831,6 +20961,7 @@ class $$QuotesTableTableManager
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,
+                editedAt: editedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -20853,6 +20984,7 @@ class $$QuotesTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> editedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuotesCompanion.insert(
                 id: id,
@@ -20873,6 +21005,7 @@ class $$QuotesTableTableManager
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,
+                editedAt: editedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -21404,6 +21537,7 @@ typedef $$ProformasTableCreateCompanionBuilder =
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
+      Value<DateTime?> editedAt,
       Value<int> rowid,
     });
 typedef $$ProformasTableUpdateCompanionBuilder =
@@ -21425,6 +21559,7 @@ typedef $$ProformasTableUpdateCompanionBuilder =
       Value<String> syncStatus,
       Value<int> version,
       Value<DateTime> createdAt,
+      Value<DateTime?> editedAt,
       Value<int> rowid,
     });
 
@@ -21566,6 +21701,11 @@ class $$ProformasTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get editedAt => $composableBuilder(
+    column: $table.editedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21725,6 +21865,11 @@ class $$ProformasTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get editedAt => $composableBuilder(
+    column: $table.editedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CompaniesTableOrderingComposer get companyId {
     final $$CompaniesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -21837,6 +21982,9 @@ class $$ProformasTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get editedAt =>
+      $composableBuilder(column: $table.editedAt, builder: (column) => column);
 
   $$CompaniesTableAnnotationComposer get companyId {
     final $$CompaniesTableAnnotationComposer composer = $composerBuilder(
@@ -21959,6 +22107,7 @@ class $$ProformasTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> editedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProformasCompanion(
                 id: id,
@@ -21978,6 +22127,7 @@ class $$ProformasTableTableManager
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,
+                editedAt: editedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21999,6 +22149,7 @@ class $$ProformasTableTableManager
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> editedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProformasCompanion.insert(
                 id: id,
@@ -22018,6 +22169,7 @@ class $$ProformasTableTableManager
                 syncStatus: syncStatus,
                 version: version,
                 createdAt: createdAt,
+                editedAt: editedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
