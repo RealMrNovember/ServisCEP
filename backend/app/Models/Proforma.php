@@ -19,6 +19,7 @@ class Proforma extends Model
     protected $fillable = ['id', 'company_id', 'code', 'customer_id', 'valid_until', 'notes', 'total_minor',
         'currency', 'vat_mode', 'vat_rate',
         'intro_text', 'payment_terms', 'delivery_time', 'warranty_terms',
+        'edited_at',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class Proforma extends Model
         return [
             'valid_until' => 'datetime',
             'created_at' => 'datetime',
+            'edited_at' => 'datetime',
             'total_minor' => 'integer',
             'vat_rate' => 'integer',
             'version' => 'integer',

@@ -96,6 +96,26 @@ class QuoteController extends Controller
         $changedFields = $data['changed_fields'] ?? [];
         unset($data['base_version'], $data['changed_fields']);
 
+        // Kalemler AYRI bir tabloda; surum birlestirmesi ise sutun bazli
+        // calisiyor (bkz. DetectsSyncConflicts) ve bir iliskiyi
+        // birlestiremez. Bu yuzden kalemler karardan ONCE $data'dan
+        // cikarilir, karar verildikten SONRA uygulanir.
+        //
+        // Kalem degisikligi boylece cakisma denetiminin disinda kalmiyor:
+        // kalemler degisince `total_minor` da degisiyor ve istemci onu
+        // `changed_fields` icinde bildiriyor. Ofiste de kalem degistiyse
+        // sunucunun izinde `total_minor` gorunur ve kesisim cakismayi
+        // yakalar.
+        $items = $data['items'] ?? null;
+        unset($data['items']);
+
+        if ($items !== null) {
+            $data['total_minor'] = DocumentTotal::forItems($items, $data['vat_mode'] ?? $quote->vat_mode);
+            // Istemci kendi duzenleme anini gonderir; gondermediyse
+            // sunucu saati yedektir (bkz. edited_at gocu).
+            $data['edited_at'] ??= now();
+        }
+
         $outcome = $this->resolveVersionConflict(
             $this->syncConflictService, $request->user(), $quote, 'quote',
             $data, $baseVersion, $changedFields
@@ -110,7 +130,27 @@ class QuoteController extends Controller
         // olduğu gibi kalır.
         $data = $outcome->data;
 
-        $quote->update($data);
+        // Kalemler yalnizca kendi degisiklikleri karardan sag ciktiysa
+        // yazilir. Birlestirme istemcinin bildirmedigi alanlari eliyor;
+        // `total_minor` elendiyse kalemler de uygulanmamali, yoksa belge
+        // tutari ile kalemleri birbirini tutmaz.
+        $kalemleriYaz = $items !== null && array_key_exists('total_minor', $data);
+
+        DB::transaction(function () use ($quote, $data, $items, $kalemleriYaz): void {
+            $quote->update($data);
+
+            if ($kalemleriYaz) {
+                // Kalem listesi kaydin YENI hali olarak geliyor; tek tek
+                // eslestirmek yerine topluca degistiriliyor. Eslestirme,
+                // silinen bir kalemi tespit etmek icin ayri bir iz
+                // gerektirirdi ve o iz hicbir yerde tutulmuyor.
+                $quote->items()->delete();
+
+                foreach ($items as $item) {
+                    $quote->items()->create($item);
+                }
+            }
+        });
 
         return (new QuoteResource($quote->load('items')))->response();
     }

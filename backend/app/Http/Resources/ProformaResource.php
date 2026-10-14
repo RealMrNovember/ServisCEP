@@ -35,6 +35,8 @@ class ProformaResource extends JsonResource
             'items' => ProformaItemResource::collection($this->whenLoaded('items')),
             'version' => $this->version,
             'created_at' => $this->created_at,
+            // Liste ekranindaki "Duzenlendi" rozeti bu alandan besleniyor.
+            'edited_at' => $this->edited_at,
         ];
     }
 }
