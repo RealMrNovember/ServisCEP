@@ -85,7 +85,7 @@ class DocumentDetailScaffold extends ConsumerWidget {
           if (onEdit != null)
             TextButton.icon(
               onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, size: 18),
+              icon: const TcIcon(TcIcons.edit, size: 18),
               label: const Text('Düzenle'),
             ),
         ],

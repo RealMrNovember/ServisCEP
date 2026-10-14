@@ -174,7 +174,13 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(productBarcodes);
       }
 
-      if (from < 12) {
+      // `to` BILEREK denetleniyor: goc testi (test/core/database/
+      // migration_test.dart) 9'dan 10'a gibi ARA bir surume goc edip
+      // sonucu o surumun anlik goruntusuyle karsilastiriyor. Yalnizca
+      // `from` bakilsaydi bu adim o testte de kosar ve v10 semasinda
+      // olmamasi gereken bir sutun ortaya cikardi. Gercek cihazda `to`
+      // her zaman en son surum oldugu icin davranis degismiyor.
+      if (from < 12 && to >= 12) {
         // Belgenin sonradan duzenlendigini isaretleyen alan.
         //
         // NULL kaliyor: mevcut belgelerin duzenlenip duzenlenmedigini
