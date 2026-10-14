@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/models/doc_item_draft.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../../core/sync/changed_fields.dart';
 import '../../../core/utils/document_numbering.dart';
 import '../../../core/utils/money.dart';
 import '../../auth/data/session_controller.dart';
@@ -230,20 +231,39 @@ class QuotesRepository {
         _db.quotes,
       )..where((q) => q.id.equals(id))).getSingle();
 
-      final degisenler = <String>['total_minor', 'edited_at'];
-      void bildir(String alan, Object? eski, Object? yeni) {
-        if (eski != yeni) degisenler.add(alan);
-      }
+      // Baslik alanlarinin farki deponun kendi yardimcisiyla cikariliyor
+      // (bkz. degisenAlanlar) — ayni esleme hem eski hem yeni kayda
+      // uygulanmazsa fark hesabi anlamsiz olur.
+      final eskiBaslik = _baslikYuk(
+        validUntil: mevcut.validUntil,
+        notes: mevcut.notes,
+        introText: mevcut.introText,
+        paymentTerms: mevcut.paymentTerms,
+        deliveryTime: mevcut.deliveryTime,
+        warrantyTerms: mevcut.warrantyTerms,
+        currency: mevcut.currency,
+        vatMode: mevcut.vatMode,
+        vatRate: mevcut.vatRate,
+      );
+      final yeniBaslik = _baslikYuk(
+        validUntil: validUntil,
+        notes: notes,
+        introText: introText,
+        paymentTerms: paymentTerms,
+        deliveryTime: deliveryTime,
+        warrantyTerms: warrantyTerms,
+        currency: currency.code,
+        vatMode: vatMode.code,
+        vatRate: vatRate,
+      );
 
-      bildir('valid_until', mevcut.validUntil, validUntil);
-      bildir('notes', mevcut.notes, notes);
-      bildir('intro_text', mevcut.introText, introText);
-      bildir('payment_terms', mevcut.paymentTerms, paymentTerms);
-      bildir('delivery_time', mevcut.deliveryTime, deliveryTime);
-      bildir('warranty_terms', mevcut.warrantyTerms, warrantyTerms);
-      bildir('currency', mevcut.currency, currency.code);
-      bildir('vat_mode', mevcut.vatMode, vatMode.code);
-      bildir('vat_rate', mevcut.vatRate, vatRate);
+      // `total_minor` ve `edited_at` HER ZAMAN bildiriliyor — gerekcesi
+      // metodun basindaki aciklamada.
+      final degisenler = <String>[
+        ...degisenAlanlar(eskiBaslik, yeniBaslik),
+        'total_minor',
+        'edited_at',
+      ];
 
       await (_db.update(_db.quotes)..where((q) => q.id.equals(id))).write(
         QuotesCompanion(
@@ -361,6 +381,32 @@ class QuotesRepository {
           ),
         );
   }
+
+  /// Sunucuya gonderilen BASLIK alanlari.
+  ///
+  /// Ayri bir metot olmasi sart: ayni esleme hem eski hem yeni kayda
+  /// uygulanmazsa fark hesabi anlamsiz olur (bkz. CustomersRepository).
+  Map<String, dynamic> _baslikYuk({
+    required DateTime? validUntil,
+    required String? notes,
+    required String? introText,
+    required String? paymentTerms,
+    required String? deliveryTime,
+    required String? warrantyTerms,
+    required String currency,
+    required String vatMode,
+    required int vatRate,
+  }) => {
+    'valid_until': validUntil?.toIso8601String(),
+    'notes': notes,
+    'intro_text': introText,
+    'payment_terms': paymentTerms,
+    'delivery_time': deliveryTime,
+    'warranty_terms': warrantyTerms,
+    'currency': currency,
+    'vat_mode': vatMode,
+    'vat_rate': vatRate,
+  };
 }
 
 final quotesRepositoryProvider = Provider<QuotesRepository>((ref) {
