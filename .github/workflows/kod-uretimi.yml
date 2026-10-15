@@ -50,18 +50,37 @@ jobs:
       - name: build_runner
         run: dart run build_runner build --delete-conflicting-outputs
 
+      # Şema anlık görüntüsü + göç testi yardımcıları.
+      #
+      # NEDEN BURADA: göç, uygulamadaki tek GERİ ALINAMAZ iş — yayınlanmış
+      # bir sürüm kullanıcının telefonundaki veriyi bozarsa geri dönüş yok
+      # (bkz. test/core/database/migration_test.dart). Testin çalışması
+      # için her şema sürümünün anlık görüntüsü gerekiyor ve `schema dump`
+      # Flutter istiyor; bu iş zaten Flutter kurduğu için en ucuz yer
+      # burası. Elle adım bırakılsaydı er ya da geç atlanırdı — v11
+      # için tam olarak bu oldu.
+      #
+      # `dump` yalnızca EKSİK sürümü yazar, mevcutlara dokunmaz.
+      - name: Şema anlık görüntüsü
+        run: |
+          dart run drift_dev schema dump \
+            lib/core/database/app_database.dart drift_schemas/
+          dart run drift_dev schema generate \
+            drift_schemas/ test/generated_migrations/
+
       - name: Üretilen dosyalar derleniyor mu
         run: flutter analyze
 
       - name: Commit
         run: |
-          if git diff --quiet -- '*.g.dart'; then
+          if git diff --quiet -- '*.g.dart' 'mobile/drift_schemas' \
+              'mobile/test/generated_migrations'; then
             echo "Üretilmiş dosyalarda değişiklik yok."
             exit 0
           fi
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git add '*.g.dart'
-          git commit -m "chore: uretilmis drift dosyalari yenilendi"
+          git add '*.g.dart' mobile/drift_schemas mobile/test/generated_migrations
+          git commit -m "chore: uretilmis drift dosyalari ve sema anlik goruntusu yenilendi"
           git push origin HEAD:${{ github.ref_name }}
         working-directory: .
