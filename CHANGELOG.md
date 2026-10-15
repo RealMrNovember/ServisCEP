@@ -17,6 +17,15 @@ Kurallar:
 
 ---
 
+## v1.3.0
+
+Yenilikler:
+• Oluşturduğunuz teklif ve proformaları artık düzenleyebilirsiniz. Yanlış girilmiş bir fiyatı, adedi ya da satırı düzeltmek için belgeyi baştan oluşturmanız gerekmiyor; kalem ekleyip çıkarabilirsiniz.
+• Düzelttiğiniz belgenin PDF'i yeni haliyle üretiliyor.
+• Belge listesinde sonradan düzenlenmiş belgelerin yanında "Düzenlendi" işareti duruyor.
+
+Not: Belge numarası ve türü değiştirilemiyor — belge müşteriye o numarayla gitmiş oluyor.
+
 ## v1.2.0
 
 Yenilikler:
