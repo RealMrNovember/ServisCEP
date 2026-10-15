@@ -227,6 +227,12 @@ class SyncService {
           case ('proforma', 'CREATE'):
             final result = await _api.createProforma(payload);
             await _markSynced('proforma', result);
+          case ('proforma', 'UPDATE'):
+            final result = await _api.updateProforma(op.entityId, {
+              ...payload,
+              'base_version': await _guncelSurum(op),
+            });
+            await _markSynced('proforma', result);
           case ('payment', 'CREATE'):
             // customer_id URL yolu içindir, istek gövdesine girmez.
             final body = Map<String, dynamic>.from(payload)
@@ -994,6 +1000,11 @@ class SyncService {
                 currency: Value(r['currency'] as String? ?? 'TRY'),
                 vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
                 vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
+                editedAt: Value(
+                  r['edited_at'] == null
+                      ? null
+                      : DateTime.parse(r['edited_at'] as String),
+                ),
                 validUntil: Value(
                   r['valid_until'] == null
                       ? null
@@ -1045,6 +1056,11 @@ class SyncService {
                 currency: Value(r['currency'] as String? ?? 'TRY'),
                 vatMode: Value(r['vat_mode'] as String? ?? 'EXCLUDED'),
                 vatRate: Value((r['vat_rate'] as num?)?.toInt() ?? 20),
+                editedAt: Value(
+                  r['edited_at'] == null
+                      ? null
+                      : DateTime.parse(r['edited_at'] as String),
+                ),
                 version: Value(remote.version),
                 syncStatus: const Value('SYNCED'),
               ),

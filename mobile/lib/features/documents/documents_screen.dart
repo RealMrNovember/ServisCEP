@@ -118,6 +118,7 @@ class _QuotesTab extends ConsumerWidget {
               tutarMinor: item.quote.totalMinor,
               tarih: item.quote.createdAt,
               bekliyor: item.quote.syncStatus == 'PENDING',
+              duzenlendi: item.quote.editedAt != null,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => QuoteDetailScreen(quoteId: item.quote.id),
@@ -160,6 +161,7 @@ class _ProformasTab extends ConsumerWidget {
               tutarMinor: item.proforma.totalMinor,
               tarih: item.proforma.createdAt,
               bekliyor: item.proforma.syncStatus == 'PENDING',
+              duzenlendi: item.proforma.editedAt != null,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) =>
@@ -218,6 +220,7 @@ class _BelgeSatiri extends StatelessWidget {
     required this.tutarMinor,
     required this.tarih,
     required this.bekliyor,
+    required this.duzenlendi,
     required this.onTap,
   });
 
@@ -231,6 +234,14 @@ class _BelgeSatiri extends StatelessWidget {
   final int tutarMinor;
   final DateTime? tarih;
   final bool bekliyor;
+
+  /// Belge oluşturulduktan SONRA düzenlendi mi.
+  ///
+  /// Müşteriye gönderilmiş bir belgenin sessizce değişmesi, elinde eski
+  /// hali olan müşteriyle aynı kâğıda bakmamak demek. Rozet belgenin
+  /// ÜZERİNDE değil burada: PDF müşteriye giden evrak, bu liste ise
+  /// işletmenin kendi kaydı.
+  final bool duzenlendi;
   final VoidCallback onTap;
 
   @override
@@ -258,8 +269,13 @@ class _BelgeSatiri extends StatelessWidget {
                 Row(
                   children: [
                     if (durum != null) _BelgeDurumu(durum: durum!),
-                    if (tarih != null) ...[
+                    if (duzenlendi) ...[
                       if (durum != null) const SizedBox(width: AppSpacing.sm),
+                      const _DuzenlendiRozeti(),
+                    ],
+                    if (tarih != null) ...[
+                      if (durum != null || duzenlendi)
+                        const SizedBox(width: AppSpacing.sm),
                       Text(
                         DateFormat('d MMM', 'tr_TR').format(tarih!),
                         style: Theme.of(
@@ -278,6 +294,37 @@ class _BelgeSatiri extends StatelessWidget {
             style: AppTypography.monoLarge.copyWith(fontSize: 16),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Düzenlendi" rozeti.
+///
+/// Durum rozetinin yanında ama ondan SESSİZ: durum kullanıcının eylem
+/// alacağı bir bilgi ("Reddedildi"), bu ise yalnızca bir kayıt notu.
+/// Aynı tonda çizilseydi gözün ayırt edemeyeceği iki rozet olurdu.
+class _DuzenlendiRozeti extends StatelessWidget {
+  const _DuzenlendiRozeti();
+
+  @override
+  Widget build(BuildContext context) {
+    final palet = context.palette;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        border: Border.all(color: palet.textMuted.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        'Düzenlendi',
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: palet.textMuted, fontSize: 11),
       ),
     );
   }

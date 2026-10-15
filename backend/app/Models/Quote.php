@@ -19,12 +19,14 @@ class Quote extends Model
     protected $fillable = ['id', 'company_id', 'code', 'customer_id', 'status', 'notes', 'total_minor',
         'currency', 'vat_mode', 'vat_rate', 'valid_until',
         'intro_text', 'payment_terms', 'delivery_time', 'warranty_terms',
+        'edited_at',
     ];
 
     protected function casts(): array
     {
         return [
             'created_at' => 'datetime',
+            'edited_at' => 'datetime',
             'total_minor' => 'integer',
             'version' => 'integer',
             'vat_rate' => 'integer',

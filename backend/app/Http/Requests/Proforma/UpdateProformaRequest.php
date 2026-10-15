@@ -39,6 +39,33 @@ class UpdateProformaRequest extends FormRequest
             'changed_fields.*' => ['string', 'max:64'],
             'valid_until' => ['sometimes', 'nullable', 'date'],
             'notes' => ['sometimes', 'nullable', 'string'],
+
+            // Kalemler. Belge olustuktan sonra en cok duzeltilen sey bir
+            // kalemin adedi ya da fiyati; `store` bunlari bastan beri
+            // kabul ediyordu, `update` etmiyordu ve bu yuzden olusmus bir
+            // belgenin tutari API uzerinden hic degistirilemiyordu.
+            //
+            // `sometimes`: yalnizca durum degistiren istek (teklifte
+            // "Gonderildi") kalem gondermez ve gondermedigi surece mevcut
+            // kalemlere dokunulmaz.
+            //
+            // Gelirse TAMAMI gelir: liste kaydin yeni hali olarak
+            // uygulanir, kismi guncelleme yoktur. Eksik gonderilen bir
+            // kalem silinmis sayilir.
+            'items' => ['sometimes', 'array', 'min:1'],
+            'items.*.id' => ['sometimes', 'uuid'],
+            'items.*.description' => ['required', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit' => ['nullable', 'string', 'max:20'],
+            'items.*.unit_price_minor' => ['required', 'integer', 'min:0'],
+            'items.*.tax_rate' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'items.*.discount_minor' => ['nullable', 'integer', 'min:0'],
+            'items.*.discount_rate' => ['nullable', 'integer', 'min:0', 'max:100'],
+
+            // Duzenlemenin GERCEKTE yapildigi an. Uygulama offline
+            // duzenleyip gunler sonra senkron olabiliyor; sunucu saatini
+            // yazmak o ani kaybettirirdi.
+            'edited_at' => ['sometimes', 'nullable', 'date'],
         ];
     }
 }

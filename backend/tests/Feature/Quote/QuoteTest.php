@@ -198,4 +198,30 @@ class QuoteTest extends TestCase
             // Tutar olarak girilen iskontoda oran NULL kalir.
             ->assertJsonPath('data.items.1.discount_rate', null);
     }
+
+    public function test_changing_only_the_status_does_not_mark_the_quote_as_edited(): void
+    {
+        $user = User::factory()->create();
+        $this->withToken($user->createToken('test')->plainTextToken);
+        $customer = Customer::factory()->create(['company_id' => $user->company_id]);
+
+        $created = $this->postJson('/api/v1/quotes', [
+            'code' => 'TEK-0010',
+            'customer_id' => $customer->id,
+            'items' => [['description' => 'Montaj', 'quantity' => 1, 'unit_price_minor' => 100000]],
+        ])->assertCreated();
+
+        // Teklifi "Gonderildi" isaretlemek bir DUZENLEME degil. Bu ayrim
+        // rozetin tek anlamli oldugu yer: durum degisikliginde de
+        // isaretlenseydi, hic dokunulmamis her teklif listede
+        // "Duzenlendi" gorunurdu.
+        $response = $this->putJson("/api/v1/quotes/{$created->json('data.id')}", [
+            'base_version' => $created->json('data.version'),
+            'changed_fields' => ['status'],
+            'status' => 'GONDERILDI',
+        ])->assertOk();
+
+        $this->assertSame('GONDERILDI', $response->json('data.status'));
+        $this->assertNull($response->json('data.edited_at'), 'Durum degisikligi belgeyi duzenlenmis yapmamali.');
+    }
 }

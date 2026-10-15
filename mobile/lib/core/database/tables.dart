@@ -252,6 +252,15 @@ class Quotes extends Table {
   IntColumn get version => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
+  /// Belge olusturulduktan SONRA duzenlendiyse duzenleme ani, aksi halde
+  /// null. Liste ekranindaki "Duzenlendi" rozeti bundan besleniyor.
+  ///
+  /// Neden ayri bir alan: teklifin DURUMU degistiginde ("Gonderildi"
+  /// isaretlemek) belge satiri da yaziliyor. Satirin son yazilma anina
+  /// bakilsaydi hic duzenlenmemis her teklif listede "Duzenlendi"
+  /// gorunurdu ve rozet hicbir sey anlatmazdi.
+  DateTimeColumn get editedAt => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -308,6 +317,15 @@ class Proformas extends Table {
   /// Sunucudaki `version` sayacının yerel kopyası (bkz. backend `HasVersion`).
   IntColumn get version => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// Belge olusturulduktan SONRA duzenlendiyse duzenleme ani, aksi halde
+  /// null. Liste ekranindaki "Duzenlendi" rozeti bundan besleniyor.
+  ///
+  /// Neden ayri bir alan: teklifin DURUMU degistiginde ("Gonderildi"
+  /// isaretlemek) belge satiri da yaziliyor. Satirin son yazilma anina
+  /// bakilsaydi hic duzenlenmemis her teklif listede "Duzenlendi"
+  /// gorunurdu ve rozet hicbir sey anlatmazdi.
+  DateTimeColumn get editedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

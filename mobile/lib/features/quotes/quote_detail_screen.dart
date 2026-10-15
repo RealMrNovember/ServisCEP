@@ -13,6 +13,7 @@ import '../../shared/document_detail.dart';
 import '../../shared/ui.dart';
 import '../auth/data/session_controller.dart';
 import '../customers/data/customers_repository.dart';
+import '../documents/document_form_screen.dart';
 import '../settings/data/company_repository.dart';
 import 'data/quotes_repository.dart';
 
@@ -165,6 +166,14 @@ class QuoteDetailScreen extends ConsumerWidget {
               ),
               onChangeStatus: () => _changeStatus(context, ref, quote),
               onShare: () => _sharePdf(context, ref, quote),
+              onEdit: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DocumentFormScreen(
+                    initialKind: DocumentKind.quote,
+                    editingId: quote.id,
+                  ),
+                ),
+              ),
             );
           },
         );

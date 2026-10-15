@@ -474,7 +474,6 @@ ekleme, fotoğraf çekme, bildirim süresi ayarı, senkron durumu ekranı.
 - Belge detayındaki "Belge geçmişi" zaman çizelgesi (oluşturuldu / PDF
   gönderildi / müşteri görüntüledi) — belge olayları hiçbir yerde
   tutulmuyor. Boş bir zaman çizelgesi göstermek yerine bırakıldı.
-- Belge detayındaki "Düzenle" — oluşmuş bir belgeyi düzenleme akışı yok.
 - Müşteri seçicideki "Telefon rehberinden ekle" satırı — rehber
   tümleşmesi yalnızca müşteri FORMUNDA var.
 - Giriş ekranındaki "Şifremi unuttum" — **backend'de parola sıfırlama ucu
