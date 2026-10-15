@@ -304,6 +304,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             unitPriceMinor: kalem.unitPriceMinor,
             taxRate: kalem.taxRate,
             discountMinor: kalem.discountMinor,
+            discountRate: kalem.discountRate,
           ),
         ),
       );
@@ -338,6 +339,7 @@ class _DocumentFormScreenState extends ConsumerState<DocumentFormScreen> {
             unitPriceMinor: kalem.unitPriceMinor,
             taxRate: kalem.taxRate,
             discountMinor: kalem.discountMinor,
+            discountRate: kalem.discountRate,
           ),
         ),
       );

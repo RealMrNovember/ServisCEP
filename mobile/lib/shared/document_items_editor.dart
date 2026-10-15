@@ -284,7 +284,9 @@ class _ItemTile extends StatelessWidget {
           '${Money.formatMinor(item.unitPriceMinor, currency: currency)}',
       'KDV %${item.taxRate}',
     ];
-    if (item.discountMinor > 0) {
+    if (item.discountRate > 0) {
+      parcalar.add('%${item.discountRate} iskonto');
+    } else if (item.discountMinor > 0) {
       parcalar.add(
         '${Money.formatMinor(item.discountMinor, currency: currency)} iskonto',
       );
@@ -421,16 +423,21 @@ class _ItemSheetState extends State<_ItemSheet> {
         ? ''
         : Money.formatMinorPlain(widget.existing!.unitPriceMinor),
   );
-  late final _discountController = TextEditingController(
-    text: (widget.existing?.discountMinor ?? 0) == 0
-        ? ''
-        : Money.formatMinorPlain(widget.existing!.discountMinor),
-  );
+  late final _discountController = TextEditingController();
   late int _vatRate = widget.existing?.taxRate ?? widget.defaultVatRate;
+
+  /// İskonto girişi tutar mı yoksa yüzde mi — arayüzde tek bir seçici var,
+  /// ikisi aynı anda girilemez (bkz. backend `App\Support\DocumentTotal`).
+  late bool _discountIsPercent = (widget.existing?.discountRate ?? 0) > 0;
 
   @override
   void initState() {
     super.initState();
+    _discountController.text = _discountIsPercent
+        ? widget.existing!.discountRate.toString()
+        : ((widget.existing?.discountMinor ?? 0) == 0
+              ? ''
+              : Money.formatMinorPlain(widget.existing!.discountMinor));
     // Canlı önizleme: kullanıcı fiyatı yazarken satır toplamını görsün.
     for (final controller in [
       _qtyController,
@@ -439,6 +446,14 @@ class _ItemSheetState extends State<_ItemSheet> {
     ]) {
       controller.addListener(_refresh);
     }
+  }
+
+  void _setDiscountMode(bool percent) {
+    if (_discountIsPercent == percent) return;
+    setState(() {
+      _discountIsPercent = percent;
+      _discountController.clear();
+    });
   }
 
   void _refresh() => setState(() {});
@@ -457,17 +472,34 @@ class _ItemSheetState extends State<_ItemSheet> {
     super.dispose();
   }
 
-  DocItemDraft _draft() => DocItemDraft(
-    description: _descController.text.trim(),
-    productId: widget.existing?.productId,
-    quantity: int.tryParse(_qtyController.text.trim()) ?? 1,
-    unit: _unitController.text.trim().isEmpty
-        ? 'adet'
-        : _unitController.text.trim(),
-    unitPriceMinor: Money.parseToMinor(_priceController.text),
-    taxRate: _vatRate,
-    discountMinor: Money.parseToMinor(_discountController.text),
-  );
+  DocItemDraft _draft() {
+    final quantity = int.tryParse(_qtyController.text.trim()) ?? 1;
+    final unitPriceMinor = Money.parseToMinor(_priceController.text);
+
+    // Yüzde modunda tutar her zaman ORANDAN türetilir — kullanıcı ayrı bir
+    // tutar girmiyor, bu yüzden miktar/fiyat değiştiği anda iskonto tutarı
+    // da güncel kalır (bkz. backend göç notu: tutar hesabın kaynağı,
+    // oran kullanıcı niyetini korur; ikisi birlikte saklanır).
+    final discountRate = _discountIsPercent
+        ? (int.tryParse(_discountController.text.trim()) ?? 0).clamp(0, 100)
+        : 0;
+    final discountMinor = _discountIsPercent
+        ? (quantity * unitPriceMinor * discountRate / 100).round()
+        : Money.parseToMinor(_discountController.text);
+
+    return DocItemDraft(
+      description: _descController.text.trim(),
+      productId: widget.existing?.productId,
+      quantity: quantity,
+      unit: _unitController.text.trim().isEmpty
+          ? 'adet'
+          : _unitController.text.trim(),
+      unitPriceMinor: unitPriceMinor,
+      taxRate: _vatRate,
+      discountMinor: discountMinor,
+      discountRate: discountRate,
+    );
+  }
 
   void _save() {
     if (_descController.text.trim().isEmpty) {
@@ -547,14 +579,37 @@ class _ItemSheetState extends State<_ItemSheet> {
                 Expanded(
                   child: TextField(
                     controller: _discountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
+                    keyboardType: _discountIsPercent
+                        ? TextInputType.number
+                        : const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                     decoration: InputDecoration(
                       labelText: 'İskonto',
-                      prefixText: '${widget.currency.symbol} ',
+                      prefixText: _discountIsPercent
+                          ? null
+                          : '${widget.currency.symbol} ',
+                      suffixText: _discountIsPercent ? '%' : null,
                     ),
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                const Text('İskonto türü', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: AppSpacing.sm),
+                ChoiceChip(
+                  label: Text(widget.currency.symbol),
+                  selected: !_discountIsPercent,
+                  onSelected: (_) => _setDiscountMode(false),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                ChoiceChip(
+                  label: const Text('%'),
+                  selected: _discountIsPercent,
+                  onSelected: (_) => _setDiscountMode(true),
                 ),
               ],
             ),

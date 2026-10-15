@@ -12,6 +12,7 @@ class DocItemDraft {
     this.unitPriceMinor = 0,
     this.taxRate = 20,
     this.discountMinor = 0,
+    this.discountRate = 0,
   });
 
   final String? productId;
@@ -21,6 +22,10 @@ class DocItemDraft {
   int unitPriceMinor;
   int taxRate;
   int discountMinor;
+
+  /// Yüzde iskonto (0-100). 0 ise tutar iskontosu ([discountMinor])
+  /// geçerlidir — bkz. backend `App\Support\DocumentTotal`.
+  int discountRate;
 
   /// Kalemin KDV kipine göre net/KDV/brüt tutarları.
   ///
@@ -41,6 +46,7 @@ class DocItemDraft {
     int? unitPriceMinor,
     int? taxRate,
     int? discountMinor,
+    int? discountRate,
   }) {
     return DocItemDraft(
       description: description ?? this.description,
@@ -50,6 +56,7 @@ class DocItemDraft {
       unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
       taxRate: taxRate ?? this.taxRate,
       discountMinor: discountMinor ?? this.discountMinor,
+      discountRate: discountRate ?? this.discountRate,
     );
   }
 }

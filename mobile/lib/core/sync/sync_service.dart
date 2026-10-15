@@ -1158,6 +1158,9 @@ class SyncService {
                 discountMinor: Value(
                   (item['discount_minor'] as num?)?.toInt() ?? 0,
                 ),
+                discountRate: Value(
+                  (item['discount_rate'] as num?)?.toInt() ?? 0,
+                ),
               ),
             );
       }
@@ -1181,6 +1184,9 @@ class SyncService {
               taxRate: Value((item['tax_rate'] as num?)?.toInt() ?? 20),
               discountMinor: Value(
                 (item['discount_minor'] as num?)?.toInt() ?? 0,
+              ),
+              discountRate: Value(
+                (item['discount_rate'] as num?)?.toInt() ?? 0,
               ),
             ),
           );

@@ -154,6 +154,7 @@ class ProformasRepository {
                 unitPriceMinor: Value(item.unitPriceMinor),
                 taxRate: Value(item.taxRate),
                 discountMinor: Value(item.discountMinor),
+                discountRate: Value(item.discountRate),
               ),
             );
         itemPayloads.add({
@@ -164,6 +165,7 @@ class ProformasRepository {
           'unit_price_minor': item.unitPriceMinor,
           'tax_rate': item.taxRate,
           'discount_minor': item.discountMinor,
+          'discount_rate': item.discountRate,
         });
       }
       await _db
@@ -307,6 +309,7 @@ class ProformasRepository {
                 unitPriceMinor: Value(item.unitPriceMinor),
                 taxRate: Value(item.taxRate),
                 discountMinor: Value(item.discountMinor),
+                discountRate: Value(item.discountRate),
               ),
             );
         itemPayloads.add({
@@ -317,6 +320,7 @@ class ProformasRepository {
           'unit_price_minor': item.unitPriceMinor,
           'tax_rate': item.taxRate,
           'discount_minor': item.discountMinor,
+          'discount_rate': item.discountRate,
         });
       }
 
