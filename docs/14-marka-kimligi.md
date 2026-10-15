@@ -41,7 +41,7 @@ Herhangi bir tasarım değişikliğinde: `icon.svg`'yi düzenle → `python gene
 
 ## Geliştirici Atfı (Zorunlu)
 
-> **Zorunlu gereksinim:** "TeknikCEP · **Cicibyte Teknoloji** tarafından geliştirilmiştir" ibaresi, [cicibyte.com](https://cicibyte.com) bağlantısıyla, gerçekten olması gereken footer alanlarında gösterilmelidir:
+> **Zorunlu gereksinim:** "TeknikCEP · **CiciByte Technology** tarafından geliştirilmiştir" ibaresi, [cicibyte.com](https://cicibyte.com) bağlantısıyla, gerçekten olması gereken footer alanlarında gösterilmelidir:
 
 - **Mobil:** Ana ekranların altında (bkz. `mobile/lib/shared/brand_footer.dart`, şu an Dashboard'da kullanılıyor) ve ileride eklenecek "Daha Fazla / Hakkında" ekranında.
 - **Web (Showroom + Panel):** Sayfa footer'ında, tüm sayfalarda tutarlı şekilde.

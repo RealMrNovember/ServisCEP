@@ -545,5 +545,5 @@ Kalkan + onay işareti: garanti, iş tamamlandı, güven. Servis sektörünün e
 
 ---
 
-TeknikCEP · Cicibyte Teknoloji tarafından geliştirilmiştir
+TeknikCEP · CiciByte Technology tarafından geliştirilmiştir
 Tasarım ve tasarım sistemi: Mikail Özkarcı · v2.0.0 · 2026-08-25

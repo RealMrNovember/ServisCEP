@@ -190,5 +190,5 @@ eşitleme) temalarını birleştiren bir telefon motifi + iki katmanlı sinyal
 dalgasıdır. Aksan rengi `#3B82F6` markanın tek vurgu rengidir ve hem
 uygulamada hem web sitesinde aynıdır.
 
-Uygulamanın alt kısımlarında "TeknikCEP · Cicibyte Teknoloji tarafından
+Uygulamanın alt kısımlarında "TeknikCEP · CiciByte Technology tarafından
 geliştirilmiştir" ibaresi bulunur; tasarım bunun için yer bırakmalıdır.

@@ -38,4 +38,4 @@ Bu belgeler resmi e-fatura veya resmi elektronik imza yerine geçmez;
 TeknikCEP bir işletme ve teknik servis yönetim platformudur, muhasebe
 yazılımı değildir.
 
-TeknikCEP, Cicibyte Teknoloji (cicibyte.com) tarafından geliştirilmiştir.
+TeknikCEP, CiciByte Technology (cicibyte.com) tarafından geliştirilmiştir.

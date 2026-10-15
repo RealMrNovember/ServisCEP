@@ -31,7 +31,7 @@ class BrandFooter extends StatelessWidget {
                 children: [
                   const TextSpan(text: 'TeknikCEP · '),
                   TextSpan(
-                    text: 'Cicibyte Teknoloji',
+                    text: 'CiciByte Technology',
                     style: TextStyle(
                       color: scheme.primary,
                       fontWeight: FontWeight.w600,

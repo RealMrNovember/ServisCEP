@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             $password = Str::password(16);
 
             AdminUser::query()->create([
-                'full_name' => 'Cicibyte Teknoloji',
+                'full_name' => 'CiciByte Technology',
                 'email' => 'info@cicibyte.com',
                 'password' => Hash::make($password),
             ]);
