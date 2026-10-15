@@ -6,6 +6,7 @@ import 'package:serviscep/core/database/app_database.dart';
 import '../../generated_migrations/schema.dart';
 import '../../generated_migrations/schema_v9.dart' as v9;
 import '../../generated_migrations/schema_v10.dart' as v10;
+import '../../generated_migrations/schema_v12.dart' as v12;
 
 /// Şema göçleri.
 ///
@@ -112,6 +113,79 @@ void main() {
       reason:
           'yeni sütun 0 ile gelmeli — aksi halde mevcut belgelerin toplamı '
           'kullanıcı hiçbir şey yapmadan değişir',
+    );
+  });
+
+  /// v11 (urun barkodlari) ve v12 (belge duzenleme izi) adimlari birlikte.
+  ///
+  /// v11'in kendi anlik goruntusu YOK: `schema dump` yalnizca o an
+  /// derlenebilen semayi yazar, gecmis surum geri getirilemez. 10'dan
+  /// 12'ye gocmek ikisini de calistirdigi icin adimlar yine de kapsaniyor.
+  test('v10 şeması v12\'ye sorunsuz yükseltiliyor', () async {
+    final baglanti = await dogrulayici.startAt(10);
+    final db = AppDatabase.forTesting(baglanti);
+
+    await dogrulayici.migrateAndValidate(db, 12);
+
+    await db.close();
+  });
+
+  /// "Düzenlendi" rozetinin doğruluğu doğrudan bu göçe bağlı.
+  ///
+  /// `edited_at` NULL ile ekleniyor ve NULL "belge oluşturulduğu gibi
+  /// duruyor" demek. Göç varsayılan bir tarih yazsaydı, kullanıcının
+  /// yıllardır duran her belgesi güncellemeden sonra listede
+  /// "Düzenlendi" görünürdü — rozet daha ilk gün anlamsızlaşırdı.
+  test('göç mevcut belgeleri düzenlenmiş göstermiyor', () async {
+    late Map<String, Object?> teklif;
+
+    await dogrulayici.testWithDataIntegrity(
+      oldVersion: 10,
+      newVersion: 12,
+      createOld: v10.DatabaseAtV10.new,
+      createNew: v12.DatabaseAtV12.new,
+      openTestedDatabase: AppDatabase.forTesting,
+      createItems: (toplu, eski) {
+        // Yabancı anahtar zinciri: teklif → müşteri → şirket.
+        toplu.insertAll(eski.companies, [
+          RawValuesInsertable({
+            'id': Variable('sirket-1'),
+            'name': Variable('Test A.Ş.'),
+          }),
+        ]);
+        toplu.insertAll(eski.customers, [
+          RawValuesInsertable({
+            'id': Variable('musteri-1'),
+            'company_id': Variable('sirket-1'),
+            'code': Variable('MUS-1'),
+          }),
+        ]);
+        toplu.insertAll(eski.quotes, [
+          RawValuesInsertable({
+            'id': Variable('teklif-1'),
+            'company_id': Variable('sirket-1'),
+            'code': Variable('TKF-1'),
+            'customer_id': Variable('musteri-1'),
+          }),
+        ]);
+      },
+      validateItems: (yeni) async {
+        final satirlar = await yeni.customSelect('SELECT * FROM quotes').get();
+        expect(satirlar, hasLength(1));
+        teklif = satirlar.single.data;
+      },
+    );
+
+    expect(teklif['code'], 'TKF-1');
+    expect(
+      // `isNull` matcher'i burada KULLANILAMIYOR: ayni ad drift'te de
+      // tanimli ve iki import arasinda cakisiyor. `expect` matcher
+      // olmayan degeri zaten `equals` sayiyor.
+      teklif['edited_at'],
+      null,
+      reason:
+          'göçten gelen belge düzenlenmiş sayılmamalı — aksi halde '
+          'kullanıcının hiç dokunmadığı her belge "Düzenlendi" görünür',
     );
   });
 }
