@@ -178,8 +178,11 @@ void main() {
 
     expect(teklif['code'], 'TKF-1');
     expect(
+      // `isNull` matcher'i burada KULLANILAMIYOR: ayni ad drift'te de
+      // tanimli ve iki import arasinda cakisiyor. `expect` matcher
+      // olmayan degeri zaten `equals` sayiyor.
       teklif['edited_at'],
-      isNull,
+      null,
       reason:
           'göçten gelen belge düzenlenmiş sayılmamalı — aksi halde '
           'kullanıcının hiç dokunmadığı her belge "Düzenlendi" görünür',
