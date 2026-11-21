@@ -58,9 +58,8 @@ class PaymentSettings extends Page implements HasForms
             'test_mode' => PaymentConfig::isTestMode(),
             // Anahtarların kendisi DOLDURULMAZ; boş bırakılırsa mevcut
             // değer korunur.
-            'merchant_id' => null,
-            'merchant_key' => null,
-            'merchant_salt' => null,
+            'secret_key' => null,
+            'webhook_secret' => null,
             'support_whatsapp' => Setting::get(
                 SubscriptionController::KEY_SUPPORT_WHATSAPP,
                 SubscriptionController::VARSAYILAN_WHATSAPP,
@@ -92,7 +91,7 @@ class PaymentSettings extends Page implements HasForms
                             ->label('Sağlayıcı')
                             ->options([
                                 PaymentConfig::PROVIDER_NONE => 'Yok (havale)',
-                                PaymentConfig::PROVIDER_PAYTR => 'PayTR',
+                                PaymentConfig::PROVIDER_STRIPE => 'Stripe',
                             ])
                             ->native(false)
                             ->required(),
@@ -115,33 +114,28 @@ class PaymentSettings extends Page implements HasForms
                     ])
                     ->columns(3),
 
-                Section::make('PayTR anahtarları')
+                Section::make('Stripe anahtarları')
                     ->description(
-                        'PayTR mağaza panelinden alınır. Buraya girilen '
-                        .'değerler şifreli saklanır ve bir daha ekranda '
-                        .'gösterilmez.'
+                        'Stripe Dashboard\'dan alınır: restricted bir '
+                        .'anahtar (Checkout Sessions: Write) ve webhook '
+                        .'uç noktasının imza sırrı (whsec_...). Buraya '
+                        .'girilen değerler şifreli saklanır ve bir daha '
+                        .'ekranda gösterilmez.'
                     )
                     ->components([
-                        TextInput::make('merchant_id')
-                            ->label('Merchant ID')
+                        TextInput::make('secret_key')
+                            ->label('Secret key (rk_... / sk_...)')
                             ->password()
                             ->revealable()
                             ->autocomplete(false)
-                            ->helperText($kayitli('payment.paytr.merchant_id')),
+                            ->helperText($kayitli('payment.stripe.secret_key')),
 
-                        TextInput::make('merchant_key')
-                            ->label('Merchant Key')
+                        TextInput::make('webhook_secret')
+                            ->label('Webhook signing secret (whsec_...)')
                             ->password()
                             ->revealable()
                             ->autocomplete(false)
-                            ->helperText($kayitli('payment.paytr.merchant_key')),
-
-                        TextInput::make('merchant_salt')
-                            ->label('Merchant Salt')
-                            ->password()
-                            ->revealable()
-                            ->autocomplete(false)
-                            ->helperText($kayitli('payment.paytr.merchant_salt')),
+                            ->helperText($kayitli('payment.stripe.webhook_secret')),
                     ]),
 
                 Section::make('Destek')
@@ -187,9 +181,8 @@ class PaymentSettings extends Page implements HasForms
         // yalnızca test kipini değiştirmek isteyen biri, farkında olmadan
         // tüm anahtarları siler ve ödeme durur.
         foreach ([
-            'merchant_id' => 'payment.paytr.merchant_id',
-            'merchant_key' => 'payment.paytr.merchant_key',
-            'merchant_salt' => 'payment.paytr.merchant_salt',
+            'secret_key' => 'payment.stripe.secret_key',
+            'webhook_secret' => 'payment.stripe.webhook_secret',
         ] as $alan => $anahtar) {
             $deger = $data[$alan] ?? null;
             if ($deger !== null && trim((string) $deger) !== '') {
@@ -217,9 +210,8 @@ class PaymentSettings extends Page implements HasForms
             'provider' => PaymentConfig::provider(),
             'enabled' => PaymentConfig::isEnabled(),
             'test_mode' => PaymentConfig::isTestMode(),
-            'merchant_id' => null,
-            'merchant_key' => null,
-            'merchant_salt' => null,
+            'secret_key' => null,
+            'webhook_secret' => null,
         ]);
     }
 }

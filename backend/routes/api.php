@@ -74,13 +74,13 @@ Route::prefix('v1')->name('api.v1.')->middleware(LogApiRequests::class)->group(f
         ->middleware('throttle:10,1')
         ->name('app.version.publish');
 
-    // Ödeme sağlayıcısının bildirimi.
+    // Stripe'ın webhook bildirimi.
     //
-    // Kimlik doğrulaması YOK: istek PayTR'nin sunucusundan gelir,
-    // bizim oturumumuz yoktur. Güvenlik imzayla sağlanır —
-    // doğrulanmayan bir bildirim hiçbir şeyi değiştirmez.
-    Route::post('/payments/paytr/callback', [SubscriptionCheckoutController::class, 'callback'])
-        ->name('payments.paytr.callback');
+    // Kimlik doğrulaması YOK: istek Stripe'ın sunucusundan gelir,
+    // bizim oturumumuz yoktur. Güvenlik Stripe-Signature başlığıyla
+    // sağlanır — doğrulanmayan bir bildirim hiçbir şeyi değiştirmez.
+    Route::post('/payments/stripe/webhook', [SubscriptionCheckoutController::class, 'webhook'])
+        ->name('payments.stripe.webhook');
 
     // Mobil tanılama — KİMLİK DOĞRULAMASI YOK.
     //

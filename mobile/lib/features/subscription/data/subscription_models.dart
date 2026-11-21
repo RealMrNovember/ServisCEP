@@ -66,6 +66,7 @@ class SubscriptionStatus {
     required this.expiresAt,
     required this.daysRemaining,
     required this.paymentInfo,
+    required this.paymentMode,
     this.supportWhatsapp,
   });
 
@@ -83,6 +84,10 @@ class SubscriptionStatus {
           : null,
       daysRemaining: (data['days_remaining'] as num?)?.toInt(),
       supportWhatsapp: (data['support_whatsapp'] as String?)?.trim(),
+      // 'transfer' | 'card'. Karar sunucuda verilir — bkz.
+      // PaymentConfig::mode() backend tarafında. Sağlayıcı
+      // yapılandırılmadan kart akışı asla gösterilmemeli.
+      paymentMode: data['payment_mode'] as String? ?? 'transfer',
       paymentInfo: PaymentInfo.fromJson(
         data['payment_info'] as Map<String, dynamic>? ?? const {},
       ),
@@ -98,6 +103,11 @@ class SubscriptionStatus {
   /// null = süresiz abonelik (bitiş tarihi yok).
   final int? daysRemaining;
   final PaymentInfo paymentInfo;
+  final String paymentMode;
+
+  /// IBAN her zaman gösterilir; bu, yalnızca "Kartla öde" düğmesinin de
+  /// ek olarak görünüp görünmeyeceğini belirler.
+  bool get kartlaOdemeMevcut => paymentMode == 'card';
 
   /// Destek WhatsApp numarası (yalnızca rakam, ülke kodu dahil).
   ///

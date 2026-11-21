@@ -26,6 +26,19 @@ class PaymentModeTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Stripe'ın gerçek webhook imza biçimi: `t=<zaman>,v1=<imza>`,
+     * imza = HMAC-SHA256("<zaman>.<ham gövde>", webhook_secret).
+     * Belgelenmiş algoritma — ağ çağrısı gerektirmez.
+     */
+    private function stripeSignature(string $payload, string $secret): string
+    {
+        $zaman = time();
+        $imza = hash_hmac('sha256', $zaman.'.'.$payload, $secret);
+
+        return "t={$zaman},v1={$imza}";
+    }
+
     private function kip(): string
     {
         $user = User::factory()->create();
@@ -45,7 +58,7 @@ class PaymentModeTest extends TestCase
     {
         // "Etkin" isareti tek basina yetmez. Eksik yapilandirmayla kart
         // kipine gecmek, kullaniciyi yarida kalan bir akisa sokar.
-        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_STRIPE);
         Setting::set(PaymentConfig::KEY_ENABLED, '1');
 
         $this->assertSame(PaymentConfig::MODE_TRANSFER, $this->kip());
@@ -53,7 +66,7 @@ class PaymentModeTest extends TestCase
 
     public function test_switches_to_card_mode_when_fully_configured(): void
     {
-        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_STRIPE);
         Setting::set(PaymentConfig::KEY_ENABLED, '1');
         foreach (PaymentConfig::SECRET_KEYS as $anahtar) {
             PaymentConfig::setSecret($anahtar, 'deneme-deger-123456');
@@ -67,7 +80,7 @@ class PaymentModeTest extends TestCase
         foreach (PaymentConfig::SECRET_KEYS as $anahtar) {
             PaymentConfig::setSecret($anahtar, 'deneme-deger-123456');
         }
-        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_STRIPE);
         Setting::set(PaymentConfig::KEY_ENABLED, '0');
 
         $this->assertSame(PaymentConfig::MODE_TRANSFER, $this->kip());
@@ -75,22 +88,22 @@ class PaymentModeTest extends TestCase
 
     public function test_secrets_are_encrypted_at_rest(): void
     {
-        // Merchant key/salt ile bir saldirgan sizin adiniza odeme istegi
-        // imzalayabilir; veritabaninda duz metin durmamali.
-        PaymentConfig::setSecret('payment.paytr.merchant_key', 'gizli-anahtar-42');
+        // Secret key ile bir saldirgan sizin adiniza odeme istegi
+        // olusturabilir; veritabaninda duz metin durmamali.
+        PaymentConfig::setSecret('payment.stripe.secret_key', 'gizli-anahtar-42');
 
-        $ham = Setting::query()->find('payment.paytr.merchant_key')?->value;
+        $ham = Setting::query()->find('payment.stripe.secret_key')?->value;
 
         $this->assertNotNull($ham);
         $this->assertStringNotContainsString('gizli-anahtar-42', $ham);
-        $this->assertSame('gizli-anahtar-42', PaymentConfig::secret('payment.paytr.merchant_key'));
+        $this->assertSame('gizli-anahtar-42', PaymentConfig::secret('payment.stripe.secret_key'));
     }
 
     public function test_masked_secret_hides_all_but_last_four(): void
     {
-        PaymentConfig::setSecret('payment.paytr.merchant_id', 'ABCDEF123456');
+        PaymentConfig::setSecret('payment.stripe.webhook_secret', 'whsec_ABCDEF123456');
 
-        $maskeli = PaymentConfig::maskedSecret('payment.paytr.merchant_id');
+        $maskeli = PaymentConfig::maskedSecret('payment.stripe.webhook_secret');
 
         $this->assertNotNull($maskeli);
         $this->assertStringEndsWith('3456', $maskeli);
@@ -101,7 +114,7 @@ class PaymentModeTest extends TestCase
     {
         // Saglayici gecici olarak duserse kullanici yine de odeyebilmeli.
         Setting::set('payment_iban', 'TR00 0000 0000 0000 0000 0000 00');
-        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
+        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_STRIPE);
         Setting::set(PaymentConfig::KEY_ENABLED, '1');
         foreach (PaymentConfig::SECRET_KEYS as $anahtar) {
             PaymentConfig::setSecret($anahtar, 'deneme-deger-123456');
@@ -116,16 +129,18 @@ class PaymentModeTest extends TestCase
             ->assertJsonPath('data.payment_info.iban', 'TR00 0000 0000 0000 0000 0000 00');
     }
 
-    public function test_callback_rejects_unverified_hash(): void
+    public function test_webhook_rejects_unverified_signature(): void
     {
         // Dogrulanmamis bir bildirimle abonelik uzatilabilseydi, herkes
         // bize bir POST atarak kendine ucretsiz abonelik acabilirdi.
-        $this->post('/api/v1/payments/paytr/callback', [
-            'merchant_oid' => 'TCSAHTE123',
-            'status' => 'success',
-            'total_amount' => '100000',
-            'hash' => 'uydurma-hash',
-        ])->assertStatus(400);
+        PaymentConfig::setSecret('payment.stripe.webhook_secret', 'whsec_deneme123');
+
+        $this->withHeaders(['Stripe-Signature' => 't=1700000000,v1=uydurma-imza'])
+            ->postJson('/api/v1/payments/stripe/webhook', [
+                'type' => 'checkout.session.completed',
+                'data' => ['object' => ['client_reference_id' => 'TCSAHTE123']],
+            ])
+            ->assertStatus(400);
     }
 
     public function test_checkout_is_unavailable_until_provider_is_ready(): void
@@ -166,7 +181,7 @@ class PaymentModeTest extends TestCase
             'amount_minor' => 100000,
             'currency' => 'TRY',
             'duration' => 'MONTHLY',
-            'provider' => 'paytr',
+            'provider' => 'stripe',
             'provider_ref' => 'TCGECMIS1',
             'status' => 'PAID',
             'paid_at' => now(),
@@ -195,7 +210,7 @@ class PaymentModeTest extends TestCase
             'amount_minor' => 100000,
             'currency' => 'TRY',
             'duration' => 'MONTHLY',
-            'provider' => 'paytr',
+            'provider' => 'stripe',
             'provider_ref' => 'TCBASKASI1',
             'status' => 'PAID',
         ]);
@@ -253,26 +268,38 @@ class PaymentModeTest extends TestCase
         $this->assertSame('payment_request_rejected', $sahte->gonderilen[0]['data']['type']);
     }
 
-    public function test_orphan_callback_is_recorded_not_lost(): void
+    public function test_orphan_webhook_is_recorded_not_lost(): void
     {
         // Imzasi gecerli ama karsiligi olmayan bildirim: gercekten para
         // hareketi olmus demektir. Yalnizca gunluge yazmak yetmez,
         // gunlukler budaniyor; para hareketi budanmamali.
-        Setting::set(PaymentConfig::KEY_PROVIDER, PaymentConfig::PROVIDER_PAYTR);
-        Setting::set(PaymentConfig::KEY_ENABLED, '1');
-        PaymentConfig::setSecret('payment.paytr.merchant_id', 'MID123');
-        PaymentConfig::setSecret('payment.paytr.merchant_key', 'KEY123');
-        PaymentConfig::setSecret('payment.paytr.merchant_salt', 'SALT123');
+        $webhookSecret = 'whsec_deneme_sir_123';
+        PaymentConfig::setSecret('payment.stripe.webhook_secret', $webhookSecret);
 
         $oid = 'TCYETIM0001';
-        $imza = base64_encode(hash_hmac('sha256', $oid.'SALT123'.'success'.'250000', 'KEY123', true));
+        $govde = [
+            'id' => 'evt_test_1',
+            'object' => 'event',
+            'type' => 'checkout.session.completed',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_1',
+                    'object' => 'checkout.session',
+                    'client_reference_id' => $oid,
+                    'payment_status' => 'paid',
+                    'amount_total' => 250000,
+                    'currency' => 'try',
+                ],
+            ],
+        ];
+        $ham = json_encode($govde);
+        $imza = $this->stripeSignature($ham, $webhookSecret);
 
-        $this->post('/api/v1/payments/paytr/callback', [
-            'merchant_oid' => $oid,
-            'status' => 'success',
-            'total_amount' => '250000',
-            'hash' => $imza,
-        ])->assertOk()->assertSee('OK');
+        $this->call('POST', '/api/v1/payments/stripe/webhook', [], [], [], [
+            'HTTP_Stripe-Signature' => $imza,
+            'CONTENT_TYPE' => 'application/json',
+        ], $ham)
+            ->assertOk()->assertSee('OK');
 
         $kayit = SubscriptionPayment::where('provider_ref', $oid)->first();
 

@@ -28,6 +28,7 @@ void main() {
       expiresAt: null,
       daysRemaining: aktif ? 10 : 0,
       paymentInfo: PaymentInfo.fromJson(const {}),
+      paymentMode: 'transfer',
       supportWhatsapp: whatsapp,
     );
   }

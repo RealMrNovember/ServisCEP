@@ -48,6 +48,24 @@ class SubscriptionRepository {
     }
   }
 
+  /// Stripe Checkout Session başlatır. Tutar SUNUCUDA hesaplanır — burada
+  /// yalnızca hangi paket/süre seçildiği gönderilir.
+  Future<String> checkoutWithCard({
+    required String planId,
+    required String duration,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/subscription/checkout',
+        data: {'plan_id': planId, 'duration': duration},
+      );
+      final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+      return data['payment_url'] as String;
+    } on DioException catch (e) {
+      _client.throwApiException(e);
+    }
+  }
+
   Future<void> submitPaymentRequest({
     required String planId,
     required String billingPeriod,

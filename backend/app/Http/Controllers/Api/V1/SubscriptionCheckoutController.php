@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AppLog;
 use App\Models\Plan;
 use App\Models\SubscriptionPayment;
-use App\Services\Payment\PayTrGateway;
+use App\Services\Payment\StripeGateway;
 use App\Services\SubscriptionService;
 use App\Support\PaymentConfig;
 use Illuminate\Http\JsonResponse;
@@ -29,13 +29,14 @@ use Illuminate\Support\Str;
  *  - `checkout` kimlik ister. Tutarı SUNUCU hesaplar; istemciden gelen
  *    tutara asla bakılmaz, aksi halde kullanıcı 1 kuruşa yıllık abonelik
  *    alabilirdi.
- *  - `callback` kimlik İSTEMEZ (sağlayıcının sunucusundan gelir) ama
- *    imzayla doğrulanır. Doğrulanmamış bir istek hiçbir şeyi değiştirmez.
+ *  - `webhook` kimlik İSTEMEZ (Stripe'ın sunucusundan gelir) ama
+ *    `Stripe-Signature` başlığıyla doğrulanır. Doğrulanmamış bir istek
+ *    hiçbir şeyi değiştirmez.
  */
 class SubscriptionCheckoutController extends Controller
 {
     public function __construct(
-        private readonly PayTrGateway $gateway,
+        private readonly StripeGateway $gateway,
         private readonly SubscriptionService $subscriptions,
     ) {}
 
@@ -74,8 +75,9 @@ class SubscriptionCheckoutController extends Controller
             'amount_minor' => $tutar,
             'currency' => 'TRY',
             'duration' => $data['duration'],
-            'provider' => PaymentConfig::PROVIDER_PAYTR,
-            // Sağlayıcı sipariş numarasında yalnızca harf-rakam kabul ediyor.
+            'provider' => PaymentConfig::PROVIDER_STRIPE,
+            // client_reference_id / metadata üzerinden webhook'ta geri
+            // bulunur — yalnızca harf-rakam.
             'provider_ref' => 'TC'.Str::upper(Str::random(20)),
             'status' => SubscriptionPayment::STATUS_PENDING,
         ]);
@@ -118,27 +120,33 @@ class SubscriptionCheckoutController extends Controller
     }
 
     /**
-     * Sağlayıcı bildirimi.
+     * Stripe webhook bildirimi.
      *
-     * Gövde olarak SADECE "OK" dönülmeli; aksi halde sağlayıcı bildirimi
+     * Gövde olarak SADECE "OK" dönülmeli; aksi halde Stripe bildirimi
      * başarısız sayıp tekrar tekrar gönderiyor ve ödeme panelinde "devam
      * ediyor" olarak asılı kalıyor.
      */
-    public function callback(Request $request): Response
+    public function webhook(Request $request): Response
     {
-        $post = $request->all();
+        $sonuc = $this->gateway->verifyAndParse($request);
 
-        if (! $this->gateway->verifyCallback($post)) {
+        if ($sonuc === null) {
             AppLog::event(
                 'Ödeme bildirimi imzası doğrulanamadı',
-                ['merchant_oid' => $post['merchant_oid'] ?? null],
+                [],
                 level: 'warning',
             );
 
-            return response('BAD HASH', 400);
+            return response('BAD SIGNATURE', 400);
         }
 
-        $payment = SubscriptionPayment::where('provider_ref', $post['merchant_oid'])->first();
+        // İmza geçerli ama dinlemediğimiz bir olay türü (örn.
+        // payment_intent.created) — işlem yok, yine de 200 dönülür.
+        if ($sonuc['status'] === 'ignored') {
+            return response('OK');
+        }
+
+        $payment = SubscriptionPayment::where('provider_ref', $sonuc['provider_ref'])->first();
 
         if ($payment === null) {
             // Karşılığı olmayan ama İMZASI GEÇERLİ bir bildirim: gerçekten
@@ -151,24 +159,24 @@ class SubscriptionCheckoutController extends Controller
             // akışı henüz yokken yapılmış bir ödeme böyle düşer.
             SubscriptionPayment::create([
                 'company_id' => null,
-                'amount_minor' => (int) ($post['total_amount'] ?? 0),
+                'amount_minor' => $sonuc['total_amount'],
                 'currency' => 'TRY',
                 'duration' => null,
-                'provider' => PaymentConfig::PROVIDER_PAYTR,
-                'provider_ref' => (string) $post['merchant_oid'],
+                'provider' => PaymentConfig::PROVIDER_STRIPE,
+                'provider_ref' => $sonuc['provider_ref'],
                 'status' => SubscriptionPayment::STATUS_ORPHAN,
-                'provider_payload' => $post,
-                'paid_at' => ($post['status'] ?? '') === 'success' ? now() : null,
+                'provider_payload' => $sonuc,
+                'paid_at' => $sonuc['status'] === 'success' ? now() : null,
             ]);
 
             AppLog::event('Karşılığı olmayan ödeme bildirimi kaydedildi', [
-                'siparis_no' => $post['merchant_oid'] ?? null,
-                'tutar_minor' => (int) ($post['total_amount'] ?? 0),
-                'sonuc' => $post['status'] ?? null,
+                'siparis_no' => $sonuc['provider_ref'],
+                'tutar_minor' => $sonuc['total_amount'],
+                'sonuc' => $sonuc['status'],
             ], level: 'warning');
 
-            // Sağlayıcıya yine OK dönülür; aksi halde bildirimi sonsuza
-            // kadar tekrar dener.
+            // Stripe'a yine OK dönülür; aksi halde bildirimi sonsuza kadar
+            // tekrar dener.
             return response('OK');
         }
 
@@ -187,18 +195,16 @@ class SubscriptionCheckoutController extends Controller
             return response('OK');
         }
 
-        if (($post['status'] ?? '') !== 'success') {
+        if ($sonuc['status'] !== 'success') {
             $payment->update([
                 'status' => SubscriptionPayment::STATUS_FAILED,
-                'provider_payload' => $post,
+                'provider_payload' => $sonuc,
             ]);
 
             AppLog::event('Kart ödemesi başarısız', [
                 'odeme_id' => $payment->id,
                 'siparis_no' => $payment->provider_ref,
                 'sirket_id' => $payment->company_id,
-                'hata_kodu' => $post['failed_reason_code'] ?? null,
-                'hata_mesaji' => $post['failed_reason_msg'] ?? null,
             ], level: 'error');
 
             return response('OK');
@@ -207,10 +213,10 @@ class SubscriptionCheckoutController extends Controller
         $company = $payment->company;
         $oncekiBitis = $company?->subscription_expires_at;
 
-        DB::transaction(function () use ($payment, $post): void {
+        DB::transaction(function () use ($payment, $sonuc): void {
             $payment->update([
                 'status' => SubscriptionPayment::STATUS_PAID,
-                'provider_payload' => $post,
+                'provider_payload' => $sonuc,
                 'paid_at' => now(),
             ]);
         });
@@ -237,7 +243,7 @@ class SubscriptionCheckoutController extends Controller
             'siparis_no' => $payment->provider_ref,
             'sirket_id' => $payment->company_id,
             'tutar_minor' => $payment->amount_minor,
-            'cekilen_minor' => (int) ($post['total_amount'] ?? 0),
+            'cekilen_minor' => $sonuc['total_amount'],
             'sure' => $payment->duration,
             'yeni_bitis' => $company?->subscription_expires_at?->toDateString(),
         ]);

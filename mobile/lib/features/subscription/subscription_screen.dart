@@ -11,6 +11,7 @@ import '../../app/typography.dart';
 import '../../core/network/api_client.dart';
 import '../../core/utils/money.dart';
 import '../../shared/ui.dart';
+import 'checkout_webview_screen.dart';
 import 'data/subscription_models.dart';
 import 'data/subscription_repository.dart';
 
@@ -34,6 +35,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   String? _selectedPlanId;
   String _billingPeriod = 'MONTHLY';
   bool _isSubmitting = false;
+  bool _isPayingWithCard = false;
 
   @override
   void dispose() {
@@ -113,6 +115,48 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     }
   }
 
+  /// Stripe Checkout'u WebView içinde açar. Sonucun ne olduğundan BAĞIMSIZ
+  /// olarak abonelik durumu her zaman sunucudan tazelenir — gerçek karar
+  /// webhook ile sunucuda verildiği için, WebView'in "başarılı" görmesi
+  /// tek başına kanıt değildir (kullanıcı tam o anda pencereyi kapatmış
+  /// olabilir, webhook birazdan gelebilir).
+  Future<void> _payWithCard(PlanInfo plan, String period) async {
+    if (_isPayingWithCard) return;
+    setState(() => _isPayingWithCard = true);
+    try {
+      final url = await ref
+          .read(subscriptionRepositoryProvider)
+          .checkoutWithCard(planId: plan.id, duration: period);
+
+      if (!mounted) return;
+      final sonuc = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => CheckoutWebViewScreen(paymentUrl: url),
+        ),
+      );
+
+      await _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            sonuc == true
+                ? 'Ödeme tamamlandı. Abonelik durumun güncellendi.'
+                : 'Ödeme tamamlanmadı ya da vazgeçildi.',
+          ),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _isPayingWithCard = false);
+    }
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(subscriptionStatusProvider);
     ref.invalidate(plansProvider);
@@ -154,6 +198,8 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                 selectedPlanId: _selectedPlanId,
                 currentPlanId: status.plan?.id,
                 onSelect: _selectPlan,
+                cardPaymentAvailable: status.kartlaOdemeMevcut,
+                onPayWithCard: _isPayingWithCard ? null : _payWithCard,
               ),
               const SizedBox(height: 24),
               _sectionTitle(context, 'Havale / EFT Bilgileri'),
@@ -337,11 +383,15 @@ class _PlansSection extends ConsumerWidget {
     required this.selectedPlanId,
     required this.currentPlanId,
     required this.onSelect,
+    required this.cardPaymentAvailable,
+    required this.onPayWithCard,
   });
 
   final String? selectedPlanId;
   final String? currentPlanId;
   final void Function(PlanInfo plan, String period) onSelect;
+  final bool cardPaymentAvailable;
+  final Future<void> Function(PlanInfo plan, String period)? onPayWithCard;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -364,6 +414,8 @@ class _PlansSection extends ConsumerWidget {
               isCurrent: plan.id == currentPlanId,
               isSelected: plan.id == selectedPlanId,
               onSelect: onSelect,
+              cardPaymentAvailable: cardPaymentAvailable,
+              onPayWithCard: onPayWithCard,
             ),
             const SizedBox(height: 12),
           ],
@@ -379,12 +431,16 @@ class _PlanCard extends StatelessWidget {
     required this.isCurrent,
     required this.isSelected,
     required this.onSelect,
+    required this.cardPaymentAvailable,
+    required this.onPayWithCard,
   });
 
   final PlanInfo plan;
   final bool isCurrent;
   final bool isSelected;
   final void Function(PlanInfo plan, String period) onSelect;
+  final bool cardPaymentAvailable;
+  final Future<void> Function(PlanInfo plan, String period)? onPayWithCard;
 
   @override
   Widget build(BuildContext context) {
@@ -527,6 +583,33 @@ class _PlanCard extends StatelessWidget {
               ),
             ],
           ),
+          // Havale her zaman yukarıdaki IBAN bölümünden mevcut — bu
+          // sadece EK bir seçenek. Sağlayıcı yapılandırılmadığında
+          // (payment_mode != 'card') hiç gösterilmez.
+          if (cardPaymentAvailable) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: onPayWithCard == null
+                    ? null
+                    : () => onPayWithCard!(plan, 'MONTHLY'),
+                icon: const TcIcon(TcIcons.card, size: 16),
+                label: const Text('Kartla Öde (Aylık)'),
+              ),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: onPayWithCard == null
+                    ? null
+                    : () => onPayWithCard!(plan, 'YEARLY'),
+                icon: const TcIcon(TcIcons.card, size: 16),
+                label: const Text('Kartla Öde (Yıllık)'),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -30,7 +30,7 @@ final class PaymentConfig
     /** Sağlayıcı yok — havale kipi. */
     public const PROVIDER_NONE = 'none';
 
-    public const PROVIDER_PAYTR = 'paytr';
+    public const PROVIDER_STRIPE = 'stripe';
 
     public const MODE_TRANSFER = 'transfer';
 
@@ -44,9 +44,8 @@ final class PaymentConfig
 
     /** Şifreli saklanan anahtarlar. */
     public const SECRET_KEYS = [
-        'payment.paytr.merchant_id',
-        'payment.paytr.merchant_key',
-        'payment.paytr.merchant_salt',
+        'payment.stripe.secret_key',
+        'payment.stripe.webhook_secret',
     ];
 
     public static function provider(): string
