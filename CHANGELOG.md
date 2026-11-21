@@ -17,6 +17,14 @@ Kurallar:
 
 ---
 
+## v1.3.1
+
+Yenilikler:
+• Artık aboneliğinizi kartla da ödeyebilirsiniz — havale/EFT'ye ek bir seçenek, istediğinizi kullanabilirsiniz.
+• Kartla yapılan ödemeler anında işleniyor, onay beklemeden aboneliğiniz hemen uzuyor.
+
+Not: Havale ile ödeyip bildirim gönderme eskisi gibi çalışmaya devam ediyor, hiçbir şey kaldırılmadı.
+
 ## v1.3.0
 
 Yenilikler:
