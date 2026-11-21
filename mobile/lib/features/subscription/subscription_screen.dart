@@ -15,10 +15,15 @@ import 'checkout_webview_screen.dart';
 import 'data/subscription_models.dart';
 import 'data/subscription_repository.dart';
 
-/// Abonelik ekranı — web'deki Filament "Abonelik" sayfasının mobil karşılığı
-/// (durum kartı → paketler → havale bilgisi → ödeme bildirimi → geçmiş).
-/// Ödeme akışı web ile aynı: kullanıcı kendi bankasından havale yapar,
-/// buradan bildirir, admin panelden onaylayınca abonelik uzar.
+/// Abonelik ekranı — web'deki Filament "Abonelik" sayfasının mobil karşılığı.
+///
+/// Dönem (aylık/yıllık) SAYFA SEVİYESİNDE tek bir anahtarla seçilir — her
+/// pakette ayrı ayrı tekrarlanmaz. Her paketin TEK bir eylem butonu var:
+/// kartla ödeme hazırsa doğrudan Stripe Checkout'u açar; değilse paketi
+/// aşağıdaki havale bildirim formuna taşır. Havale, kartla ödeme hazır
+/// olduğunda birincil akışın önüne geçmesin diye kapanabilir bir bölüme
+/// alınır; kartla ödeme yoksa (tek seçenek olduğu için) her zaman açık
+/// kalır.
 class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({super.key});
 
@@ -36,6 +41,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   String _billingPeriod = 'MONTHLY';
   bool _isSubmitting = false;
   bool _isPayingWithCard = false;
+  bool _transferExpanded = false;
 
   @override
   void dispose() {
@@ -45,24 +51,56 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     super.dispose();
   }
 
-  void _selectPlan(PlanInfo plan, String period) {
+  void _setPeriod(String period) {
+    setState(() {
+      _billingPeriod = period;
+      if (_selectedPlanId != null) {
+        // Zaten bir paket seçiliyse (havale formu doldurulmuşsa), dönem
+        // değişince bildirilecek tutar da güncellenmeli.
+        final plans = ref.read(plansProvider).valueOrNull ?? const [];
+        for (final p in plans) {
+          if (p.id == _selectedPlanId) {
+            _fillAmount(p, period);
+            break;
+          }
+        }
+      }
+    });
+  }
+
+  void _fillAmount(PlanInfo plan, String period) {
+    _amountController.text = Money.formatMinor(
+      period == 'YEARLY' ? plan.priceYearlyMinor : plan.priceMonthlyMinor,
+    ).replaceAll('₺', '').trim();
+  }
+
+  /// Havale (transfer) kipinde paket seçimi: formu doldurup o bölüme
+  /// kaydırır. Kartla ödeme kipinde hiç çağrılmaz — bkz. `_choosePlan`.
+  void _selectPlanForTransfer(PlanInfo plan) {
     setState(() {
       _selectedPlanId = plan.id;
-      _billingPeriod = period;
-      _amountController.text = Money.formatMinor(
-        period == 'YEARLY' ? plan.priceYearlyMinor : plan.priceMonthlyMinor,
-      ).replaceAll('₺', '').trim();
+      _transferExpanded = true;
+      _fillAmount(plan, _billingPeriod);
     });
-    // Paket seçimi formu doldurur ama forma OTOMATİK kaydırmaz — kullanıcı
-    // önce havale bilgisini (IBAN) görsün; ayrıca form bölümünün başında
-    // "önce ödeme yapın" uyarısı da var.
-    final ctx = _formSectionKey.currentContext;
-    if (ctx != null) {
-      Scrollable.ensureVisible(
-        ctx,
-        duration: const Duration(milliseconds: 400),
-        alignment: 0.1,
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _formSectionKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 400),
+          alignment: 0.1,
+        );
+      }
+    });
+  }
+
+  /// Bir pakette TEK butona basıldığında ne olacağına karar verir.
+  void _choosePlan(PlanInfo plan, bool cardPaymentAvailable) {
+    if (cardPaymentAvailable) {
+      if (_isPayingWithCard) return;
+      _payWithCard(plan, _billingPeriod);
+    } else {
+      _selectPlanForTransfer(plan);
     }
   }
 
@@ -177,51 +215,78 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
       body: statusAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _ErrorState(onRetry: _refresh),
-        data: (status) => RefreshIndicator(
-          onRefresh: _refresh,
-          child: ListView(
-            controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-            children: [
-              _StatusCard(status: status),
-              const SizedBox(height: 24),
-              _sectionTitle(context, 'Paketler'),
-              const SizedBox(height: 4),
-              Text(
-                'Ödemeyi yaptıktan sonra aşağıdaki formla bildir; onaylandığında aboneliğin otomatik uzatılır.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+        data: (status) {
+          final cardReady = status.kartlaOdemeMevcut;
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+              children: [
+                _StatusCard(status: status),
+                const SizedBox(height: 24),
+                _sectionTitle(context, 'Paketler'),
+                const SizedBox(height: 4),
+                Text(
+                  cardReady
+                      ? 'Dönemini seç, paketinin yanındaki tek butonla ödemeni anında tamamla.'
+                      : 'Paketini seç, havale/EFT yaptıktan sonra aşağıdaki formla bildir.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              _PlansSection(
-                selectedPlanId: _selectedPlanId,
-                currentPlanId: status.plan?.id,
-                onSelect: _selectPlan,
-                cardPaymentAvailable: status.kartlaOdemeMevcut,
-                onPayWithCard: _isPayingWithCard ? null : _payWithCard,
-              ),
-              const SizedBox(height: 24),
-              _sectionTitle(context, 'Havale / EFT Bilgileri'),
-              const SizedBox(height: 12),
-              _BankInfoCard(info: status.paymentInfo),
-              const SizedBox(height: 24),
-              KeyedSubtree(
-                key: _formSectionKey,
-                child: _sectionTitle(context, 'Ödeme Bildirimi'),
-              ),
-              const SizedBox(height: 12),
-              _PaymentNoticeCard(info: status.paymentInfo),
-              const SizedBox(height: 12),
-              _buildForm(context),
-              const SizedBox(height: 24),
-              _sectionTitle(context, 'Geçmiş Talepler'),
-              const SizedBox(height: 12),
-              const _RequestHistory(),
-            ],
-          ),
-        ),
+                const SizedBox(height: 12),
+                _PeriodToggle(
+                  period: _billingPeriod,
+                  onChanged: _setPeriod,
+                ),
+                const SizedBox(height: 12),
+                _PlansSection(
+                  period: _billingPeriod,
+                  currentPlanId: status.plan?.id,
+                  cardPaymentAvailable: cardReady,
+                  onChoose: (plan) => _choosePlan(plan, cardReady),
+                ),
+                const SizedBox(height: 24),
+                if (cardReady)
+                  _TransferDisclosure(
+                    expanded: _transferExpanded,
+                    onToggle: () => setState(
+                      () => _transferExpanded = !_transferExpanded,
+                    ),
+                    child: _transferSection(context, status),
+                  )
+                else
+                  _transferSection(context, status),
+                const SizedBox(height: 24),
+                _sectionTitle(context, 'Geçmiş Talepler'),
+                const SizedBox(height: 12),
+                const _RequestHistory(),
+              ],
+            ),
+          );
+        },
       ),
+    );
+  }
+
+  Widget _transferSection(BuildContext context, SubscriptionStatus status) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(context, 'Havale / EFT Bilgileri'),
+        const SizedBox(height: 12),
+        _BankInfoCard(info: status.paymentInfo),
+        const SizedBox(height: 24),
+        KeyedSubtree(
+          key: _formSectionKey,
+          child: _sectionTitle(context, 'Ödeme Bildirimi'),
+        ),
+        const SizedBox(height: 12),
+        _PaymentNoticeCard(info: status.paymentInfo),
+        const SizedBox(height: 12),
+        _buildForm(context),
+      ],
     );
   }
 
@@ -261,7 +326,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
             ButtonSegment(value: 'YEARLY', label: Text('Yıllık')),
           ],
           selected: {_billingPeriod},
-          onSelectionChanged: (s) => setState(() => _billingPeriod = s.first),
+          onSelectionChanged: (s) => _setPeriod(s.first),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -378,20 +443,44 @@ class _StatusCard extends StatelessWidget {
   }
 }
 
+/// Sayfa seviyesinde tek dönem anahtarı — her pakette tekrarlanmaz.
+class _PeriodToggle extends StatelessWidget {
+  const _PeriodToggle({required this.period, required this.onChanged});
+
+  final String period;
+  final void Function(String period) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<String>(
+      segments: const [
+        ButtonSegment(value: 'MONTHLY', label: Text('Aylık')),
+        ButtonSegment(value: 'YEARLY', label: Text('Yıllık')),
+      ],
+      selected: {period},
+      onSelectionChanged: (s) => onChanged(s.first),
+      showSelectedIcon: false,
+      style: const ButtonStyle(
+        visualDensity: VisualDensity.standard,
+      ).copyWith(
+        minimumSize: const WidgetStatePropertyAll(Size.fromHeight(44)),
+      ),
+    );
+  }
+}
+
 class _PlansSection extends ConsumerWidget {
   const _PlansSection({
-    required this.selectedPlanId,
+    required this.period,
     required this.currentPlanId,
-    required this.onSelect,
     required this.cardPaymentAvailable,
-    required this.onPayWithCard,
+    required this.onChoose,
   });
 
-  final String? selectedPlanId;
+  final String period;
   final String? currentPlanId;
-  final void Function(PlanInfo plan, String period) onSelect;
   final bool cardPaymentAvailable;
-  final Future<void> Function(PlanInfo plan, String period)? onPayWithCard;
+  final void Function(PlanInfo plan) onChoose;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -411,11 +500,10 @@ class _PlansSection extends ConsumerWidget {
           for (final plan in plans) ...[
             _PlanCard(
               plan: plan,
+              period: period,
               isCurrent: plan.id == currentPlanId,
-              isSelected: plan.id == selectedPlanId,
-              onSelect: onSelect,
               cardPaymentAvailable: cardPaymentAvailable,
-              onPayWithCard: onPayWithCard,
+              onChoose: onChoose,
             ),
             const SizedBox(height: 12),
           ],
@@ -428,24 +516,24 @@ class _PlansSection extends ConsumerWidget {
 class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.plan,
+    required this.period,
     required this.isCurrent,
-    required this.isSelected,
-    required this.onSelect,
     required this.cardPaymentAvailable,
-    required this.onPayWithCard,
+    required this.onChoose,
   });
 
   final PlanInfo plan;
+  final String period;
   final bool isCurrent;
-  final bool isSelected;
-  final void Function(PlanInfo plan, String period) onSelect;
   final bool cardPaymentAvailable;
-  final Future<void> Function(PlanInfo plan, String period)? onPayWithCard;
+  final void Function(PlanInfo plan) onChoose;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isPopular = plan.slug == 'profesyonel';
+    final isYearly = period == 'YEARLY';
+    final priceMinor = isYearly ? plan.priceYearlyMinor : plan.priceMonthlyMinor;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -453,10 +541,8 @@ class _PlanCard extends StatelessWidget {
         color: scheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected || isCurrent
-              ? scheme.primary
-              : scheme.outlineVariant,
-          width: isSelected || isCurrent ? 1.6 : 1,
+          color: isCurrent ? scheme.primary : scheme.outlineVariant,
+          width: isCurrent ? 1.6 : 1,
         ),
       ),
       child: Column(
@@ -482,7 +568,7 @@ class _PlanCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                Money.formatMinor(plan.priceMonthlyMinor, decimals: false),
+                Money.formatMinor(priceMinor, decimals: false),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -491,24 +577,14 @@ class _PlanCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
-                  '/ay',
+                  isYearly ? '/yıl' : '/ay',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),
-            ],
-          ),
-          Row(
-            children: [
-              Text(
-                'veya yıllık ${Money.formatMinor(plan.priceYearlyMinor, decimals: false)}',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-              if (plan.yearlySavingsPercent > 0) ...[
-                const SizedBox(width: 6),
+              if (isYearly && plan.yearlySavingsPercent > 0) ...[
+                const SizedBox(width: 8),
                 _chip(
                   context,
                   '%${plan.yearlySavingsPercent} tasarruf',
@@ -565,48 +641,16 @@ class _PlanCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => onSelect(plan, 'MONTHLY'),
-                  child: const Text('Aylık Seç'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => onSelect(plan, 'YEARLY'),
-                  child: const Text('Yıllık Seç'),
-                ),
-              ),
-            ],
-          ),
-          // Havale her zaman yukarıdaki IBAN bölümünden mevcut — bu
-          // sadece EK bir seçenek. Sağlayıcı yapılandırılmadığında
-          // (payment_mode != 'card') hiç gösterilmez.
-          if (cardPaymentAvailable) ...[
-            const SizedBox(height: 8),
+          if (!isCurrent) ...[
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              child: FilledButton.tonalIcon(
-                onPressed: onPayWithCard == null
-                    ? null
-                    : () => onPayWithCard!(plan, 'MONTHLY'),
-                icon: const TcIcon(TcIcons.card, size: 16),
-                label: const Text('Kartla Öde (Aylık)'),
-              ),
-            ),
-            const SizedBox(height: 6),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                onPressed: onPayWithCard == null
-                    ? null
-                    : () => onPayWithCard!(plan, 'YEARLY'),
-                icon: const TcIcon(TcIcons.card, size: 16),
-                label: const Text('Kartla Öde (Yıllık)'),
+              child: FilledButton.icon(
+                onPressed: () => onChoose(plan),
+                icon: cardPaymentAvailable
+                    ? const TcIcon(TcIcons.card, size: 16)
+                    : const TcIcon(TcIcons.send, size: 16),
+                label: const Text('Bu paketi seç'),
               ),
             ),
           ],
@@ -626,6 +670,57 @@ class _PlanCard extends StatelessWidget {
       style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
     ),
   );
+}
+
+/// Kartla ödeme hazır olduğunda havale/EFT bölümünü ikincil, kapanabilir
+/// bir bölüme indirir — birincil akışın (kartla ödeme) önüne geçmesin
+/// diye. Kartla ödeme yokken hiç kullanılmaz (bkz. SubscriptionScreen.build).
+class _TransferDisclosure extends StatelessWidget {
+  const _TransferDisclosure({
+    required this.expanded,
+    required this.onToggle,
+    required this.child,
+  });
+
+  final bool expanded;
+  final VoidCallback onToggle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Banka havalesiyle öde',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                TcIcon(
+                  expanded ? TcIcons.chevronUp : TcIcons.chevronDown,
+                  size: 16,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (expanded) ...[const SizedBox(height: 12), child],
+      ],
+    );
+  }
 }
 
 class _BankInfoCard extends StatelessWidget {

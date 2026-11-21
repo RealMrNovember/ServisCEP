@@ -17,6 +17,12 @@ Kurallar:
 
 ---
 
+## v1.3.2
+
+Yenilikler:
+• Abonelik ekranı sadeleşti: aylık/yıllık seçimini artık tek bir yerden yapıyorsun, her pakette tek bir "Bu paketi seç" butonu var.
+• Kartla ödeme açıkken havale bilgileri isteğe bağlı, kapanabilir bir bölüme taşındı — ekran daha az kalabalık.
+
 ## v1.3.1
 
 Yenilikler:
