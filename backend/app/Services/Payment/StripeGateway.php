@@ -47,7 +47,10 @@ class StripeGateway
         try {
             $session = $stripe->checkout->sessions->create([
                 'mode' => 'payment',
-                'payment_method_types' => ['card'],
+                // payment_method_types KASITLI OLARAK verilmiyor: Stripe bunu
+                // yeni hesaplarda artık kabul etmiyor ("no longer supported"),
+                // ödeme yöntemleri Dashboard > Settings > Payment methods'tan
+                // yönetiliyor. Varsayılan olarak kart zaten açık geliyor.
                 // Webhook geldiğinde ödemeyi SubscriptionPayment kaydına
                 // geri bağlamanın tek yolu — PayTR'deki merchant_oid'in
                 // karşılığı.
